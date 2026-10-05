@@ -9,13 +9,16 @@ using UnityEngine.XR.Interaction.Toolkit.Transformers;
 using UnityEngine.XR.Interaction.Toolkit.Filtering;
 
 /// <summary>Independent exhibit for helmet 2. Exact part keys exclude nail2 through nail12.</summary>
+[ExecuteAlways]
 public class HelmetDetailInspection : MonoBehaviour
 {
     [Serializable] public class PartDescription
     {
         public string key, title;
         [TextArea(3, 8)] public string description;
-        public PartDescription(string k, string t, string d) { key = k; title = t; description = d; }
+        [TextArea(3, 8)] public string englishDescription;
+        public PartDescription(string k, string t, string d)
+        { key = k; title = t; description = d; englishDescription = EnglishDescription(k); }
     }
     public Transform helmet;
     public Font font;
@@ -49,15 +52,29 @@ public class HelmetDetailInspection : MonoBehaviour
     Quaternion baseRotation;
     float magnification = 1;
     Text details, status;
+    ScrollRect detailsScroll;
     GameObject panel;
     Font fallback;
     XRGrabInteractable wholeGrab;
     XRGeneralGrabTransformer wholeTransformer;
     Material handleMaterial;
-    readonly string instructions = "头盔细节观察 / Helmet details\n\n靠近两侧青色抓取点，按住手柄握把抓住头盔。\n单手移动、旋转；双手各抓一侧，拉开放大、聚拢缩小。\n松开后保留当前位置和大小，再抓取可继续调整。\n\n先松开整盔，再抓住零件拆下，查看介绍。\n移回原位附近并松手可装回；复位恢复全部零件。\n可拆：前、左、右、顶部、固定件、铭牌、nail1。";
+    readonly string instructions = "ACT 2 · 头盔细节观察 / Helmet details\n\n观察潜水头盔的视窗、连接件与铭牌。\n握住青色抓取点移动、旋转；双手拉开放大。\n松开整盔后，抓取零件查看详情。\n零件放回原位附近并松手可装回；Reset 恢复展项。";
+    const string defaultDetails = "可拆：前、左、右、顶部、固定件、铭牌、nail1。\n抓取一个零件，即可在这里查看介绍。\n\nRemovable parts: front, left, right, top, fixing component, nameplate and nail1.\nGrab a part to read its description here.\n\n拖动文字或右侧滚动条查看全部内容。\nDrag the text or the scrollbar to read more.";
+
+    void Update()
+    {
+        if (!panel)
+        {
+            BuildPanel();
+            ShowDetails(defaultDetails);
+            if (Application.isPlaying) UpdateStatus();
+            else status.text = "操作介绍常驻显示 / Instructions always visible";
+        }
+    }
 
     void Start()
     {
+        if (!Application.isPlaying) return;
         if (!helmet) { Debug.LogError("Assign helmet 2.", this); enabled = false; return; }
         baseScale = helmet.localScale; basePosition = helmet.localPosition; baseRotation = helmet.localRotation;
         var renderers = helmet.GetComponentsInChildren<Renderer>();
@@ -95,19 +112,23 @@ public class HelmetDetailInspection : MonoBehaviour
             parts.Add(part);
         }
         SetupWholeGrab(bounds);
-        BuildPanel();
-        details.text = instructions;
+        if (!panel) BuildPanel();
+        ShowDetails(defaultDetails);
         UpdateStatus();
     }
     void Detach(Part part)
     {
         part.releaseFrame = -1; part.detached = true;
         part.transform.SetParent(null, true);
-        details.text = part.info.title + "\n\n" + part.info.description + "\n\n旋转手柄观察零件。\n放回原位附近并松手可装回。";
+        string english = string.IsNullOrWhiteSpace(part.info.englishDescription)
+            ? EnglishDescription(part.info.key) : part.info.englishDescription;
+        ShowDetails(part.info.title + "\n\n" + part.info.description + "\n\n" + english
+            + "\n\n旋转手柄观察零件。放回原位附近并松手可装回。\nRotate your controller to inspect the part. Bring it close to its original position and release to reattach.");
         UpdateStatus();
     }
     void LateUpdate()
     {
+        if (!Application.isPlaying) return;
         if (wholeGrab)
         {
             float current = Mathf.Abs(helmet.localScale.x / baseScale.x);
@@ -197,11 +218,12 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     public void ResetExhibit()
     {
+        if (!Application.isPlaying) return;
         if (Held()) { status.text = "请先松开零件，再复位 / Release part first"; return; }
         helmet.localScale = baseScale; helmet.localPosition = basePosition; helmet.localRotation = baseRotation;
         magnification = 1;
         foreach (var part in parts) Restore(part);
-        details.text = instructions; UpdateStatus();
+        ShowDetails(defaultDetails); UpdateStatus();
     }
     void UpdateStatus()
     {
@@ -211,14 +233,73 @@ public class HelmetDetailInspection : MonoBehaviour
     {
         fallback = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 40);
         panel = new GameObject("Helmet 2 Detail Controls", typeof(RectTransform), typeof(Canvas), typeof(TrackedDeviceGraphicRaycaster));
+        panel.hideFlags = HideFlags.HideAndDontSave;
         panel.transform.SetParent(transform, false); panel.transform.localScale = Vector3.one * 0.002f;
         panel.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         panel.GetComponent<RectTransform>().sizeDelta = new Vector2(1200, 950);
         Element<Image>("Background", Vector2.zero, new Vector2(1200, 950)).color = new Color(0.025f, 0.09f, 0.12f, 0.97f);
-        details = TextLabel("Details", new Vector2(0, 85), new Vector2(1100, 670), 34);
+        var introduction = TextLabel("Permanent Introduction", new Vector2(0, 245), new Vector2(1100, 400), 34);
+        introduction.alignment = TextAnchor.UpperLeft;
+        introduction.text = instructions;
+        introduction.raycastTarget = false;
+        var viewport = Element<Image>("Details Viewport", new Vector2(-20, -105), new Vector2(1060, 280));
+        viewport.color = new Color(0.04f, 0.14f, 0.18f, 1);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        detailsScroll = viewport.gameObject.AddComponent<ScrollRect>();
+        detailsScroll.viewport = viewport.rectTransform;
+        detailsScroll.horizontal = false;
+        detailsScroll.movementType = ScrollRect.MovementType.Clamped;
+        detailsScroll.scrollSensitivity = 45;
+        details = TextLabel("Details", Vector2.zero, new Vector2(1020, 280), 30);
+        details.transform.SetParent(viewport.transform, false);
+        var content = details.rectTransform;
+        content.anchorMin = new Vector2(0, 1);
+        content.anchorMax = new Vector2(1, 1);
+        content.pivot = new Vector2(0.5f, 1);
+        content.sizeDelta = new Vector2(-40, 0);
+        content.anchoredPosition = Vector2.zero;
+        details.horizontalOverflow = HorizontalWrapMode.Wrap;
+        details.verticalOverflow = VerticalWrapMode.Overflow;
+        details.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        detailsScroll.content = content;
         details.alignment = TextAnchor.UpperLeft;
+        details.raycastTarget = true;
+        var track = Element<Image>("Details Scrollbar", new Vector2(535, -105), new Vector2(30, 280));
+        track.color = new Color(0.1f, 0.25f, 0.28f);
+        var thumb = Element<Image>("Scroll Handle", Vector2.zero, Vector2.zero);
+        thumb.transform.SetParent(track.transform, false);
+        thumb.rectTransform.anchorMin = Vector2.zero;
+        thumb.rectTransform.anchorMax = Vector2.one;
+        thumb.rectTransform.sizeDelta = Vector2.zero;
+        thumb.color = new Color(0.3f, 0.85f, 0.8f);
+        var scrollbar = track.gameObject.AddComponent<Scrollbar>();
+        scrollbar.handleRect = thumb.rectTransform;
+        scrollbar.targetGraphic = thumb;
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+        detailsScroll.verticalScrollbar = scrollbar;
         status = TextLabel("Status", new Vector2(0, -295), new Vector2(1100, 65), 30);
         Button("复位 / Reset", 0, ResetExhibit);
+    }
+    void ShowDetails(string message)
+    {
+        details.text = message;
+        LayoutRebuilder.ForceRebuildLayoutImmediate(details.rectTransform);
+        detailsScroll.StopMovement();
+        detailsScroll.verticalNormalizedPosition = 1;
+    }
+    public static string EnglishDescription(string key)
+    {
+        switch (key)
+        {
+            case "forward": return "Traditional copper diving helmets have glass viewports. Examine the frame, opening and connections of the front part, then compare its shape with the side parts.";
+            case "left": return "Examine the outline, frame and attachment to the helmet shell. Compare this part with the right viewport.";
+            case "right": return "Turn the part to examine its inner and outer surfaces and the connections around its edge. Compare it with the left viewport.";
+            case "up": return "Examine the opening, frame and mounting position of the top component. Consider how viewports facing different directions affect the field of view.";
+            case "fixing": return "Examine the contact surfaces, holes and outline of the fixing component. This model shows its connection structure; its exact function needs confirmation against the actual helmet model.";
+            case "nameplate": return "Look closely for lettering, marks or numbers on the nameplate. These may help identify the equipment. The specific manufacturer of this model has not been confirmed.";
+            case "nail1": return "Examine the head, shaft and mounting position of this fastener. Only nail1 can be removed in this exhibit to avoid repetitive interactions; the other nail parts remain fixed.";
+            default: return "";
+        }
     }
     void Button(string caption, float x, UnityEngine.Events.UnityAction action)
     {
@@ -240,8 +321,16 @@ public class HelmetDetailInspection : MonoBehaviour
     T Element<T>(string name, Vector2 position, Vector2 size) where T : Graphic
     {
         var item = new GameObject(name, typeof(RectTransform)); item.transform.SetParent(panel.transform, false);
+        item.hideFlags = HideFlags.HideAndDontSave;
         var rect = item.GetComponent<RectTransform>(); rect.anchoredPosition = position; rect.sizeDelta = size;
         return item.AddComponent<T>();
+    }
+    void OnDisable()
+    {
+        if (panel) { if (Application.isPlaying) Destroy(panel); else DestroyImmediate(panel); }
+        if (fallback) { if (Application.isPlaying) Destroy(fallback); else DestroyImmediate(fallback); }
+        panel = null;
+        fallback = null;
     }
     void OnDestroy()
     {

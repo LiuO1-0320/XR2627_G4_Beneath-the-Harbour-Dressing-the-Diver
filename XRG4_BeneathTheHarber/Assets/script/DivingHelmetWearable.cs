@@ -13,6 +13,8 @@ public class DivingHelmetWearable : MonoBehaviour
     public Vector3 wornCenterOffset = new Vector3(0, 0.05f, 0);
     public Vector3 wornEulerOffset = new Vector3(0, -90, 0);
     public bool hideShellWhileWorn = true;
+    public bool returnWithSecondaryButton = true;
+    [Min(0.1f)] public float standSnapDistance = 0.7f;
     public bool IsWorn { get; private set; }
     XRGrabInteractable grab;
     Rigidbody body;
@@ -20,14 +22,20 @@ public class DivingHelmetWearable : MonoBehaviour
     ShadowCastingMode[] shadows;
     Vector3 center, initialPosition;
     Quaternion initialRotation;
+    Transform stand;
+    Vector3 standLocalPosition;
+    Quaternion standLocalRotation;
+    bool docked = true;
     int wearFrame = -1;
     bool previousButton;
 
     void Start()
     {
-        if (!helmet) { Debug.LogError("Assign the divinghelmet1 Transform.", this); enabled = false; return; }
+        if (!helmet) { Debug.LogError("Assign the helmet Transform.", this); enabled = false; return; }
         if (!head && Camera.main) head = Camera.main.transform;
         initialPosition = helmet.position; initialRotation = helmet.rotation;
+        stand = helmet.parent;
+        standLocalPosition = helmet.localPosition; standLocalRotation = helmet.localRotation;
         renderers = helmet.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) { Debug.LogError("Helmet has no visible model.", this); enabled = false; return; }
         var bounds = renderers[0].bounds;
@@ -37,7 +45,9 @@ public class DivingHelmetWearable : MonoBehaviour
         center = helmet.InverseTransformPoint(bounds.center);
         body = helmet.GetComponent<Rigidbody>();
         if (!body) body = helmet.gameObject.AddComponent<Rigidbody>();
-        body.mass = 3; body.useGravity = false; body.isKinematic = false;
+        body.mass = 3; body.useGravity = false; body.isKinematic = true;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         // A simple convex grab volume works with the imported model, including a hollow shell.
         var collider = helmet.gameObject.AddComponent<BoxCollider>();
         var local = new Bounds(center, Vector3.zero);
@@ -52,6 +62,7 @@ public class DivingHelmetWearable : MonoBehaviour
         if (!grab) grab = helmet.gameObject.AddComponent<XRGrabInteractable>();
         grab.colliders.Clear(); grab.colliders.Add(collider);
         grab.useDynamicAttach = true;
+        grab.retainTransformParent = true;
         grab.movementType = XRBaseInteractable.MovementType.Kinematic;
         grab.throwOnDetach = false;
         grab.selectEntered.AddListener(OnGrab);
@@ -61,13 +72,15 @@ public class DivingHelmetWearable : MonoBehaviour
     void OnGrab(SelectEnterEventArgs args)
     {
         wearFrame = -1;
-        body.useGravity = true;
+        docked = false;
+        body.detectCollisions = true;
+        body.useGravity = false;
     }
     void OnRelease(SelectExitEventArgs args)
     {
-        if (args.isCanceled || !head) return;
-        if (Vector3.Distance(helmet.TransformPoint(center), head.position) <= wearDistance)
-            wearFrame = Time.frameCount + 2; // Wait for XR detach physics to finish.
+        // Resolve every release after XR has restored its cached Rigidbody state.
+        // The cached state is kinematic while docked, so gravity alone is insufficient.
+        if (!IsWorn) wearFrame = Time.frameCount + 2;
     }
     void LateUpdate()
     {
@@ -83,9 +96,21 @@ public class DivingHelmetWearable : MonoBehaviour
                 if (hideShellWhileWorn)
                     foreach (var renderer in renderers) renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
             }
+            else if (!grab.isSelected && !IsWorn)
+            {
+                if (NearStand()) ReturnToStand();
+                else
+                {
+                    docked = false;
+                    body.isKinematic = false;
+                    body.detectCollisions = true;
+                    body.useGravity = true;
+                    body.WakeUp();
+                }
+            }
         }
         bool button = SecondaryPressed(XRNode.LeftHand) || SecondaryPressed(XRNode.RightHand);
-        if (IsWorn && button && !previousButton) ReturnToStand();
+        if (returnWithSecondaryButton && IsWorn && button && !previousButton) ReturnToStand();
         previousButton = button;
         if (IsWorn && head)
         {
@@ -93,6 +118,18 @@ public class DivingHelmetWearable : MonoBehaviour
             helmet.position += head.TransformPoint(wornCenterOffset) - helmet.TransformPoint(center);
         }
         if (!IsWorn && !grab.isSelected && helmet.position.y < initialPosition.y - 10) ReturnToStand();
+    }
+    void FixedUpdate()
+    {
+        if (!helmet || !grab || IsWorn || docked || grab.isSelected || wearFrame >= 0) return;
+        if (NearStand()) ReturnToStand();
+    }
+    Vector3 StandPosition() { return stand ? stand.TransformPoint(standLocalPosition) : initialPosition; }
+    Quaternion StandRotation() { return stand ? stand.rotation * standLocalRotation : initialRotation; }
+    bool NearStand()
+    {
+        Vector3 standCenter = StandPosition() + StandRotation() * Vector3.Scale(helmet.lossyScale, center);
+        return Vector3.Distance(helmet.TransformPoint(center), standCenter) <= standSnapDistance;
     }
     static bool SecondaryPressed(XRNode node)
     {
@@ -103,9 +140,10 @@ public class DivingHelmetWearable : MonoBehaviour
     {
         if (!body || grab.isSelected) return;
         IsWorn = false; wearFrame = -1;
-        body.isKinematic = false; body.useGravity = false; body.detectCollisions = true;
-        body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero;
-        helmet.SetPositionAndRotation(initialPosition, initialRotation);
+        if (!body.isKinematic) { body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+        docked = true;
+        body.isKinematic = true; body.useGravity = false; body.detectCollisions = true;
+        helmet.SetPositionAndRotation(StandPosition(), StandRotation());
         for (int i = 0; i < renderers.Length; i++) renderers[i].shadowCastingMode = shadows[i];
         grab.enabled = true;
     }

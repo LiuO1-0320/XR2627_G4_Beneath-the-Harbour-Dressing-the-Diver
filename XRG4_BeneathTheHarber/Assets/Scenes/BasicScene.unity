@@ -228,8 +228,8 @@ Transform:
   m_GameObject: {fileID: 34489065}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 91.48, y: 7.4625235, z: 37.850002}
-  m_LocalScale: {x: 1, y: 14.769, z: 10.27171}
+  m_LocalPosition: {x: 90.1, y: 7.4625235, z: 37.85}
+  m_LocalScale: {x: 1, y: 14.769, z: 8.164536}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1662686409}
@@ -338,7 +338,7 @@ Transform:
   m_GameObject: {fileID: 86703752}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 151.879, y: 0.501, z: -21.85}
+  m_LocalPosition: {x: 148.88, y: 0.501, z: -19.71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -476,16 +476,28 @@ PrefabInstance:
     m_TransformParent: {fileID: 976892861}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.3712
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.3712
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.3712
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.14689636
+      value: 0.020924
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.96199995
+      value: 0.98438
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.0019264221
+      value: -0.11167
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1007,6 +1019,8 @@ MonoBehaviour:
   wornCenterOffset: {x: 0, y: 0.05, z: 0}
   wornEulerOffset: {x: 0, y: -90, z: 0}
   hideShellWhileWorn: 1
+  returnWithSecondaryButton: 1
+  standSnapDistance: 0.7
 --- !u!4 &750000010 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
@@ -1141,7 +1155,7 @@ Transform:
   m_GameObject: {fileID: 770000000}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.06, y: 1.4, z: 1.5}
+  m_LocalPosition: {x: -1.31, y: 2.4, z: 0.04}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1168,30 +1182,233 @@ MonoBehaviour:
   - key: forward
     title: "\u524D\u90E8\u89C6\u7A97 / Front viewport"
     description: "\u4F20\u7EDF\u94DC\u5236\u6F5C\u6C34\u5934\u76D4\u914D\u6709\u73BB\u7483\u89C6\u7A97\u3002\u89C2\u5BDF\u524D\u90E8\u96F6\u4EF6\u7684\u8FB9\u6846\u3001\u5F00\u53E3\u548C\u8FDE\u63A5\u7ED3\u6784\uFF0C\u518D\u6BD4\u8F83\u5B83\u4E0E\u4E24\u4FA7\u90E8\u4EF6\u7684\u5F62\u72B6\u3002"
+    englishDescription: Traditional copper diving helmets have glass viewports. Examine
+      the frame, opening and connections of the front part, then compare its shape
+      with the side parts.
   - key: left
     title: "\u5DE6\u4FA7\u89C6\u7A97 / Left viewport"
     description: "\u89C2\u5BDF\u5DE6\u4FA7\u90E8\u4EF6\u7684\u8F6E\u5ED3\u3001\u8FB9\u6846\u548C\u4E0E\u5934\u76D4\u5916\u58F3\u8FDE\u63A5\u7684\u4F4D\u7F6E\uFF0C\u6BD4\u8F83\u5B83\u4E0E\u53F3\u4FA7\u90E8\u4EF6\u7684\u5F02\u540C\u3002"
+    englishDescription: Examine the outline, frame and attachment to the helmet shell.
+      Compare this part with the right viewport.
   - key: right
     title: "\u53F3\u4FA7\u89C6\u7A97 / Right viewport"
     description: "\u5C06\u96F6\u4EF6\u8F6C\u5230\u4E0D\u540C\u89D2\u5EA6\uFF0C\u89C2\u5BDF\u5185\u5916\u4E24\u9762\u4EE5\u53CA\u8FB9\u7F18\u7684\u8FDE\u63A5\u7ED3\u6784\uFF0C\u5E76\u4E0E\u5DE6\u4FA7\u90E8\u4EF6\u6BD4\u8F83\u3002"
+    englishDescription: Turn the part to examine its inner and outer surfaces and
+      the connections around its edge. Compare it with the left viewport.
   - key: up
     title: "\u9876\u90E8\u90E8\u4EF6 / Top component"
     description: "\u89C2\u5BDF\u9876\u90E8\u90E8\u4EF6\u7684\u5F00\u53E3\u3001\u8FB9\u6846\u53CA\u5B89\u88C5\u4F4D\u7F6E\uFF0C\u601D\u8003\u4E0D\u540C\u65B9\u5411\u7684\u89C6\u7A97\u5982\u4F55\u5F71\u54CD\u89C2\u5BDF\u8303\u56F4\u3002"
+    englishDescription: Examine the opening, frame and mounting position of the top
+      component. Consider how viewports facing different directions affect the field
+      of view.
   - key: fixing
     title: "\u56FA\u5B9A\u8FDE\u63A5\u4EF6 / Fixing component"
     description: "\u89C2\u5BDF\u56FA\u5B9A\u4EF6\u4E0E\u5176\u4ED6\u96F6\u4EF6\u63A5\u89E6\u7684\u8868\u9762\u3001\u5B54\u4F4D\u548C\u8F6E\u5ED3\u3002\u6B64\u5904\u5C55\u793A\u6A21\u578B\u7684\u8FDE\u63A5\u7ED3\u6784\uFF0C\u5177\u4F53\u529F\u80FD\u9700\u7ED3\u5408\u5B9E\u7269\u578B\u53F7\u786E\u8BA4\u3002"
+    englishDescription: Examine the contact surfaces, holes and outline of the fixing
+      component. This model shows its connection structure; its exact function needs
+      confirmation against the actual helmet model.
   - key: nameplate
     title: "\u94ED\u724C / Nameplate"
     description: "\u4ED4\u7EC6\u67E5\u770B\u94ED\u724C\u8868\u9762\u662F\u5426\u6709\u6587\u5B57\u3001\u6807\u8BB0\u6216\u7F16\u53F7\u3002\u5B83\u4EEC\u53EF\u80FD\u4E3A\u8BC6\u522B\u8BBE\u5907\u63D0\u4F9B\u7EBF\u7D22\uFF1B\u672C\u6A21\u578B\u7684\u5177\u4F53\u5236\u9020\u4FE1\u606F\u5C1A\u672A\u786E\u8BA4\u3002"
+    englishDescription: Look closely for lettering, marks or numbers on the nameplate.
+      These may help identify the equipment. The specific manufacturer of this model
+      has not been confirmed.
   - key: nail1
     title: "\u7D27\u56FA\u4EF6 nail1 / Fastener"
     description: "\u89C2\u5BDF\u8FD9\u679A\u7D27\u56FA\u4EF6\u7684\u5934\u90E8\u3001\u6746\u8EAB\u548C\u5B89\u88C5\u4F4D\u7F6E\u3002\u4E3A\u4E86\u907F\u514D\u91CD\u590D\u64CD\u4F5C\uFF0C\u672C\u5C55\u9879\u4EC5\u5F00\u653E
       nail1\uFF0C\u5176\u4ED6 nail \u4FDD\u6301\u56FA\u5B9A\u3002"
+    englishDescription: Examine the head, shaft and mounting position of this fastener.
+      Only nail1 can be removed in this exhibit to avoid repetitive interactions;
+      the other nail parts remain fixed.
 --- !u!4 &770000010 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
   m_PrefabInstance: {fileID: 654642191}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &780000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 780000004}
+  - component: {fileID: 780000005}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: guidance2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &780000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 142.47, y: 0.29875147, z: -0.63}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &780000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 780000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 981782876236416799b358b02c5ab912, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  destination: {fileID: 976892861}
+  message: "\u4E0B\u4E00\u7AD9 / Next stop: ACT 3\n\u8BF7\u6CBF\u7BAD\u5934\u65B9\u5411\u524D\u5F80
+    / Follow the arrow"
+  font: {fileID: 0}
+  fontSize: 79
+  arrowColor: {r: 0.2, g: 0.85, b: 0.72, a: 1}
+--- !u!1 &790000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 790000004}
+  - component: {fileID: 790000005}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Act 3 Diver NPC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &790000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.9998699, z: -0, w: -0.016132634}
+  m_LocalPosition: {x: -1.425, y: -0.35969, z: 0.108}
+  m_LocalScale: {x: 1.0177, y: 1.0177, z: 1.0177}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 976892861}
+  m_LocalEulerAnglesHint: {x: 0, y: -181.849, z: 0}
+--- !u!114 &790000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6840eac81024aa1ba48bf8cb4cf1390, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  helmet: {fileID: 1294052398}
+  font: {fileID: 0}
+  instructionAnchor: {fileID: 800000004}
+  helmetEulerOffset: {x: 0, y: -90, z: 0}
+  wearDistance: 0.4
+--- !u!1 &800000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 800000004}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Act 3 Instructions
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &800000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.95590794, z: -0, w: 0.29366645}
+  m_LocalPosition: {x: 1.639, y: 1.16, z: -1.209}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 976892861}
+  m_LocalEulerAnglesHint: {x: 0, y: -145.845, z: 0}
+--- !u!1 &810000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 810000004}
+  - component: {fileID: 810000005}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: reset
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &810000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 810000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.2, z: -3.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1315271509}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &810000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 810000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65bb6191286b4f28a56ea08f9e512ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  start: {fileID: 1315271509}
+  act1: {fileID: 86703756}
+  act2: {fileID: 2019508270}
+  act3: {fileID: 976892861}
+  font: {fileID: 0}
+  viewOffset: {x: -0.65, y: -0.05, z: 1.4}
 --- !u!1 &976892857
 GameObject:
   m_ObjectHideFlags: 0
@@ -1301,6 +1518,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1294052398}
+  - {fileID: 790000004}
+  - {fileID: 800000004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1249617917
@@ -1886,6 +2105,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 810000004}
   - {fileID: 720000004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2014,7 +2234,7 @@ Transform:
   m_GameObject: {fileID: 1926960097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 149.8, y: 0.29875147, z: -7.61}
+  m_LocalPosition: {x: 148.99, y: 0.29875147, z: -7.61}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2124,7 +2344,7 @@ Transform:
   m_GameObject: {fileID: 2019508266}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 137.30962, y: 0.338, z: -4.34}
+  m_LocalPosition: {x: 140.23, y: 0.338, z: -2.62}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2346,4 +2566,5 @@ SceneRoots:
   - {fileID: 2019508270}
   - {fileID: 976892861}
   - {fileID: 1926960098}
+  - {fileID: 780000004}
   - {fileID: 1616578099}
