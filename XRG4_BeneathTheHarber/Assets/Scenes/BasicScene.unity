@@ -1324,7 +1324,7 @@ MonoBehaviour:
   helmet: {fileID: 1294052398}
   font: {fileID: 0}
   instructionAnchor: {fileID: 800000004}
-  helmetEulerOffset: {x: 0, y: -90, z: 0}
+  helmetEulerOffset: {x: 0, y: -180, z: 0}
   wearDistance: 0.4
 --- !u!1 &800000000
 GameObject:
