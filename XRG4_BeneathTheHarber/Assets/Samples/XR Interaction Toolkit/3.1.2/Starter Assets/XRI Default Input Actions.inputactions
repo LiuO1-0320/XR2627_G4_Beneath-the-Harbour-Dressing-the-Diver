@@ -1133,6 +1133,17 @@
                     "isPartOfComposite": false
                 },
                 {
+                    "name": "Left trigger axis UI press",
+                    "id": "97953142-49dc-4f11-a891-332c99379302",
+                    "path": "<XRController>{LeftHand}/{Trigger}",
+                    "interactions": "Press(pressPoint=0.5)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UI Press",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
                     "name": "",
                     "id": "a5bf6a12-a026-46d1-a793-7252c49aaf66",
                     "path": "<MetaAimHand>{LeftHand}/indexPressed",
