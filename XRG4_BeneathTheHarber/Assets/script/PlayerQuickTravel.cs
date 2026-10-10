@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation;
 using UnityEngine.XR.Interaction.Toolkit.UI;
@@ -10,7 +11,7 @@ public class PlayerQuickTravel : MonoBehaviour
     public Transform start, act1, act2, act3, act4;
     public Font font;
     [Tooltip("Menu position relative to the player's headset, in metres.")]
-    public Vector3 viewOffset = new Vector3(-0.65f, -0.05f, 1.4f);
+    public Vector3 viewOffset = new Vector3(-1.0f, -0.1f, 1.4f);
     GameObject panel;
     GameObject drawer;
     Transform uiParent;
@@ -51,6 +52,8 @@ public class PlayerQuickTravel : MonoBehaviour
     public void TravelTo(int index)
     {
         if (!Application.isPlaying) return;
+        if (DiveRopeStation.IsPlayerTravelling)
+        { status.text = "沿绳移动中，请稍候\nRope travel in progress"; return; }
         Transform destination;
         switch (index)
         {
@@ -96,7 +99,9 @@ public class PlayerQuickTravel : MonoBehaviour
         drawer.transform.SetParent(panel.transform, false);
         drawer.GetComponent<RectTransform>().sizeDelta = new Vector2(420, 1000);
         uiParent = drawer.transform;
-        Element<Image>("Background", Vector2.zero, new Vector2(420, 1000)).color = new Color(0.025f, 0.09f, 0.12f, 0.97f);
+        var background = Element<Image>("Background", Vector2.zero, new Vector2(420, 1000));
+        background.color = new Color(0.025f, 0.09f, 0.12f, 0.65f);
+        background.raycastTarget = false;
         Label("Title", "快捷跳转\nQuick travel", new Vector2(0, 400), new Vector2(380, 120), 36);
         string[] captions = { "起点 / Start", "ACT 1", "ACT 2", "ACT 3", "ACT 4" };
         for (int i = 0; i < captions.Length; i++)
@@ -114,8 +119,8 @@ public class PlayerQuickTravel : MonoBehaviour
     {
         var image = Element<Image>(caption, position, new Vector2(360, 110));
         rect = image.rectTransform;
-        image.color = new Color(0.1f, 0.42f, 0.42f);
-        var button = image.gameObject.AddComponent<Button>();
+        image.color = new Color(0.1f, 0.42f, 0.42f, 0.8f);
+        var button = image.gameObject.AddComponent<QuickTravelPressButton>();
         button.targetGraphic = image;
         button.onClick.AddListener(action);
         var text = Label(caption + " Label", caption, Vector2.zero, new Vector2(340, 100), 32);
@@ -148,4 +153,19 @@ public class PlayerQuickTravel : MonoBehaviour
         if (!item) return;
         if (Application.isPlaying) Destroy(item); else DestroyImmediate(item);
     }
+}
+
+/// <summary>Respond on trigger press so a moving headset menu cannot cancel the click on release.</summary>
+public class QuickTravelPressButton : Button
+{
+    public override void OnPointerDown(PointerEventData eventData)
+    {
+        base.OnPointerDown(eventData);
+        // XR uses the left mouse button event for the trigger on either hand.
+        if (eventData.button == PointerEventData.InputButton.Left && IsActive() && IsInteractable())
+            onClick.Invoke();
+    }
+
+    // The action already ran on press. Keep Button's hover, release and keyboard submit behaviour.
+    public override void OnPointerClick(PointerEventData eventData) { }
 }

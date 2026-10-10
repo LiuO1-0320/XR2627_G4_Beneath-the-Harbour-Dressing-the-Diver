@@ -347,138 +347,6 @@ Transform:
   - {fileID: 750000004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &149100039
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 7
-  m_Component:
-  - component: {fileID: 149100042}
-  - component: {fileID: 149100041}
-  - component: {fileID: 149100040}
-  m_Layer: 0
-  m_HasEditorInfo: 1
-  m_Name: Water Volume (Swimming)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &149100040
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 149100039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b42c4612c08cd34aab7ab0e03e5c0b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Mediator: {fileID: 0}
-  m_TransformationPriority: 0
-  origin: {fileID: 454887630}
-  gravityProvider: {fileID: 279133904}
-  waterVolume: {fileID: 149100041}
-  leftThumbstick:
-    m_InputSourceMode: 2
-    m_InputAction:
-      m_Name: Left Thumbstick
-      m_Type: 0
-      m_ExpectedControlType: Vector2
-      m_Id: a34c445b-5f93-408c-9f72-1ad941cb1323
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_InputActionReference: {fileID: 6972639530819350904, guid: c348712bda248c246b8c49b3db54643f, type: 3}
-    m_ObjectReferenceObject: {fileID: 0}
-    m_ManualValue: {x: 0, y: 0}
-  jumpButton:
-    m_InputSourceMode: 2
-    m_InputActionPerformed:
-      m_Name: Jump
-      m_Type: 1
-      m_ExpectedControlType: 
-      m_Id: 23368c39-f5e9-475f-b4e8-7bce65fc2893
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_InputActionValue:
-      m_Name: Jump Value
-      m_Type: 0
-      m_ExpectedControlType: Axis
-      m_Id: eb1431fe-b47b-45aa-8cc0-7a83059a7f46
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_InputActionReferencePerformed: {fileID: -3875704489234743591, guid: c348712bda248c246b8c49b3db54643f, type: 3}
-    m_InputActionReferenceValue: {fileID: -3875704489234743591, guid: c348712bda248c246b8c49b3db54643f, type: 3}
-    m_ObjectReferenceObject: {fileID: 0}
-    m_ManualPerformed: 0
-    m_ManualValue: 0
-    m_ManualQueuePerformed: 0
-    m_ManualQueueWasPerformedThisFrame: 0
-    m_ManualQueueWasCompletedThisFrame: 0
-    m_ManualQueueValue: 0
-    m_ManualQueueTargetFrame: 0
-  sinkAcceleration: 0.6
-  maxSinkSpeed: 1.2
-  swimUpSpeed: 1.8
-  swimDownSpeed: 1.2
-  surfaceHysteresis: 0.15
---- !u!65 &149100041
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 149100039}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 32, y: 40, z: 32}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &149100042
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 149100039}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 216.55, y: -20.05, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &279133904 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 658028464602686504, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-  m_PrefabInstance: {fileID: 441087506}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b46d3c2f9f9a9849840e47b9ddef1b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &299639867
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,8 +454,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Version: 3
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -765,17 +633,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
---- !u!114 &454887630 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1178791450436251564, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-  m_PrefabInstance: {fileID: 441087506}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &513506906
 GameObject:
   m_ObjectHideFlags: 0
@@ -1013,8 +870,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62a9f61db8cd49f490e589d98608a102, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   title: Beneath the Harbour
   introduction: "\r \u6B22\u8FCE\u6765\u5230\u6D77\u4E8B\u535A\u7269\u9986\r\n\u63A5\u4E0B\u6765\u6211\u4EEC\u5C06\u901A\u8FC7\u4E00\u4E2A\u7B80\u77ED\u7684\u4EFB\u52A1\u5F15\u5BFC\u6765\u8BA9\u4F60\u5B66\u4E60\u4E86\u89E3\u548C\u201C\u94DC\u5236\u5934\u76D4\u201D\u4EE5\u53CA\u5176\u80CC\u540E\u548C\u9999\u6E2F\u7EF4\u591A\u5229\u4E9A\u6E2F\u6709\u5173\u7684\u5386\u53F2\u6545\u4E8B\u3002\n\r\nWelcome
     to the Maritime Museum\r\nNext, we\u2019ll take you through a short guided tour
@@ -1072,8 +929,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62a9f61db8cd49f490e589d98608a102, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   title: "\u94DC\u5236\u6F5C\u6C34\u5934\u76D4Brass diving helmet"
   introduction: "\u4F20\u7EDF\u6F5C\u6C34\u5934\u76D4\u5E38\u7531\u94DC\u4E0E\u9EC4\u94DC\u5236\u6210\uFF0C\u5E76\u914D\u6709\u73BB\u7483\u89C6\u7A97\u3002\u5934\u76D4\u4E0E\u80F8\u80A9\u6258\u67B6\u3001\u9632\u6C34\u6F5C\u6C34\u670D\u8FDE\u63A5\uFF0C\u6784\u6210\u6C34\u9762\u4F9B\u6C14\u6F5C\u6C34\u88C5\u5907\u7684\u4E00\u90E8\u5206\u3002\n\u6F5C\u6C34\u5458\u901A\u8FC7\u8FDE\u63A5\u6C34\u9762\u6C14\u6CF5\u7684\u8F6F\u7BA1\u83B7\u5F97\u7A7A\u6C14\uFF0C\u5E76\u900F\u8FC7\u89C6\u7A97\u89C2\u5BDF\u5468\u56F4\u73AF\u5883\u3002\n\u4ED4\u7EC6\u89C2\u5BDF\u5934\u76D4\u7684\u91D1\u5C5E\u5916\u58F3\u3001\u89C6\u7A97\u548C\u8FDE\u63A5\u90E8\u4F4D\uFF1A\u5B83\u4EEC\u5982\u4F55\u5E2E\u52A9\u6F5C\u6C34\u5458\u5728\u6C34\u4E0B\u5DE5\u4F5C\uFF1F\n\u672C\u8BF4\u660E\u4ECB\u7ECD\u4F20\u7EDF\u94DC\u5236\u6F5C\u6C34\u5934\u76D4\u7684\u4E00\u822C\u7ED3\u6784\uFF0C\u5177\u4F53\u578B\u53F7\u7684\u8BBE\u8BA1\u53EF\u80FD\u4E0D\u540C\u3002\n\nTraditional
     diving helmets are typically made of copper and brass, and are fitted with glass
@@ -1102,8 +959,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 981782876236416799b358b02c5ab912, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   destination: {fileID: 2019508270}
   message: "\u4E0B\u4E00\u7AD9\uFF1AACT 2\n\u8BF7\u6CBF\u7BAD\u5934\u65B9\u5411\u524D\u5F80
     / Follow the arrow"
@@ -1154,8 +1011,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c73c31ddc47341d8b5c743325d5f3c73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   helmet: {fileID: 750000010}
   head: {fileID: 0}
   wearDistance: 0.4
@@ -1197,8 +1054,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 83e4e6cca11330d4088d729ab4fc9d9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
 --- !u!4 &756192408
@@ -1259,8 +1116,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 91a975382f6b4f48a68bd214c1fb8f10, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   wearable: {fileID: 750000005}
   font: {fileID: 0}
   instructions: "\u8BD5\u6234\u6F5C\u6C34\u5934\u76D4 / Try the diving helmet\n\u6309\u4F4F\u63E1\u628A\u6293\u53D6
@@ -1314,8 +1171,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 962f427a238443128e35cc6ca1907731, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   helmet: {fileID: 770000010}
   font: {fileID: 0}
   reattachDistance: 0.15
@@ -1409,8 +1266,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 981782876236416799b358b02c5ab912, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   destination: {fileID: 976892861}
   message: "\u4E0B\u4E00\u7AD9 / Next stop: ACT 3\n\u8BF7\u6CBF\u7BAD\u5934\u65B9\u5411\u524D\u5F80
     / Follow the arrow"
@@ -1460,13 +1317,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6840eac81024aa1ba48bf8cb4cf1390, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   helmet: {fileID: 1294052398}
   font: {fileID: 0}
   instructionAnchor: {fileID: 800000004}
+  dialogueOffset: {x: 1.25, y: 2.05, z: 0.05}
+  dialogueBackgroundOpacity: 0.65
+  dialogueScale: 0.00105
   helmetEulerOffset: {x: 0, y: 0, z: 0}
   wearDistance: 0.4
+  act4Destination: {fileID: 1838547438}
+  diveRope: {fileID: 860000005}
+  escortWaypoints: []
+  greetingDistance: 3.5
+  walkSpeed: 1.15
+  waitForPlayerDistance: 4.5
+  act4ArrivalOffset: {x: -3, y: 0, z: -3}
+  departureDistance: 2.2
 --- !u!1 &800000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,15 +1410,69 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65bb6191286b4f28a56ea08f9e512ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   start: {fileID: 1315271509}
   act1: {fileID: 86703756}
   act2: {fileID: 2019508270}
   act3: {fileID: 976892861}
   act4: {fileID: 1838547438}
   font: {fileID: 0}
-  viewOffset: {x: -0.65, y: -0.05, z: 1.4}
+  viewOffset: {x: -1, y: -0.1, z: 1.4}
+--- !u!1 &860000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 860000004}
+  - component: {fileID: 860000005}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Act 4 Dive Rope Station
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &860000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 860000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.050003, y: -0.89, z: -6.58}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1838547438}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &860000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 860000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dac9a0bdf544b9aa6315ca810eed7a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  seabed: {fileID: 860000014}
+  font: {fileID: 0}
+  travelDuration: 9
+  interactionDistance: 3.5
+--- !u!4 &860000014 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 710000014, guid: c07aa4e923a447cda493c7870d5a1e01, type: 3}
+  m_PrefabInstance: {fileID: 710009000}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &976892857
 GameObject:
   m_ObjectHideFlags: 0
@@ -1786,8 +1708,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38f6bf3d943ac7945842268c9ef1dca6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_InteractionManager: {fileID: 0}
   m_Colliders: []
   m_InteractionLayers:
@@ -2259,10 +2181,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 6900676903622151380, guid: 58d0a4ac86f2348deb02f3880c71378e, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8135023674665499069, guid: 58d0a4ac86f2348deb02f3880c71378e, type: 3}
       propertyPath: m_Name
       value: XR Interaction Simulator
@@ -2457,10 +2375,11 @@ Transform:
   m_GameObject: {fileID: 1838547434}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 202.77507, y: 1.13, z: 10.77}
+  m_LocalPosition: {x: 200.15, y: 1.13, z: 12.22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 860000004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1926960097
@@ -2747,8 +2666,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab68ce6587aab0146b8dabefbd806791, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_SendPointerHoverToParent: 1
   m_ClickSpeed: 0.3
   m_MoveDeadzone: 0.6
@@ -2786,8 +2705,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
@@ -2806,6 +2725,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &870000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 870000004}
+  - component: {fileID: 870000005}
+  m_Layer: 0
+  m_Name: Harbour Museum and Diver Workshop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &870000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 870000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &870000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 870000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eef4c0cbd4c4d38ae2cb5d4f4c615e8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  act1: {fileID: 86703756}
+  act2: {fileID: 2019508270}
+  act3: {fileID: 976892861}
+  font: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2825,4 +2792,4 @@ SceneRoots:
   - {fileID: 1926960098}
   - {fileID: 780000004}
   - {fileID: 1616578099}
-  - {fileID: 149100042}
+  - {fileID: 870000004}

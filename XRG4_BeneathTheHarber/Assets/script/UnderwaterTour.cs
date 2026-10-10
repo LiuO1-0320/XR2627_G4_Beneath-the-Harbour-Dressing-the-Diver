@@ -6,6 +6,7 @@ public class UnderwaterTour : MonoBehaviour
 {
     readonly List<Transform> fish = new List<Transform>();
     readonly List<Vector3> origins = new List<Vector3>();
+    Transform waterSurface, seabed;
     Camera viewer;
     bool submerged, oldFog;
     Color oldColor;
@@ -14,6 +15,8 @@ public class UnderwaterTour : MonoBehaviour
 
     void Start()
     {
+        waterSurface = transform.Find("Water_Surface");
+        seabed = transform.Find("Seabed_Teleport");
         foreach (Transform child in transform)
             if (child.name.StartsWith("Fish_"))
             { fish.Add(child); origins.Add(child.localPosition); }
@@ -31,7 +34,14 @@ public class UnderwaterTour : MonoBehaviour
         if (!viewer) viewer = Camera.main;
         if (!viewer) return;
         Vector3 p = transform.InverseTransformPoint(viewer.transform.position);
-        bool inside = p.x > -28 && p.x < 16 && Mathf.Abs(p.z) < 16 && p.y < -0.3f && p.y > -9;
+        // Derive the water volume from its authored geometry so pool resizing also resizes the atmosphere.
+        if (!waterSurface || !seabed) return;
+        Vector3 waterCenter = waterSurface.localPosition;
+        Vector3 waterHalfSize = waterSurface.localScale * 0.5f;
+        float surfaceY = waterCenter.y - waterHalfSize.y;
+        float bottomY = seabed.localPosition.y - seabed.localScale.y * 0.5f;
+        bool inside = Mathf.Abs(p.x - waterCenter.x) < waterHalfSize.x &&
+            Mathf.Abs(p.z - waterCenter.z) < waterHalfSize.z && p.y < surfaceY && p.y > bottomY;
         if (inside == submerged) return;
         if (inside)
         {
