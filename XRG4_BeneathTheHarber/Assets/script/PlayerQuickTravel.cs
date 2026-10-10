@@ -7,7 +7,7 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 [ExecuteAlways]
 public class PlayerQuickTravel : MonoBehaviour
 {
-    public Transform start, act1, act2, act3;
+    public Transform start, act1, act2, act3, act4;
     public Font font;
     [Tooltip("Menu position relative to the player's headset, in metres.")]
     public Vector3 viewOffset = new Vector3(-0.65f, -0.05f, 1.4f);
@@ -51,7 +51,16 @@ public class PlayerQuickTravel : MonoBehaviour
     public void TravelTo(int index)
     {
         if (!Application.isPlaying) return;
-        Transform destination = index == 0 ? start : index == 1 ? act1 : index == 2 ? act2 : act3;
+        Transform destination;
+        switch (index)
+        {
+            case 0: destination = start; break;
+            case 1: destination = act1; break;
+            case 2: destination = act2; break;
+            case 3: destination = act3; break;
+            case 4: destination = act4; break;
+            default: return;
+        }
         if (!destination) { status.text = "目的地未设置 / Destination missing"; return; }
         var viewer = Camera.main;
         var origin = viewer ? viewer.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>() : null;
@@ -89,13 +98,13 @@ public class PlayerQuickTravel : MonoBehaviour
         uiParent = drawer.transform;
         Element<Image>("Background", Vector2.zero, new Vector2(420, 1000)).color = new Color(0.025f, 0.09f, 0.12f, 0.97f);
         Label("Title", "快捷跳转\nQuick travel", new Vector2(0, 400), new Vector2(380, 120), 36);
-        string[] captions = { "起点 / Start", "ACT 1", "ACT 2", "ACT 3" };
-        for (int i = 0; i < 4; i++)
+        string[] captions = { "起点 / Start", "ACT 1", "ACT 2", "ACT 3", "ACT 4" };
+        for (int i = 0; i < captions.Length; i++)
         {
             int index = i;
-            MakeButton(captions[i], new Vector2(0, 250 - i * 140), () => TravelTo(index), out _);
+            MakeButton(captions[i], new Vector2(0, 260 - i * 115), () => TravelTo(index), out _);
         }
-        status = Label("Hint", "指向按钮，按扳机\nPoint + trigger\nA 键展开 / 收起", new Vector2(0, -310), new Vector2(380, 120), 26);
+        status = Label("Hint", "指向按钮，按扳机\nPoint + trigger\nA 键展开 / 收起", new Vector2(0, -325), new Vector2(380, 120), 26);
         // Keep this button outside the drawer so it remains interactive when collapsed.
         uiParent = panel.transform;
         toggleCaption = MakeButton("收起 / Close", new Vector2(0, -450), ToggleMenu, out toggleRect);

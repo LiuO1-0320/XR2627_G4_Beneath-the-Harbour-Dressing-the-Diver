@@ -22,8 +22,6 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     public Transform helmet;
     public Font font;
-    [Range(1, 4)] public float maximumMagnification = 3;
-    [Range(0.25f, 1)] public float minimumMagnification = 1;
     [Min(0.03f)] public float reattachDistance = 0.15f;
     public PartDescription[] descriptions = {
         new PartDescription("forward", "前部视窗 / Front viewport", "传统铜制潜水头盔配有玻璃视窗。观察前部零件的边框、开口和连接结构，再比较它与两侧部件的形状。"),
@@ -50,15 +48,13 @@ public class HelmetDetailInspection : MonoBehaviour
     readonly List<Part> parts = new List<Part>();
     Vector3 baseScale, basePosition, localCenter;
     Quaternion baseRotation;
-    float magnification = 1;
     Text details, status;
     ScrollRect detailsScroll;
     GameObject panel;
     Font fallback;
     XRGrabInteractable wholeGrab;
     XRGeneralGrabTransformer wholeTransformer;
-    Material handleMaterial;
-    readonly string instructions = "ACT 2 · 头盔细节观察 / Helmet details\n\n观察潜水头盔的视窗、连接件与铭牌。\n握住青色抓取点移动、旋转；双手拉开放大。\n松开整盔后，抓取零件查看详情。\n零件放回原位附近并松手可装回；Reset 恢复展项。";
+    readonly string instructions = "ACT 2 · 头盔细节观察 / Helmet details\n\n观察潜水头盔的视窗、连接件与铭牌。\n抓取头盔固定部分移动、旋转。\n松开整盔后，抓取零件查看详情。\n零件放回原位附近并松手可装回；Reset 恢复展项。";
     const string defaultDetails = "可拆：前、左、右、顶部、固定件、铭牌、nail1。\n抓取一个零件，即可在这里查看介绍。\n\nRemovable parts: front, left, right, top, fixing component, nameplate and nail1.\nGrab a part to read its description here.\n\n拖动文字或右侧滚动条查看全部内容。\nDrag the text or the scrollbar to read more.";
 
     void Update()
@@ -111,7 +107,7 @@ public class HelmetDetailInspection : MonoBehaviour
             grab.selectExited.AddListener(part.exited.Invoke);
             parts.Add(part);
         }
-        SetupWholeGrab(bounds);
+        SetupWholeGrab();
         if (!panel) BuildPanel();
         ShowDetails(defaultDetails);
         UpdateStatus();
@@ -129,12 +125,6 @@ public class HelmetDetailInspection : MonoBehaviour
     void LateUpdate()
     {
         if (!Application.isPlaying) return;
-        if (wholeGrab)
-        {
-            float current = Mathf.Abs(helmet.localScale.x / baseScale.x);
-            if (!Mathf.Approximately(current, magnification))
-            { magnification = current; UpdateStatus(); }
-        }
         foreach (var part in parts)
         {
             if (part.releaseFrame < 0 || Time.frameCount < part.releaseFrame) continue;
@@ -144,52 +134,41 @@ public class HelmetDetailInspection : MonoBehaviour
         }
     }
     bool Held() { return (wholeGrab && wholeGrab.isSelected) || parts.Exists(p => p.grab.isSelected); }
-    void SetupWholeGrab(Bounds bounds)
+    void SetupWholeGrab()
     {
         var body = helmet.GetComponent<Rigidbody>();
         if (!body) body = helmet.gameObject.AddComponent<Rigidbody>();
         body.useGravity = false; body.isKinematic = true;
         wholeTransformer = helmet.gameObject.AddComponent<XRGeneralGrabTransformer>();
         wholeTransformer.allowOneHandedScaling = false;
-        wholeTransformer.allowTwoHandedScaling = true;
+        wholeTransformer.allowTwoHandedScaling = false;
         wholeTransformer.allowTwoHandedRotation = XRGeneralGrabTransformer.TwoHandedRotationMode.TwoHandedAverage;
-        wholeTransformer.thresholdMoveRatioForScale = 0.03f;
-        wholeTransformer.clampScaling = true;
-        wholeTransformer.minimumScaleRatio = minimumMagnification;
-        wholeTransformer.maximumScaleRatio = maximumMagnification;
         wholeGrab = helmet.gameObject.AddComponent<XRGrabInteractable>();
-        // Re-register only after the handle collider list is complete. OnEnable
+        // Re-register only after the fixed-part collider list is complete. OnEnable
         // initially sees the imported hierarchy and its separate part colliders.
         wholeGrab.enabled = false;
         wholeGrab.addDefaultGrabTransformers = false;
         wholeGrab.selectMode = InteractableSelectMode.Multiple;
         wholeGrab.useDynamicAttach = true;
         wholeGrab.reinitializeDynamicAttachEverySingleGrab = true;
-        wholeGrab.trackScale = true;
+        wholeGrab.trackScale = false;
         wholeGrab.throwOnDetach = false;
         wholeGrab.movementType = XRBaseInteractable.MovementType.Instantaneous;
         wholeGrab.AddSingleGrabTransformer(wholeTransformer);
         wholeGrab.AddMultipleGrabTransformer(wholeTransformer);
         wholeGrab.selectFilters.Add(new XRSelectFilterDelegate((interactor, interactable) =>
             !parts.Exists(p => !p.detached && p.grab.isSelected)));
-        // Restrict whole-object selection to separate handles. A large root collider
-        // would cover detachable windows and compete with their grab interactions.
+        // Use the existing fixed model parts instead of generated grip spheres.
+        // Detachable parts keep their own grab interactables and colliders.
         wholeGrab.colliders.Clear();
-        var shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (!shader) shader = Shader.Find("Unlit/Color");
-        handleMaterial = new Material(shader);
-        handleMaterial.color = new Color(0.1f, 0.95f, 0.85f);
-        for (int side = -1; side <= 1; side += 2)
+        foreach (var mesh in helmet.GetComponentsInChildren<MeshFilter>())
         {
-            var handle = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            handle.name = side < 0 ? "Left Whole Helmet Grip" : "Right Whole Helmet Grip";
-            handle.transform.SetParent(helmet, false);
-            handle.transform.position = bounds.center + Vector3.right * side * (bounds.extents.x + 0.12f);
-            Vector3 worldScale = helmet.lossyScale;
-            handle.transform.localScale = new Vector3(0.12f / Mathf.Abs(worldScale.x),
-                0.12f / Mathf.Abs(worldScale.y), 0.12f / Mathf.Abs(worldScale.z));
-            handle.GetComponent<Renderer>().sharedMaterial = handleMaterial;
-            wholeGrab.colliders.Add(handle.GetComponent<SphereCollider>());
+            if (!mesh.sharedMesh || !mesh.GetComponent<Renderer>()) continue;
+            if (parts.Exists(part => mesh.transform == part.transform || mesh.transform.IsChildOf(part.transform))) continue;
+            var collider = mesh.gameObject.AddComponent<BoxCollider>();
+            collider.center = mesh.sharedMesh.bounds.center;
+            collider.size = mesh.sharedMesh.bounds.size;
+            wholeGrab.colliders.Add(collider);
         }
         wholeGrab.enabled = true;
     }
@@ -199,15 +178,6 @@ public class HelmetDetailInspection : MonoBehaviour
         part.transform.SetParent(part.parent, false);
         part.transform.localPosition = part.position; part.transform.localRotation = part.rotation; part.transform.localScale = part.scale;
         part.detached = false; part.releaseFrame = -1;
-        UpdateStatus();
-    }
-    public void ChangeScale(float amount)
-    {
-        if (Held()) { status.text = "请先松开零件，再调整 / Release part first"; return; }
-        Vector3 center = helmet.TransformPoint(localCenter);
-        magnification = Mathf.Clamp(magnification + amount, minimumMagnification, maximumMagnification);
-        helmet.localScale = baseScale * magnification;
-        helmet.position += center - helmet.TransformPoint(localCenter);
         UpdateStatus();
     }
     public void Rotate(float angle)
@@ -221,13 +191,12 @@ public class HelmetDetailInspection : MonoBehaviour
         if (!Application.isPlaying) return;
         if (Held()) { status.text = "请先松开零件，再复位 / Release part first"; return; }
         helmet.localScale = baseScale; helmet.localPosition = basePosition; helmet.localRotation = baseRotation;
-        magnification = 1;
         foreach (var part in parts) Restore(part);
         ShowDetails(defaultDetails); UpdateStatus();
     }
     void UpdateStatus()
     {
-        if (status) status.text = $"放大 {magnification:0.0}× · 已拆下 {parts.FindAll(p => p.detached).Count}/{parts.Count}";
+        if (status) status.text = $"已拆下 {parts.FindAll(p => p.detached).Count}/{parts.Count}";
     }
     void BuildPanel()
     {
@@ -343,6 +312,5 @@ public class HelmetDetailInspection : MonoBehaviour
         }
         if (panel) Destroy(panel);
         if (fallback) Destroy(fallback);
-        if (handleMaterial) Destroy(handleMaterial);
     }
 }

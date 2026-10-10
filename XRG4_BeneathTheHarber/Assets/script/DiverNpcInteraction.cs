@@ -9,7 +9,7 @@ public class DiverNpcInteraction : MonoBehaviour
     public Transform helmet;
     public Font font;
     public Transform instructionAnchor;
-    public Vector3 helmetEulerOffset = new Vector3(0, -90, 0);
+    public Vector3 helmetEulerOffset = Vector3.zero;
     [Min(0.1f)] public float wearDistance = 0.4f;
     GameObject visuals;
     Transform head, dialoguePanel, instructionPanel, uiParent;
