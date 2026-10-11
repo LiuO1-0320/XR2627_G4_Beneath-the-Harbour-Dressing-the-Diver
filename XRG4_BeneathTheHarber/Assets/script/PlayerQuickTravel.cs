@@ -73,10 +73,16 @@ public class PlayerQuickTravel : MonoBehaviour
         // Arrive beside each exhibit, facing it, with space clear of the stand.
         Vector3 offset = index == 1 || index == 2 ? Vector3.left * 2.8f : Vector3.back * 3f;
         Vector3 position = destination.position + offset;
+        Vector3 lookAt = destination.position;
         position.y = 0;
+        if (index == 4)
+        {
+            var rope = destination.GetComponentInChildren<DiveRopeStation>();
+            if (rope) { position = rope.SurfaceDock; lookAt = rope.transform.position; }
+        }
         if (Physics.Raycast(position + Vector3.up * 2f, Vector3.down, out var hit, 5f, ~0, QueryTriggerInteraction.Ignore))
             position.y = hit.point.y;
-        Vector3 facing = Vector3.ProjectOnPlane(destination.position - position, Vector3.up).normalized;
+        Vector3 facing = Vector3.ProjectOnPlane(lookAt - position, Vector3.up).normalized;
         var request = new TeleportRequest {
             destinationPosition = position,
             destinationRotation = Quaternion.LookRotation(facing),

@@ -7,24 +7,62 @@ using UnityEngine.UI;
 public class HarbourSceneDressing : MonoBehaviour
 {
     public Transform act1, act2, act3;
+    public Transform helmet1, helmet2, helmet3;
+    public Transform introductionBoard, helmetInstructionsBoard, detailsBoard, diverInstructionsBoard;
     public Font font;
+    public bool batchInPlay = true;
+    [SerializeField, HideInInspector] int editableLayoutVersion;
     GameObject scenery;
-    Font fallback;
     readonly List<Material> materials = new List<Material>();
-    readonly List<Mesh> combinedMeshes = new List<Mesh>();
     Material ivory, ink, brass, wood, steel, blue, canvas, glass, glow;
-    HideFlags Flags => Application.isPlaying ? HideFlags.None : HideFlags.HideAndDontSave;
+    const string SceneryName = "Static Scenery (editable)";
+    HideFlags Flags => HideFlags.None;
 
-    void OnEnable() { Build(); }
-    void Update() { if (!scenery) Build(); }
+    void OnEnable()
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) { UnityEditor.EditorApplication.delayCall += EnsureBuilt; return; }
+#endif
+        EnsureBuilt();
+    }
+    public void EnsureBuilt()
+    {
+        if (!this || !isActiveAndEnabled || !gameObject.scene.IsValid()) return;
+        var saved = transform.Find(SceneryName);
+        if (saved) scenery = saved.gameObject;
+        else Build();
+#if UNITY_EDITOR
+        if (!Application.isPlaying && editableLayoutVersion < 2)
+        {
+            AlignStationBoards(); AlignExhibitBoards(); editableLayoutVersion = 2;
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.AssetDatabase.SaveAssets();
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            // Complete the one-time migration into ordinary saved objects in the already-open scene.
+            if (!string.IsNullOrEmpty(gameObject.scene.path))
+                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(gameObject.scene);
+            Debug.Log("HARBOUR_SCENERY_EDITABLE: saved independent scenery and helmet-facing boards.");
+        }
+#endif
+        if (Application.isPlaying && batchInPlay) StaticBatchingUtility.Combine(scenery);
+    }
     [ContextMenu("Rebuild museum and workshop")]
-    public void Rebuild() { Clear(); Build(); }
+    public void Rebuild()
+    {
+        var saved = transform.Find(SceneryName);
+        if (saved) scenery = saved.gameObject;
+#if UNITY_EDITOR
+        if (!Application.isPlaying && scenery) UnityEditor.Undo.DestroyObjectImmediate(scenery);
+        else
+#endif
+        Dispose(scenery);
+        scenery = null; Build();
+    }
     void Build()
     {
         if (scenery) return;
-        scenery = new GameObject("Museum and diver workshop (generated)") { hideFlags = Flags };
+        scenery = new GameObject(SceneryName) { hideFlags = Flags };
         scenery.transform.SetParent(transform, false);
-        fallback = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 48);
         ivory = Mat(new Color(.8f, .77f, .66f));
         ink = Mat(new Color(.035f, .085f, .105f));
         brass = Mat(new Color(.58f, .36f, .12f), .65f);
@@ -35,7 +73,17 @@ public class HarbourSceneDressing : MonoBehaviour
         glass = Mat(new Color(.13f, .29f, .32f));
         glow = Mat(new Color(.95f, .75f, .4f));
         glow.EnableKeyword("_EMISSION"); glow.SetColor("_EmissionColor", new Color(.65f, .42f, .17f));
-        Museum(); Workshop(); CombineStaticGeometry();
+#if UNITY_EDITOR
+        if (!Application.isPlaying) UnityEditor.EditorUtility.SetDirty(glow);
+#endif
+        AlignStationBoards(); Museum(); Workshop();
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            UnityEditor.Undo.RegisterCreatedObjectUndo(scenery, "Create editable harbour scenery");
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+        }
+#endif
     }
 
     void Museum()
@@ -63,8 +111,8 @@ public class HarbourSceneDressing : MonoBehaviour
         Bench(new Vector3(137.3f, 0, 13), 90);
         Case(new Vector3(137.3f, 0, -15), 90, "连接与配重 / CONNECTIONS & WEIGHTS", false);
         Case(new Vector3(145, 0, 17.8f), 180, "绳索与信号 / ROPES & SIGNALS", true);
-        if (act1) Exhibit(act1.position, "01", "铜制潜水头盔\nDIVING HELMET", "靠近观察 · 抓取探索\nApproach, inspect and handle");
-        if (act2) Exhibit(act2.position, "02", "潜水装备探索\nEQUIPMENT STUDY", "观察部件 · 尝试互动\nInspect the parts and interact");
+        if (act1) Exhibit(helmet1 ? helmet1 : act1, "01", "铜制潜水头盔\nDIVING HELMET", "靠近观察 · 抓取探索\nApproach, inspect and handle");
+        if (act2) Exhibit(helmet2 ? helmet2 : act2, "02", "潜水装备探索\nEQUIPMENT STUDY", "观察部件 · 尝试互动\nInspect the parts and interact");
         // Wall-mounted route marks, avoiding freestanding barriers across the doorway.
         Sign("Workshop transition", new Vector3(151, 2.5f, 19.39f), 180, 4, .8f,
             "展览之后：走进潜水员的工作室 →\nNEXT: THE DIVER'S WORKSHOP", ink, 32);
@@ -99,8 +147,7 @@ public class HarbourSceneDressing : MonoBehaviour
         {
             Vector3 p = act3.position; p.y = .03f;
             Box("Dressing station mat", p + new Vector3(0, 0, -1.2f), new Vector3(5, .02f, 3.8f), blue);
-            Sign("Dressing station wall sign", new Vector3(p.x, 2.7f, 19.1f), 180, 3.3f, .75f,
-                "03 装备准备 / SUITING UP\n帮助潜水员戴好头盔", ivory, 34);
+            Exhibit(helmet3 ? helmet3 : act3, "03", "装备准备 / SUITING UP", "帮助潜水员戴好头盔\nHelp the diver put on the helmet");
         }
         // The route is suggested by flat brass markers, without physical rails in the escort corridor.
         for (int i = 0; i < 6; i++)
@@ -114,19 +161,28 @@ public class HarbourSceneDressing : MonoBehaviour
     }
 
     void WallPanel(Vector3 p, Vector3 size, float yaw, string title, string caption)
+    { Assemble("展墙 · Gallery wall", p, () => BuildWallPanel(p, size, yaw, title, caption)); }
+    void BuildWallPanel(Vector3 p, Vector3 size, float yaw, string title, string caption)
     {
         Box("Museum exhibit wall", p, size, ivory);
         Vector3 outward = Quaternion.Euler(0, yaw, 0) * Vector3.forward;
         Sign("Gallery wall title", p + Vector3.up * .9f + outward * .08f, yaw, 5, .9f, title, ink, 46);
         Sign("Gallery wall introduction", p - Vector3.up * .2f + outward * .08f, yaw, 4.8f, .8f, caption, ivory, 34);
     }
-    void Exhibit(Vector3 p, string number, string title, string caption)
+    void Exhibit(Transform helmet, string number, string title, string caption)
     {
         // Existing helmets stay uncovered and retain their original colliders and grab interaction.
-        Vector3 label = new Vector3(p.x + 1.75f, 1.25f, p.z - 1.15f);
-        Box("Exhibit label pedestal", label - Vector3.up * .62f, new Vector3(.1f, 1.2f, .1f), brass, true);
-        Sign("Exhibit caption " + number, label, 180, 1.35f, .9f, number + "  " + title + "\n" + caption, ink, 29);
-        Box("Exhibit label base", new Vector3(label.x, .05f, label.z), new Vector3(.55f, .1f, .55f), ink, true);
+        Vector3 forward = HelmetFront(helmet);
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        Vector3 label = helmet.position + forward * 1.15f + right * 1.35f; label.y = 0;
+        label = scenery.transform.InverseTransformPoint(label);
+        float yaw = Quaternion.LookRotation(forward).eulerAngles.y - scenery.transform.eulerAngles.y;
+        Assemble(number + " 提示板 · Exhibit information", label, () => {
+            Box("Exhibit label pedestal", label + Vector3.up * .58f, new Vector3(.08f, 1.16f, .08f), brass, true);
+            Sign("Exhibit caption " + number, label + Vector3.up * 1.28f, yaw, 1.3f, .78f,
+                number + "  " + title + "\n" + caption, ink, 34);
+            Box("Exhibit label base", label + Vector3.up * .04f, new Vector3(.45f, .08f, .45f), ink, true);
+        });
     }
     void Bench(Vector3 p, float yaw)
     {
@@ -134,6 +190,69 @@ public class HarbourSceneDressing : MonoBehaviour
         Shape(group, "Timber seat", PrimitiveType.Cube, new Vector3(0, .48f, 0), new Vector3(2.6f, .12f, .65f), wood, true);
         foreach (float x in new[] { -.95f, .95f })
             Shape(group, "Brass bench leg", PrimitiveType.Cube, new Vector3(x, .23f, 0), new Vector3(.12f, .46f, .5f), brass, true);
+    }
+    public static Vector3 HelmetFront(Transform helmet)
+    {
+        // Imported models can have a different root axis from the physical front viewport.
+        // Prefer the named forward/forword mesh; use the root forward if it is unavailable.
+        Bounds bounds = default; bool hasBounds = false;
+        foreach (var renderer in helmet.GetComponentsInChildren<Renderer>())
+        { if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; } else bounds.Encapsulate(renderer.bounds); }
+        foreach (var part in helmet.GetComponentsInChildren<Transform>())
+        {
+            string key = part.name.ToLowerInvariant();
+            if (key != "forward" && key != "forword" && key != "lookforward" && key != "lookforword") continue;
+            var renderer = part.GetComponentInChildren<Renderer>();
+            Vector3 center = renderer ? renderer.bounds.center : part.position;
+            Vector3 direction = Vector3.ProjectOnPlane(center - (hasBounds ? bounds.center : helmet.position), Vector3.up);
+            if (direction.sqrMagnitude > .0001f) return direction.normalized;
+        }
+        Vector3 fallback = Vector3.ProjectOnPlane(helmet.forward, Vector3.up);
+        return fallback.sqrMagnitude > .001f ? fallback.normalized : Vector3.forward;
+    }
+    [ContextMenu("Align station boards with helmet front")]
+    public void AlignStationBoards()
+    {
+        PlaceBoard(introductionBoard, helmet1, -2.1f, .25f, 1.65f);
+        PlaceBoard(helmetInstructionsBoard, helmet1, 2.8f, .25f, 1.5f);
+        PlaceBoard(detailsBoard, helmet2, -2.1f, .25f, 1.65f);
+        PlaceBoard(diverInstructionsBoard, helmet3, 2.8f, .25f, 1.65f);
+    }
+    public void AlignExhibitBoards()
+    {
+        AlignExhibit("01", helmet1); AlignExhibit("02", helmet2); AlignExhibit("03", helmet3);
+    }
+    void AlignExhibit(string number, Transform helmet)
+    {
+        if (!scenery || !helmet) return;
+        var root = scenery.transform.Find(number + " 提示板 · Exhibit information");
+        if (!root)
+            foreach (Transform child in scenery.transform)
+                if (child.name == number + " 提示板 / Exhibit information")
+                { root = child; root.name = number + " 提示板 · Exhibit information"; break; }
+        if (!root) return;
+#if UNITY_EDITOR
+        if (!Application.isPlaying) UnityEditor.Undo.RegisterFullObjectHierarchyUndo(root.gameObject, "Align exhibit caption");
+#endif
+        Vector3 front = HelmetFront(helmet);
+        Vector3 p = helmet.position + front * 1.15f + Vector3.Cross(Vector3.up, front) * 1.35f; p.y = 0;
+        root.position = p;
+        var sign = root.Find("Exhibit caption " + number);
+        if (sign) sign.rotation = Quaternion.LookRotation(front, Vector3.up);
+    }
+    void PlaceBoard(Transform board, Transform helmet, float side, float front, float height)
+    {
+        if (!board || !helmet) return;
+#if UNITY_EDITOR
+        if (!Application.isPlaying) UnityEditor.Undo.RecordObject(board, "Align helmet information board");
+#endif
+        Vector3 direction = HelmetFront(helmet);
+        Vector3 position = helmet.position + Vector3.Cross(Vector3.up, direction) * side + direction * front;
+        position.y = height;
+        board.SetPositionAndRotation(position, Quaternion.LookRotation(-direction, Vector3.up));
+#if UNITY_EDITOR
+        if (!Application.isPlaying) UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+#endif
     }
     void Case(Vector3 p, float yaw, string caption, bool rope)
     {
@@ -147,7 +266,9 @@ public class HarbourSceneDressing : MonoBehaviour
             Shape(g, "Cabinet frame", PrimitiveType.Cube, new Vector3(x, 1.28f, .46f), new Vector3(.035f, .7f, .05f), brass);
         if (rope)
         {
+            int coilIndex = scenery.transform.childCount;
             Coil(scenery.transform.InverseTransformPoint(g.TransformPoint(new Vector3(-.45f, 1, 0))), .3f, 4, canvas);
+            scenery.transform.GetChild(coilIndex).SetParent(g, true);
             Shape(g, "Signal block", PrimitiveType.Cube, new Vector3(.65f, 1.08f, 0), new Vector3(.45f, .22f, .35f), wood);
         }
         else
@@ -158,9 +279,13 @@ public class HarbourSceneDressing : MonoBehaviour
                 Shape(g, "Brass connection", PrimitiveType.Cylinder, new Vector3(x, 1.2f, 0), new Vector3(.17f, .045f, .17f), brass);
             }
         }
-        Sign("Cabinet explanation", g.TransformPoint(new Vector3(0, .64f, -.515f)), yaw + 180, 2.3f, .4f, caption, ink, 27);
+        int first = scenery.transform.childCount;
+        Sign("Cabinet explanation", scenery.transform.InverseTransformPoint(g.TransformPoint(new Vector3(0, .64f, -.515f))), yaw + 180, 2.3f, .4f, caption, ink, 27);
+        scenery.transform.GetChild(first).SetParent(g, true);
     }
     void Workbench(Vector3 p)
+    { Assemble("工作台 · Workbench", p, () => BuildWorkbench(p)); }
+    void BuildWorkbench(Vector3 p)
     {
         Box("Heavy timber worktop", p + Vector3.up * .95f, new Vector3(5, .16f, 1.25f), wood, true);
         foreach (float x in new[] { -2.1f, 2.1f })
@@ -182,6 +307,8 @@ public class HarbourSceneDressing : MonoBehaviour
         Coil(p + new Vector3(1.8f, 1.05f, .1f), .24f, 3, ink);
     }
     void EquipmentRack(Vector3 p)
+    { Assemble("装备架 · Equipment rack", p, () => BuildEquipmentRack(p)); }
+    void BuildEquipmentRack(Vector3 p)
     {
         foreach (float x in new[] { -1.7f, 1.7f })
             Box("Equipment rack upright", p + new Vector3(x, 1.3f, 0), new Vector3(.09f, 2.6f, .09f), steel, true);
@@ -197,6 +324,8 @@ public class HarbourSceneDressing : MonoBehaviour
         Sign("Rack label", p + new Vector3(0, 2.1f, -.12f), 180, 3.1f, .4f, "装备归位 / EQUIPMENT STORAGE", ink, 29);
     }
     void Pump(Vector3 p)
+    { Assemble("供气设备 · Air supply", p, () => BuildPump(p)); }
+    void BuildPump(Vector3 p)
     {
         Box("Air supply machine base", p + Vector3.up * .35f, new Vector3(2.2f, .7f, 1.1f), blue, true);
         Box("Pump top plate", p + Vector3.up * .75f, new Vector3(2.3f, .12f, 1.2f), steel);
@@ -211,6 +340,8 @@ public class HarbourSceneDressing : MonoBehaviour
         Coil(p + new Vector3(0, .045f, -1), .65f, 5, ink);
     }
     void Crate(Vector3 p)
+    { Assemble("工具箱 · Supply crate", p, () => BuildCrate(p)); }
+    void BuildCrate(Vector3 p)
     {
         Box("Supply crate", p + Vector3.up * .4f, new Vector3(.95f, .8f, .85f), wood, true);
         foreach (float x in new[] { -.31f, .31f })
@@ -220,7 +351,7 @@ public class HarbourSceneDressing : MonoBehaviour
     void Coil(Vector3 p, float radius, int turns, Material material)
     {
         var item = new GameObject("Coiled rope or hose") { hideFlags = Flags };
-        item.transform.SetParent(scenery.transform, false);
+        item.transform.SetParent(scenery.transform, false); item.transform.localPosition = p;
         var line = item.AddComponent<LineRenderer>(); line.useWorldSpace = false;
         line.sharedMaterial = material; line.widthMultiplier = .035f; line.numCornerVertices = 2;
         line.positionCount = turns * 40 + 1;
@@ -228,7 +359,7 @@ public class HarbourSceneDressing : MonoBehaviour
         {
             float t = (float)i / (line.positionCount - 1);
             float angle = t * turns * Mathf.PI * 2, r = Mathf.Lerp(radius * .45f, radius, t);
-            line.SetPosition(i, p + new Vector3(Mathf.Cos(angle) * r, .02f, Mathf.Sin(angle) * r));
+            line.SetPosition(i, new Vector3(Mathf.Cos(angle) * r, .02f, Mathf.Sin(angle) * r));
         }
         line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
@@ -239,6 +370,15 @@ public class HarbourSceneDressing : MonoBehaviour
     }
     void Box(string name, Vector3 p, Vector3 size, Material material, bool solid = false)
     { Shape(scenery.transform, name, PrimitiveType.Cube, p, size, material, solid); }
+    void Assemble(string name, Vector3 pivot, System.Action create)
+    {
+        int start = scenery.transform.childCount;
+        create();
+        var parts = new List<Transform>();
+        for (int i = start; i < scenery.transform.childCount; i++) parts.Add(scenery.transform.GetChild(i));
+        var root = Group(name, pivot, 0);
+        foreach (var part in parts) part.SetParent(root, true);
+    }
     GameObject Shape(Transform parent, string name, PrimitiveType type, Vector3 p, Vector3 size, Material material, bool solid = false)
     {
         var g = GameObject.CreatePrimitive(type); g.name = name; g.hideFlags = Flags;
@@ -262,51 +402,38 @@ public class HarbourSceneDressing : MonoBehaviour
         textObject.transform.SetParent(ui.transform, false);
         var rect = textObject.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
         rect.offsetMin = new Vector2(20, 12); rect.offsetMax = new Vector2(-20, -12);
-        var label = textObject.GetComponent<Text>(); label.font = font ? font : fallback; label.text = words;
+        var label = textObject.GetComponent<Text>(); label.font = font; label.text = words;
         label.fontSize = fontSize; label.alignment = TextAnchor.MiddleCenter;
         label.color = backing == ivory ? new Color(.035f, .085f, .105f) : new Color(.96f, .9f, .74f);
         label.raycastTarget = false;
+        if (!font) textObject.AddComponent<HarbourStaticCaption>();
     }
     Material Mat(Color color, float metallic = 0)
     {
         Shader shader = Shader.Find("Universal Render Pipeline/Lit"); if (!shader) shader = Shader.Find("Standard");
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            const string folder = "Assets/HarbourSceneryMaterials";
+            if (!UnityEditor.AssetDatabase.IsValidFolder(folder)) UnityEditor.AssetDatabase.CreateFolder("Assets", "HarbourSceneryMaterials");
+            string path = folder + "/Scenery_" + ColorUtility.ToHtmlStringRGB(color) + ".mat";
+            var saved = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (saved) return saved;
+            saved = new Material(shader) { color = color };
+            saved.SetFloat("_Metallic", metallic); saved.SetFloat("_Smoothness", .25f);
+            UnityEditor.AssetDatabase.CreateAsset(saved, path); return saved;
+        }
+#endif
         var mat = new Material(shader) { color = color, hideFlags = HideFlags.HideAndDontSave };
         mat.SetFloat("_Metallic", metallic); mat.SetFloat("_Smoothness", .25f); materials.Add(mat); return mat;
     }
-    void CombineStaticGeometry()
+    void OnDisable()
     {
-        // Merge only decorative meshes. Original exhibits, UI, hoses and prop colliders remain independent.
-        var groups = new Dictionary<Material, List<CombineInstance>>();
-        foreach (var renderer in scenery.GetComponentsInChildren<MeshRenderer>())
-        {
-            var filter = renderer.GetComponent<MeshFilter>();
-            if (!filter || !filter.sharedMesh || !renderer.sharedMaterial) continue;
-            if (!groups.TryGetValue(renderer.sharedMaterial, out var instances))
-            { instances = new List<CombineInstance>(); groups.Add(renderer.sharedMaterial, instances); }
-            instances.Add(new CombineInstance {
-                mesh = filter.sharedMesh,
-                transform = scenery.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix
-            });
-            renderer.enabled = false;
-        }
-        foreach (var pair in groups)
-        {
-            var mesh = new Mesh { name = "Static scenery batch", hideFlags = HideFlags.HideAndDontSave,
-                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-            mesh.CombineMeshes(pair.Value.ToArray(), true, true); combinedMeshes.Add(mesh);
-            var batch = new GameObject("Batched " + pair.Key.color, typeof(MeshFilter), typeof(MeshRenderer)) { hideFlags = Flags };
-            batch.transform.SetParent(scenery.transform, false);
-            batch.GetComponent<MeshFilter>().sharedMesh = mesh;
-            batch.GetComponent<MeshRenderer>().sharedMaterial = pair.Key;
-        }
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.delayCall -= EnsureBuilt;
+#endif
     }
-    void OnDisable() { Clear(); }
-    void Clear()
-    {
-        Dispose(scenery); scenery = null;
-        foreach (var mesh in combinedMeshes) Dispose(mesh); combinedMeshes.Clear();
-        foreach (var material in materials) Dispose(material); materials.Clear(); Dispose(fallback); fallback = null;
-    }
+    void OnDestroy() { foreach (var material in materials) Dispose(material); materials.Clear(); }
     static void Dispose(Object item)
     { if (!item) return; if (Application.isPlaying) Destroy(item); else DestroyImmediate(item); }
 }

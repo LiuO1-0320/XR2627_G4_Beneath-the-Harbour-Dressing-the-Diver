@@ -77,10 +77,6 @@ public class DiverNpcInteraction : MonoBehaviour
     {
         if (!visuals) Build();
         if (Application.isPlaying && !wearable && helmet) SetupWearable();
-        if (Camera.main)
-        {
-            FaceViewer(instructionPanel, Camera.main.transform);
-        }
         if (!Application.isPlaying) return;
         if (wearable && wearable.IsWorn != previouslyWorn)
         {
@@ -377,7 +373,7 @@ public class DiverNpcInteraction : MonoBehaviour
         if (stateTime >= approachDuration + duration)
         {
             SetBehaviour(Behaviour.Arrived);
-            dialogue.text = "欢迎来到海底！现在可以自由探索。\n想回平台时，握住这里的绳索手柄，或点“上浮”。\n\nWelcome to the seabed! Explore freely. Grip the rope here or press Ascend to return to the platform.";
+            dialogue.text = "欢迎来到海底！这里散落着一些瓶子、罐子和包装，请帮忙捡起，放进绿色回收篮后松手。\n想回平台时，握住这里的绳索手柄，或点“上浮”。\n\nWelcome to the seabed! Pick up the bottles, cans and wrappers. Release them inside the green collection basket. Use the rope or press Ascend to return.";
             ShowDialoguePopup();
         }
     }

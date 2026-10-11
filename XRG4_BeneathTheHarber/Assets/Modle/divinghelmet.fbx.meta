@@ -3,7 +3,12 @@ guid: DSsX4y74UHKZo6exAPW2qXUwI5naLf0V+W5e/dSlfQ7voApb52v0MgE=
 ModelImporter:
   serializedVersion: 22361
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: DivingHelmet_MTL
+    second: {fileID: 2100000, guid: 22f83d4522b04748b2a1e31bbdc0103b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

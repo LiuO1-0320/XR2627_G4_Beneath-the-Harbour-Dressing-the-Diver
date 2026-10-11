@@ -27,12 +27,6 @@ public class HelmetInteractionGuidance : MonoBehaviour
             ? successMessage : instructions;
         notificationText.text = successMessage;
         Transform viewer = wearable && wearable.head ? wearable.head : Camera.main ? Camera.main.transform : null;
-        if (viewer)
-        {
-            Vector3 direction = station.transform.position - viewer.position;
-            direction.y = 0;
-            if (direction.sqrMagnitude > 0.001f) station.transform.rotation = Quaternion.LookRotation(direction);
-        }
         if (!Application.isPlaying) return;
         bool worn = wearable && wearable.IsWorn;
         if (worn && !previousWorn) remaining = successDuration;
