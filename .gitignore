@@ -104,3 +104,13 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Codely AI assistant local tooling (machine-specific, not needed by teammates)
+.codely-cli/
+.codely.packages/
+.codelyignore
+CODELY.md
+.codely-cli.meta
+.codely.packages.meta
+.codelyignore.meta
+CODELY.md.meta
