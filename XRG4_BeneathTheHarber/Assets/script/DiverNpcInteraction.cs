@@ -4,8 +4,15 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 
 /// <summary>Act 3 diver, controller-operated dialogue and helmet dressing station.</summary>
 [ExecuteAlways]
-public class DiverNpcInteraction : MonoBehaviour
+public class DiverNpcInteraction : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 20;
+    public void PrepareReset() { fittingSession=System.Guid.Empty; CloseDialogue(); }
+    public void RestoreReset() { ResetActivity(); }
+
+    public event System.Action<DiverNpcInteraction, System.Guid> EscortStarted;
+    public bool HasFittedHelmet => wearable && wearable.IsWorn;
+    System.Guid fittingSession;
     public Transform helmet;
     public Font font;
     public Transform instructionAnchor;
@@ -78,12 +85,18 @@ public class DiverNpcInteraction : MonoBehaviour
         if (!visuals) Build();
         if (Application.isPlaying && !wearable && helmet) SetupWearable();
         if (!Application.isPlaying) return;
+        if (!StageCoordinator.Allows(ExperienceStage.DressTheDiver) &&
+            !(HasFittedHelmet && (StageCoordinator.Allows(ExperienceStage.Descent) || StageCoordinator.Allows(ExperienceStage.SeabedCleanup)))) return;
         if (wearable && wearable.IsWorn != previouslyWorn)
         {
             previouslyWorn = wearable.IsWorn;
             page = wearable.IsWorn ? 3 : 2;
             RefreshDialogue();
-            if (wearable.IsWorn) { SetBehaviour(Behaviour.Thanking); ShowDialoguePopup(); }
+            if (wearable.IsWorn)
+            {
+                fittingSession = StageCoordinator.Current ? StageCoordinator.Current.Controller.Session.SessionId : System.Guid.Empty;
+                SetBehaviour(Behaviour.Thanking); ShowDialoguePopup();
+            }
             else { RestoreStation(); }
         }
         UpdateBehaviour();
@@ -96,6 +109,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     public void OpenDialogue()
     {
+        if (!StageCoordinator.Allows(ExperienceStage.DressTheDiver)) return;
         if (!Application.isPlaying) return;
         page = wearable && wearable.IsWorn ? 3 : 0;
         RefreshDialogue();
@@ -136,6 +150,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     public void NextDialogue()
     {
+        if (!StageCoordinator.Allows(ExperienceStage.DressTheDiver)) return;
         if (!Application.isPlaying) return;
         if (wearable && wearable.IsWorn) { CloseDialogue(); return; }
         page = (page + 1) % 3;
@@ -145,6 +160,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     public void ResetActivity()
     {
+        fittingSession = System.Guid.Empty;
         if (!Application.isPlaying || !wearable) return;
         wearable.ReturnToStand();
         // A held helmet cannot be reset; keep its current dialogue until released.
@@ -158,7 +174,11 @@ public class DiverNpcInteraction : MonoBehaviour
     void RefreshDialogue()
     {
         if (dialogue) dialogue.text = lines[page];
-        if (nextCaption) nextCaption.text = page == 3 ? "跟上潜水员 / Follow" : "下一句 / Next";
+        if (nextCaption)
+        {
+            string[] topics = { "检查哪些部件？\nWhat should I check?", "怎样佩戴？\nHow do I fit it?", "介绍潜水准备\nAbout dive preparation", "收起对话\nClose dialogue" };
+            nextCaption.text = topics[page];
+        }
     }
     void Build()
     {
@@ -195,7 +215,7 @@ public class DiverNpcInteraction : MonoBehaviour
         Label("Title", "潜水员说 / Diver says", new Vector2(0, 280), new Vector2(1200, 80), 42);
         dialogue = Label("Dialogue", "", new Vector2(0, 30), new Vector2(1180, 380), 34);
         dialogue.alignment = TextAnchor.UpperLeft;
-        nextCaption = MakeButton("下一句 / Next", new Vector2(-280, -270), NextDialogue);
+        nextCaption = MakeButton("检查哪些部件？\nWhat should I check?", new Vector2(-280, -270), NextDialogue);
         MakeButton("关闭 / Close", new Vector2(280, -270), CloseDialogue);
         RefreshDialogue();
         CloseDialogue();
@@ -258,7 +278,11 @@ public class DiverNpcInteraction : MonoBehaviour
         valve.localRotation = Quaternion.Euler(90, 0, 0);
         Part("Rear air coupling", PrimitiveType.Cylinder, bodyRoot, new Vector3(0, 1.35f, -0.19f), new Vector3(0.09f, 0.05f, 0.09f), brass).localRotation = Quaternion.Euler(90, 0, 0);
     }
-    void SetBehaviour(Behaviour next) { behaviour = next; stateTime = 0; gestureTime = 0; }
+    void SetBehaviour(Behaviour next)
+    {
+        if (behaviour != next) SessionTelemetry.Report("DiverBehaviourChanged", this, next.ToString());
+        behaviour = next; stateTime = 0; gestureTime = 0;
+    }
     static float PlanarDistance(Vector3 a, Vector3 b) { return Vector3.ProjectOnPlane(a - b, Vector3.up).magnitude; }
     void TurnToward(Vector3 target)
     {
@@ -298,6 +322,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     void BeginEscort()
     {
+        if (!HasFittedHelmet) { RestoreStation(); return; }
         if (!act4Destination)
         {
             dialogue.text = "谢谢！请通过导航前往 ACT 4。\n\nThank you! Use the navigation menu to visit ACT 4.";
@@ -327,6 +352,8 @@ public class DiverNpcInteraction : MonoBehaviour
         points.Add(arrival); route = points.ToArray(); routeIndex = 0;
         // The instruction panel stays at the station; speech remains attached to the diver.
         CloseDialogue(); SetBehaviour(Behaviour.Leading);
+        // Publish the real interaction outcome. The coordinator defers transitions until Update.
+        EscortStarted?.Invoke(this, fittingSession);
     }
     bool WalkRoute(Transform viewer)
     {
@@ -434,6 +461,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     void RestoreStation()
     {
+        fittingSession = System.Guid.Empty;
         transform.SetPositionAndRotation(homePosition, homeRotation);
         greeted = waitingForPlayer = false; route = null; routeIndex = 0;
         SetBehaviour(Behaviour.Idle);
@@ -470,7 +498,7 @@ public class DiverNpcInteraction : MonoBehaviour
     }
     T Element<T>(string name, Vector2 position, Vector2 size) where T : Graphic
     {
-        var item = new GameObject(name, typeof(RectTransform));
+        var item = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer));
         item.hideFlags = HideFlags.HideAndDontSave;
         item.transform.SetParent(uiParent, false);
         var rect = item.GetComponent<RectTransform>();
@@ -494,7 +522,7 @@ public class DiverNpcInteraction : MonoBehaviour
     {
         var image = Element<Image>(caption, position, new Vector2(480, 100));
         image.color = new Color(0.1f, 0.42f, 0.42f);
-        var button = image.gameObject.AddComponent<Button>();
+        var button = image.gameObject.AddComponent<AccessibleButton>();
         button.targetGraphic = image;
         button.onClick.AddListener(action);
         var label = Label(caption + " Label", caption, Vector2.zero, new Vector2(460, 90), 34);
@@ -525,9 +553,18 @@ public class DiverNpcInteraction : MonoBehaviour
 }
 
 /// <summary>Small non-interactive speech bubble tail that points toward its speaker.</summary>
+[RequireComponent(typeof(CanvasRenderer))]
 public class DiverSpeechBubbleTail : MaskableGraphic
 {
     Vector2 edge, tip;
+    protected override void OnEnable()
+    {
+        // Also repair an existing ExecuteAlways-generated tail after a script reload.
+        // Graphic/MaskableGraphic require RectTransform but not CanvasRenderer in this UI version.
+        if (!GetComponent<CanvasRenderer>()) gameObject.AddComponent<CanvasRenderer>();
+        raycastTarget = false;
+        base.OnEnable();
+    }
     public void SetTail(Vector2 edgePoint, Vector2 tipPoint)
     {
         if (edge == edgePoint && tip == tipPoint) return;

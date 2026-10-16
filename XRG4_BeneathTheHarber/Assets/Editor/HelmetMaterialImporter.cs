@@ -7,8 +7,8 @@ using UnityEngine;
 public class HelmetMaterialImporter : AssetPostprocessor
 {
     const string ModelPath = "Assets/Modle/divinghelmet.fbx";
-    const string BodyPath = "Assets/Modle/Materials/DivingHelmet_Copper.mat";
-    const string ViewportPath = "Assets/Modle/Materials/DivingHelmet_Viewports.mat";
+    const string BodyPath = "Assets/Modle/DivingHelmet/Materials/DivingHelmet_Copper.mat";
+    const string ViewportPath = "Assets/Modle/DivingHelmet/Materials/DivingHelmet_Viewports.mat";
     const string Marker = "HarbourHelmetPbr-v1";
     static HelmetMaterialImporter() { EditorApplication.delayCall += ConfigureModel; }
 

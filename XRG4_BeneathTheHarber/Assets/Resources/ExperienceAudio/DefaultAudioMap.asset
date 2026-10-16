@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f0b2892d25648da99e78296e98aefa9, type: 3}
+  m_Name: DefaultAudioMap
+  m_EditorClassIdentifier: 
+  mixer: {fileID: 24100000, guid: 5ecd1518bfa84de89f1362515e6296b7, type: 2}
+  narrationGroup: {fileID: 24300001, guid: 5ecd1518bfa84de89f1362515e6296b7, type: 2}
+  ambienceGroup: {fileID: 24300002, guid: 5ecd1518bfa84de89f1362515e6296b7, type: 2}
+  feedbackGroup: {fileID: 24300003, guid: 5ecd1518bfa84de89f1362515e6296b7, type: 2}
+  harbour: {fileID: 8300000, guid: 9a2b302ca1044245a61725f89df4c8d2, type: 3}
+  museumMusic: {fileID: 8300000, guid: 27eef0e4215b4d538b07f861ed62b546, type: 3}
+  underwater: {fileID: 8300000, guid: 3f8a5e5c05a84a0c91df95ff3051bb99, type: 3}
+  interaction: {fileID: 8300000, guid: 2e4800bb23514c3ab8906a185df616f3, type: 3}
+  success: {fileID: 8300000, guid: bfd743fa64ba439f870d18b132b46627, type: 3}
+  waterEntry: {fileID: 8300000, guid: e2908ab4e8ca4a599d7bb02e24a1e3fa, type: 3}
+  waterEntryVolume: 0.55
+  waterExit: {fileID: 8300000, guid: 301dc4e36b3c454e9d152223ff2eea2f, type: 3}
+  waterExitVolume: 0.5
+  insideNarration: []
+  stages:
+  - stage: 0
+    narration: []
+  - stage: 1
+    narration:
+    - {fileID: 8300000, guid: d9826d9ec632d8045a785e3a418c9ed5, type: 3}
+  - stage: 2
+    narration:
+    - {fileID: 8300000, guid: 0f11ec62f1c92674fbb8d4668aa9d2f1, type: 3}
+  - stage: 3
+    narration: []
+  - stage: 4
+    narration:
+    - {fileID: 8300000, guid: 493d52a16e69332458777abe36b2c9c3, type: 3}
+  - stage: 5
+    narration: []
+  - stage: 6
+    narration: []
+  narrationVolume: 0.8
+  ambienceVolume: 0.25
+  feedbackVolume: 0.18
+  duckMultiplier: 0.3
+  crossfadeSeconds: 2.5

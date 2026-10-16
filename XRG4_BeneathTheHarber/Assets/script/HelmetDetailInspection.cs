@@ -10,8 +10,12 @@ using UnityEngine.XR.Interaction.Toolkit.Filtering;
 
 /// <summary>Independent exhibit for helmet 2. Exact part keys exclude nail2 through nail12.</summary>
 [ExecuteAlways]
-public class HelmetDetailInspection : MonoBehaviour
+public class HelmetDetailInspection : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 10;
+    public void PrepareReset() { PrepareSessionReset(); }
+    public void RestoreReset() { ResetExhibit(); if(Held()) throw new System.InvalidOperationException("Inspection parts are still selected."); }
+
     [Serializable] public class PartDescription
     {
         public string key, title;
@@ -114,6 +118,8 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     void Detach(Part part)
     {
+        SessionTelemetry.Report("PartDetached", part.transform, part.info.key);
+        if (Application.isPlaying && StageCoordinator.Current && StageCoordinator.Current.Audio) StageCoordinator.Current.Audio.PlayFeedback(false);
         part.releaseFrame = -1; part.detached = true;
         part.transform.SetParent(null, true);
         string english = string.IsNullOrWhiteSpace(part.info.englishDescription)
@@ -124,6 +130,7 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     void LateUpdate()
     {
+        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
         if (!Application.isPlaying) return;
         foreach (var part in parts)
         {
@@ -174,6 +181,7 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     void Restore(Part part)
     {
+        if (part.detached) SessionTelemetry.Report("PartRestored", part.transform, part.info.key);
         part.body.isKinematic = true;
         part.transform.SetParent(part.parent, false);
         part.transform.localPosition = part.position; part.transform.localRotation = part.rotation; part.transform.localScale = part.scale;
@@ -182,17 +190,28 @@ public class HelmetDetailInspection : MonoBehaviour
     }
     public void Rotate(float angle)
     {
+        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
         if (Held()) { status.text = "请先松开零件，再旋转 / Release part first"; return; }
         helmet.RotateAround(helmet.TransformPoint(localCenter), Vector3.up, angle);
         UpdateStatus();
     }
     public void ResetExhibit()
     {
-        if (!Application.isPlaying) return;
+        if (!Application.isPlaying || !helmet || !wholeGrab) return;
         if (Held()) { status.text = "请先松开零件，再复位 / Release part first"; return; }
         helmet.localScale = baseScale; helmet.localPosition = basePosition; helmet.localRotation = baseRotation;
         foreach (var part in parts) Restore(part);
         ShowDetails(defaultDetails); UpdateStatus();
+    }
+    public void SetSessionInteraction(bool allowed)
+    {
+        if (wholeGrab) wholeGrab.enabled = allowed;
+        foreach (var part in parts) if (part.grab) part.grab.enabled = allowed;
+    }
+    public void PrepareSessionReset()
+    {
+        SetSessionInteraction(false);
+        foreach (var part in parts) part.releaseFrame = -1;
     }
     void UpdateStatus()
     {
@@ -248,6 +267,31 @@ public class HelmetDetailInspection : MonoBehaviour
         detailsScroll.verticalScrollbar = scrollbar;
         status = TextLabel("Status", new Vector2(0, -295), new Vector2(1100, 65), 30);
         Button("复位 / Reset", 0, ResetExhibit);
+        // Information-only alternatives; viewing a description never reports M3 task success.
+        for (int i=0;i<descriptions.Length;i++)
+        {
+            var info=descriptions[i]; if (info==null) continue;
+            InformationButton(info.title,new Vector2(850,350-i*105),()=>
+            {
+                if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
+                ShowDetails(info.title+"\n\n"+info.description+"\n\n"+info.englishDescription);
+                SessionTelemetry.Report("InformationViewed",this,info.key);
+            });
+        }
+        InformationButton("文字上移 / Scroll up",new Vector2(850,-440),()=>ScrollInformation(.35f));
+        InformationButton("文字下移 / Scroll down",new Vector2(850,-535),()=>ScrollInformation(-.35f));
+    }
+    void ScrollInformation(float delta)
+    {
+        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
+        detailsScroll.StopMovement(); detailsScroll.verticalNormalizedPosition=Mathf.Clamp01(detailsScroll.verticalNormalizedPosition+delta);
+    }
+    void InformationButton(string caption,Vector2 position,UnityEngine.Events.UnityAction action)
+    {
+        var image=Element<Image>(caption,position,new Vector2(440,85)); image.color=new Color(.06f,.28f,.32f);
+        var button=image.gameObject.AddComponent<AccessibleButton>(); button.targetGraphic=image; button.onClick.AddListener(action);
+        var label=TextLabel(caption+" label",Vector2.zero,new Vector2(425,80),27);
+        label.text=caption; label.transform.SetParent(image.transform,false); label.raycastTarget=false;
     }
     void ShowDetails(string message)
     {
@@ -274,7 +318,7 @@ public class HelmetDetailInspection : MonoBehaviour
     {
         var image = Element<Image>(caption, new Vector2(x, -390), new Vector2(320, 95));
         image.color = new Color(0.1f, 0.42f, 0.42f);
-        var button = image.gameObject.AddComponent<Button>(); button.targetGraphic = image;
+        var button = image.gameObject.AddComponent<AccessibleButton>(); button.targetGraphic = image;
         button.onClick.AddListener(action);
         var text = TextLabel(caption + " Label", Vector2.zero, new Vector2(310, 85), 34);
         text.text = caption;

@@ -5,8 +5,16 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 /// <summary>An editable world-space introduction, visible in the scene and in VR.</summary>
 [ExecuteAlways]
 [DisallowMultipleComponent]
-public class StartIntroduction : MonoBehaviour
+public class StartIntroduction : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 100;
+    public void PrepareReset() { if (scroll) scroll.StopMovement(); }
+    public void RestoreReset()
+    {
+        refresh = true;
+        if (scroll) { scroll.StopMovement(); scroll.verticalNormalizedPosition = 1; }
+    }
+
     [Header("Introduction / 引言")]
     public string title = "Beneath the Harbour";
     [TextArea(6, 20)]
@@ -34,12 +42,22 @@ public class StartIntroduction : MonoBehaviour
     RectTransform content;
     Font fallback;
     bool refresh = true;
+    RegionalActions sessionActions;
 
     void OnEnable() { refresh = true; }
     void OnValidate() { refresh = true; }
     void Update()
     {
         if (!display) Build();
+        if (Application.isPlaying && StageCoordinator.Current && !sessionActions)
+        {
+            // Multiple exhibit boards share this component. The tutorial belongs to
+            // the session, not to each board, otherwise overlapping cards disagree.
+            var host = StageCoordinator.Current.gameObject;
+            sessionActions = host.GetComponent<RegionalActions>();
+            if (!sessionActions) sessionActions = host.AddComponent<RegionalActions>();
+            sessionActions.font = font ? font : GetFallback();
+        }
         if (!refresh) return;
         refresh = false;
         display.transform.localScale = new Vector3(Mathf.Max(0.5f, size.x) / 1200f,

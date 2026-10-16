@@ -1,0 +1,9 @@
+<linker>
+  <!-- XRI 3.1.2 lacks public cancellation for these deferred operations. -->
+  <assembly fullname="Unity.XR.Interaction.Toolkit">
+    <type fullname="UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationProvider" preserve="all" />
+    <type fullname="UnityEngine.XR.Interaction.Toolkit.Locomotion.XRBodyTransformer" preserve="all" />
+    <type fullname="UnityEngine.XR.Interaction.Toolkit.Locomotion.LocomotionProvider" preserve="all" />
+    <type fullname="UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable" preserve="all" />
+  </assembly>
+</linker>
