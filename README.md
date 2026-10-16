@@ -1,249 +1,242 @@
-[PROJECT_OVERVIEW.md](https://github.com/user-attachments/files/33298456/PROJECT_OVERVIEW.md)
-# Beneath the Harbour — 场景导览与功能介绍 / Visitor Guide & Features
+# Beneath the Harbour — Dressing the Diver 项目说明
 
-**港湾之下 · 为潜水员穿戴装备**
+> 更新日期：2026-10-16。本文根据团队现有脚本、场景、预制体和项目配置，介绍展项交互及新增的统一流程、音视频、辅助交互和工作人员控制功能。已实现功能与尚待开发的内容分别说明；代码检查不等于完成头显实机或打包验收。
 
-**Beneath the Harbour · Dressing the Diver**
+## 1. 这个项目在做什么
 
-更新日期 / Updated: 2026-10-11
+这是一个使用团结引擎制作的 **VR 海事博物馆互动体验**，主题为 **Beneath the Harbour（港湾之下）— Dressing the Diver（为潜水员穿戴装备）**。
 
-欢迎来到海港潜水装备馆。这里的体验从岸上的博物馆开始：认识铜制潜水头盔，亲手观察和拆装零件，再走进潜水员的工作室，帮助他准备下潜。最后沿绳索进入水下港湾，探索海底并参与垃圾回收。
+参观者通过阅读中英文说明、亲手抓取潜水头盔、拆下零件观察，以及帮助虚拟潜水员戴头盔，了解传统潜水装备的结构。场景引言将体验与香港维多利亚港的历史联系起来；当前代码的重点是头盔交互与展项导览，不能据此认定已经实现完整的历史叙事。
 
-Welcome to the harbour diving equipment gallery. Begin in the museum on shore: discover the copper diving helmet, inspect and disassemble its parts, then enter the diver’s workshop to help him prepare for a dive. Finally, follow the rope into the underwater harbour, explore the seabed and collect litter.
+项目以三个头盔互动展项为主线，连接港口下潜和海底探索。团队在原有展项基础上加入了新手教程、统一体验流程、区域引导、音视频、凝视辅助和全局复位，使参观者能够按引导完成体验，也方便工作人员协助操作和准备下一轮接待。
 
-本文介绍当前项目中的参观路线、交互方式和场景调整入口。体验场景为 `Assets/Scenes/BasicScene.unity`。
+## 2. 参观体验流程
 
-This guide covers the visitor route, interactions and scene editing options currently available in the project. The experience scene is `Assets/Scenes/BasicScene.unity`.
+整体路线为：**工作人员 Start → 欢迎介绍与操作教程 → ACT 1 试戴头盔 → ACT 2 拆装观察 → ACT 3 为潜水员戴头盔 → 跟随潜水员前往港口 → ACT 4 下潜与海底清理 → 上浮返回平台 → 自由探索或退出。**
 
-## 参观路线 / Visitor Route
+系统根据真实的点击、佩戴、装配和任务完成事件判断进度，记录操作并触发后续流程。进入区域或听完旁白不会直接算作任务完成；展项之间通过引导让用户自行前往，不因阶段完成而直接传送用户。
 
-**起点 → ACT 1 认识与试戴 → ACT 2 拆装观察 → ACT 3 潜水员工作室 → ACT 4 沿绳下潜 → 海底探索与清理 → 沿绳上浮**
+### 起点：欢迎介绍与操作教程
 
-**Start → ACT 1 Discover & Try On → ACT 2 Disassemble & Inspect → ACT 3 Diver’s Workshop → ACT 4 Rope Descent → Seabed Exploration & Cleanup → Rope Ascent**
+`BasicScene.unity` 中的 `Start Introduction` 展示欢迎文字，介绍海事博物馆、铜制头盔和维多利亚港背景。文字面板支持滚动，标题、正文、字号、颜色和尺寸可以在 Inspector 中修改。
 
-第一次体验建议按路线参观。再次体验时，可以通过快捷导航直接前往起点或 ACT 1–4。
+工作人员启动会话后，用户先完成分步教程：指向并选择左右目标按钮，再抓取和松开练习球。教程提供进度提示和鼓励反馈，要求依次完成各步骤，帮助首次使用 VR 的访客熟悉设备。
 
-For your first visit, follow the route in order. On return visits, use quick navigation to travel directly to Start or ACT 1–4.
+按钮选择可使用手柄射线，或在辅助模式下通过凝视完成。**抓球练习目前仍需手柄操作，必须先抓住、再由同一手柄主动松开，才算完成。** 暂停或取消抓取不计为成功；教程不设置必须在限定时间内完成的要求。
 
-| 区域 / Area | 主要体验 / Main Experience | 你可以做什么 / What You Can Do |
-| --- | --- | --- |
-| 起点 / Start | 了解展览主题 Discover the exhibition theme | 阅读中英文引言，熟悉操作 Read the bilingual introduction and learn the controls |
-| ACT 1 | 认识铜制潜水头盔 Discover the copper diving helmet | 抓取、观察、试戴和归还头盔 Pick up, inspect, wear and return the helmet |
-| ACT 2 | 探索头盔结构 Explore the helmet’s construction | 移动整盔，拆下零件，阅读介绍并装回 Move the helmet, remove parts, read their descriptions and reattach them |
-| ACT 3 | 帮助潜水员准备 Help the diver prepare | 打招呼、对话、戴头盔并跟随潜水员 Greet the diver, talk, fit his helmet and follow him |
-| ACT 4 | 从岸上进入水下 Travel from shore to the seabed | 交互绳索，体验平滑的下潜过程 Use the rope for a smooth descent |
-| 海底 / Seabed | 探索与保护海港 Explore and care for the harbour | 观察环境，捡垃圾并投放回收篮，沿绳返回平台 Explore, collect litter, deposit it in the basket and return via the rope |
+### ACT 1：认识并试戴头盔
 
-## 开始前：操作速查 / Before You Begin: Controls
+场景配置了铜制潜水头盔介绍、头盔抓取与试戴，以及操作指引。
 
-| 操作 / Action | 使用方式 / How to Use |
+- 按住握把抓起头盔，将它移到玩家头部附近并松手。
+- 头盔中心与头部距离不超过配置的 **0.4 米**时进入佩戴状态，并跟随头部运动。
+- 玩家佩戴时，外壳渲染切换为仅投射阴影，避免模型挡住视野。
+- 佩戴成功后显示提示；按 B / Y 对应的手柄次要按钮可取下并返回展台。
+- 松手时若靠近展台，头盔会吸附复位；在其他位置松手则启用重力，掉落过远时自动返回。
+
+这里的试戴主要通过吸附和头部跟随表达，代码中未见真实密封、供气或潜水生理模拟。
+
+### ACT 2：拆解和观察头盔细节
+
+第二个头盔作为独立观察展项，支持整盔移动、旋转和指定零件拆装。
+
+- 抓取头盔固定部分移动、旋转整盔，头盔尺寸保持固定。
+- 松开整盔后，可抓取对应零件查看中英文介绍。
+- 可拆零件键为 `forward`、`left`、`right`、`up`、`fixing`、`nameplate` 和 `nail1`。
+- `nail2` 到 `nail12` 不在默认可拆列表中，匹配采用完整名称后缀，避免将 `nail10` 误认为 `nail1`。
+- 零件放回原安装位置附近并松手，可自动装回；场景配置距离为 **0.15 米**。
+- 面板显示已拆零件数量，详情区域支持滚动，Reset 恢复展项。
+
+整盔和仍安装在头盔上的零件之间有抓取过滤，减少同时操作造成的冲突。拆下的零件不启用重力，适合悬停观察。
+
+### ACT 3：帮助潜水员戴头盔
+
+第三个展项通过文字对话引导参观者为潜水员戴上 `helmet3`。
+
+1. 使用手柄射线指向“开始对话”，按扳机打开文字弹窗。
+2. 阅读提示，观察头盔视窗和连接结构。
+3. 按住握把抓起 `helmet3`，移到 NPC 头部附近并松手。
+4. 距离符合条件时，头盔吸附到 NPC 头部，并显示完成感谢语。
+5. 佩戴成功后，潜水员开始带路，用户跟随前往港口和下潜区域。
+
+重新接待游客时，可通过工作人员的全局 Reset 恢复头盔、潜水员位置和任务状态。
+
+NPC 由脚本使用胶囊、球体、立方体等基础几何体生成；对话是脚本内置的固定文本。这一环节当前实现的是戴头盔，未见完整潜水服穿戴系统或 AI 对话。
+
+### 水下港湾探索与导航
+
+`BasicScene.unity` 引用了 `UnderwaterHarbourTour.prefab`。该预制体包含水面、海床、下行坡道、入口甲板、观察平台、路线标记、礁石、海草、珊瑚、港湾支柱和鱼群等内容，并配置了传送相关区域。
+
+`UnderwaterTour` 让直属子物体中名称以 `Fish_` 开头的鱼沿缓慢轨迹运动，并根据主相机是否处于设定的局部水下范围切换雾效，离开或禁用时恢复原雾效。脚本没有主动推动玩家相机。
+
+用户靠近绳索交互范围后，可以选择下潜或上浮。系统先将用户移动到绳索附近的安全位置，再进行垂直移动，减少上浮时与平台围栏穿模。面板根据用户位于水上还是水下显示相应操作，并在上下潜过程中保持在用户视野内。仅靠近绳索不会自动触发下潜。
+
+用户可在海底探索并将垃圾投入回收篮。首次清理完成后，还需上浮返回陆地平台，才显示整段体验完成；工作人员跳过清理时，也必须返回平台后才进入完成提示。
+
+区域引导根据用户的位置和进度显示：用户处于体验区域内时隐藏，留出探索空间；离开区域、处于展区之间时，提示下一步应前往哪里。到达目标展台后引导消失，到达判断与字幕牌的位置分开处理。
+
+项目保留起点和 ACT 1–4 的快捷导航，便于测试和探索；快捷移动本身不代替任务完成事件。
+
+### 体验结束与自由探索
+
+用户完成主要流程并上浮返回平台后，可以选择“自由探索”或“退出体验”。自由探索中保留明显的退出入口，用户也可以返回不同展台重新播放解说。
+
+选择退出后，系统显示感谢和结束提示，请用户停留原地，等待工作人员协助摘下头显。工作人员完成交接后，可通过全局 Reset 为下一位游客恢复初始状态。
+
+### 工作人员控制与全局复位
+
+工作人员面板显示当前会话和阶段，并提供以下操作，支持现场协助和团队测试：
+
+| 操作 | 功能 |
 | --- | --- |
-| 点击界面 / Select a button | 用左手或右手射线指向按钮，按扳机 Point either controller’s ray at a button and press the trigger |
-| 抓取物体 / Grab an object | 指向或靠近可抓取物体，按住握把；松开握把放下 Point at or reach toward a grabbable object, hold the grip button, then release it to let go |
-| 试戴头盔 / Wear the helmet | 把头盔移到自己头部附近，松开握把 Bring the helmet close to your head and release the grip button |
-| 归还试戴头盔 / Return the worn helmet | 在 ACT 1 佩戴状态下，按 B / Y 次要按钮 While wearing the ACT 1 helmet, press the B / Y secondary button |
-| 水中上浮 / Swim upward | 在水中按住手柄 A 键上浮，松开后恢复缓慢下沉<br>While underwater, hold the controller’s A button to swim upward. Release it to resume slowly sinking |
-| 查看长篇介绍 / Read longer descriptions | 拖动文字区域或滚动条Drag the text area or scrollbar |
-| 打开、收起导航 / Open or close navigation | 按右手 A 主按钮，或点击菜单的打开、收起按钮 Press the right controller’s A primary button, or select the menu’s open or close button |
-| 重新体验展项 / Reset an activity | 松开手里的物体，再点击对应 Reset / 重置按钮 Release any held object, then select the activity’s Reset button |
+| Start | 从待机状态启动一轮体验 |
+| Pause | 暂停流程、相关活动与音频 |
+| Resume | 从暂停位置继续 |
+| Skip | 跳过当前环节，记录为 Skipped，不伪装成用户完成任务 |
+| Reset | 安全终止当前活动，统一恢复会话初始状态，回到 Waiting |
 
-按钮名称以常见手柄布局和场景提示为准，其他设备的按键名称可能不同。
+全局 Reset 恢复头盔和拆装零件、潜水员位置与活动、用户初始位置及朝向、下潜过程、垃圾对象及计数、任务完成标记、界面和凝视状态，同时停止旧音频并清零视频播放进度。重置时先停止抓取、移动和播放等当前动作，再恢复对象，减少下一位游客继承上一轮状态的问题。
 
-Button names follow common controller layouts and the on-screen instructions. Names may differ on other devices.
+### 音频及旁白系统
 
-## 第一站：博物馆探索 / Stop 1: Explore the Museum
+音频分为旁白、环境音和操作反馈三个通道。旁白播放时适当降低环境音，不同环境之间使用音量渐变，让解说更清晰、声音过渡更舒缓。
 
-### 起点 · 阅读欢迎介绍 / Start · Read the Welcome Introduction
+- **位置决定背景音：**博物馆内播放柔和音乐；靠近港口时逐渐过渡到风声和海浪声；用户实际进入水下后切换为水下氛围。
+- **操作决定行为反馈：**佩戴头盔等音效由真实操作事件触发。给潜水员戴头盔不会把游客当作佩戴者并切换水下背景音。入水和出水时分别播放对应声音。
+- **首次到访自动解说：**已接入 ACT 1–3 的本地英文旁白。用户进入对应展台的到达范围后自动播放；正式流程中的目标展台还会等待到达引导淡出，避免用户仍在途中就开始解说。
+- **自由探索支持重播：**用户返回展台后，可通过“再次播放本区解说”按钮重听本区旁白，不会叠加多条解说。
+- **播放与会话控制同步：**Pause 暂停播放，Resume 接续；Skip 清理旧阶段旁白及相关反馈；Reset 清除播放状态和本轮首次访问记录。
 
-从入口的介绍板了解展览主题，再沿指引前往展项。介绍支持中英文阅读和滚动浏览。
+已接入的体验音频使用本地资源，不依赖联网播放。其他阶段的正式旁白仍需团队确认内容并提供录音。
 
-Read the introduction board at the entrance, then follow the signs to the exhibits. The introduction supports Chinese and English text and scrolling.
+### 凝视辅助交互
 
-前段空间采用展墙、黄铜说明牌、器材展柜和休息凳，营造博物馆参观氛围。展品保持开放，方便靠近观察和亲手操作。
+用户可在体验开始前选择常规模式或辅助模式。辅助模式通过头部朝向选择目标，不要求头显具有眼球追踪硬件，同时保留可用的手柄输入。
 
-The first area features gallery walls, brass information signs, equipment display cabinets and benches. Exhibits remain accessible for close inspection and hands-on interaction.
+看向按钮并持续停留一段时间后即可触发选择，过程中显示凝视进度；提前移开视线则取消。系统限制长时间注视同一目标重复触发，并避免手柄与凝视同时提交同一次操作。
 
-### ACT 1 · 认识并试戴潜水头盔 / Discover and Try On the Diving Helmet
+目前已具备按钮和菜单的凝视路径。**抓取、佩戴和装配等物理任务的完整凝视替代仍未完成**，需要继续接入相应的辅助操作接口，不能将当前体验描述为完全无需手柄。
 
-这里展示铜制潜水头盔的外壳、视窗和连接结构。先阅读介绍，再尝试把展品从展台上拿起，转动手柄观察不同角度。
+### 视频展台
 
-Examine the copper helmet’s shell, viewports and connections. Read the introduction, lift the helmet from its stand and rotate your controller to view it from different angles.
+项目接入头盔历史、头盔部件和潜水员相关的三个本地视频。用户离开播放区域一定距离后，视频自动暂停并保存当前进度；下次返回时，可点击播放继续观看。全局 Reset 将视频进度清零，让下一位游客从头观看。
 
-1. 按住握把抓起头盔。Hold the grip button to pick up the helmet.
-2. 将头盔移到自己的头部附近。Bring it close to your head.
-3. 松开握把，符合距离条件时会自动佩戴，并显示成功提示。Release the grip button. When close enough, the helmet attaches automatically and a confirmation appears.
-4. 按 B / Y 将头盔取下并放回展台。Press B / Y to remove the helmet and return it to the stand.
+### 操作日志与移动端接入准备
 
-佩戴时，头盔跟随头部运动，外壳不会覆盖玩家的正常视野。也可以把头盔带回展台附近松手，让它归位。
+系统记录会话状态、阶段进度、完成或跳过结果，以及用户的主要操作，便于团队测试和分析体验问题。项目提供状态快照、事件查询和控制命令接口，为后续 iPad 或其他移动端的工作人员控制页面提供基础。
 
-While worn, the helmet follows your head without its shell blocking your view. You can also return a held helmet by releasing it near the stand.
+**移动端页面、设备之间的实际通信和连接管理仍需后续开发。** 当前完成的是项目内的状态、日志和命令处理基础，不代表已经能够用 iPad 远程控制体验。
 
-### ACT 2 · 拆解和观察零件 / Disassemble and Inspect the Parts
+## 3. 技术与工程结构
 
-第二个展项适合仔细观察头盔结构。你可以先抓取头盔固定部分，移动或旋转整盔；松开整盔后，再抓取可拆零件。
+### 引擎与主要依赖
 
-The second exhibit lets you study the helmet’s construction. Grab a fixed part to move or rotate the whole helmet. Release the helmet before picking up a removable part.
+以下版本来自本地配置，表示本项目使用的版本：
 
-| 可观察零件 / Inspectable Part | 模型中的名称 / Model Name |
+| 项目 | 配置 |
 | --- | --- |
-| 前部视窗 / Front viewport | `forward` |
-| 左、右侧视窗 / Left and right viewports | `left`、`right` |
-| 顶部部件 / Top component | `up` |
-| 固定连接件 / Fixing component | `fixing` |
-| 铭牌 / Nameplate | `nameplate` |
-| 开放操作的一枚紧固件 / One interactive fastener | `nail1` |
+| 团结引擎版本 | `1.6.13` |
+| Editor 版本字段 | `2022.3.61t14` |
+| Universal Render Pipeline | `14.1.0` |
+| XR Interaction Toolkit | `3.1.2` |
+| OpenXR | `1.14.2` |
+| XR Management | `4.5.1` |
+| Input System | `1.14.0` |
+| TextMesh Pro | `3.0.9` |
 
-抓取零件后，详情板会显示对应的中英文介绍。你可以转动手柄观察内外两面，再把零件移到原安装位置附近并松手，让它自动装回。
+主要自定义界面使用 `UnityEngine.UI` 的世界空间 Canvas、Text、Button 和 ScrollRect；需要手柄射线交互的面板使用 `TrackedDeviceGraphicRaycaster`。虽然项目安装了 TextMesh Pro，这些脚本的主要文字组件仍是传统 UI Text。
 
-Picking up a part displays its Chinese and English description. Rotate your controller to inspect both sides, then bring the part close to its original mounting position and release it to reattach it automatically.
+### 目录作用
 
-点击 **复位 / Reset** 可以恢复整盔和零件。其余紧固件保持固定，避免重复拆装影响观察。
-
-Select **Reset** to restore the helmet and its parts. The other fasteners remain fixed to keep the inspection focused.
-
-## 第二站：潜水员工作室 / Stop 2: The Diver’s Workshop
-
-### ACT 3 · 打招呼，帮助潜水员戴好头盔 / Greet the Diver and Fit His Helmet
-
-离开展览区后，进入布置有木质工作台、工具抽屉、装备架、气瓶、供气设备、软管和检查图板的工作室。
-
-Leave the gallery and enter a workshop furnished with a wooden workbench, tool drawers, equipment racks, air cylinders, air supply equipment, hoses and inspection boards.
-
-潜水员有面部和潜水装备造型，并通过挥手、对话手势、点头和招手回应玩家。
-
-The diver has facial features and diving equipment. He responds with a greeting wave, conversational gestures, a nod and a beckoning gesture.
-
-1. 靠近潜水员，他会挥手打招呼；也可以点击 **开始对话**。<Approach the diver to receive a greeting wave, or select **Start dialogue**.
-2. 阅读潜水员的提示，观察头盔视窗和连接结构。Read his instructions and inspect the helmet’s viewports and connections.
-3. 按住握把抓起展台上的头盔，移到潜水员头部附近。Hold the grip button to lift the helmet from the stand and bring it close to the diver’s head.
-4. 松开握把，头盔就位后，潜水员会点头感谢。<br>Release the grip button. Once the helmet is fitted, the diver nods to thank you.
-5. 跟随他的招手和带路动作，前往 ACT 4。Follow his beckoning gesture as he leads you to ACT 4.
-
-对话框出现在潜水员旁边，让发言与角色的位置对应。带路时，如果玩家落后较远，潜水员会停下来等待。
-
-The dialogue appears beside the diver, linking the speech to the character. He pauses during the walk if you fall too far behind.
-
-想重新体验时，松开手里的头盔，点击 ACT 3 的 **重置 / Reset**，恢复潜水员和头盔的初始状态。
-
-To repeat the activity, release the helmet and select ACT 3’s **Reset** button to restore the diver and helmet to their starting state.
-
-## 第三站：沿绳进入水下港湾 / Stop 3: Follow the Rope into the Underwater Harbour
-
-### ACT 4 · 下潜平台与绳索 / The Platform and Descent Rope
-
-ACT 4 以平台旁的下潜绳索作为交互入口。原来的独立小方块已移除，快捷导航会把玩家送到绳索旁的平台。
-
-ACT 4 begins at the descent rope beside the platform. The separate cube marker has been removed. Quick navigation takes you to the platform next to the rope.
-
-潜水员到达后会说明下潜方式，并先沿绳索下潜，在海底等待玩家。
-
-On arrival, the diver explains how to descend. He follows the rope down first and waits for you on the seabed.
-
-**下潜方式：** 靠近绳索，握住绳索手柄，或用射线点击 **下潜 / Descend**。
-
-**To descend:** Approach the rope and grip its handle, or point your controller’s ray at **Descend** and select it.
-
-玩家会先靠近绳索，再平滑下降到海底。到达后恢复自由操作。过程中保留头部观察方向，可以继续看向周围；绳索移动期间，快捷跳转会暂时等待，避免打断下潜或上浮。
-
-You move into position beside the rope, then descend smoothly to the seabed. Free control resumes on arrival. Head tracking remains active so you can look around during the journey. Quick travel is temporarily unavailable during rope movement to avoid interrupting the descent or ascent.
-
-### 海底探索 · 观察港湾环境 / Seabed Exploration · Discover the Harbour
-
-水下空间包含海床、礁石、珊瑚、海草、港湾支柱和缓慢游动的鱼群。进入水下后，蓝绿色雾效帮助表现海水氛围。
-
-The underwater area contains a seabed, rocks, coral, aquatic plants, harbour pillars and slowly swimming fish. Blue-green fog creates the atmosphere of being underwater.
-
-水池扩大并加入蓝色边界包边，形成连续的探索区域；平台底面也可从水下看到。
-
-The pool has been enlarged and fitted with blue perimeter boundaries to create a continuous exploration area. The underside of the platform is also visible from below.
-
-### 水中重力与上浮 / Underwater Gravity and Swimming Upward
-
-水中设有独立的重力与沉降控制。进入水中后，玩家会缓慢下沉；**按住手柄 A 键可以主动上浮**，松开后逐渐恢复下沉。离开水域后恢复陆地重力。
-
-The water uses a separate gravity and sinking system. After entering the water, you slowly sink. **Hold the controller’s A button to swim upward**; releasing it gradually resumes sinking. Normal land gravity returns when you leave the water.
-
-这种上浮方式用于水中的自由探索。若要沿指定路线返回平台，可以使用绳索手柄或 **上浮 / Ascend** 按钮。
-
-Use this swimming control during free underwater exploration. To return to the platform along the designated route, use the rope handle or the **Ascend** button.
-
-A 键也用于快捷导航的展开与收起。水中需要操作导航时，可用射线点击菜单上的打开、收起按钮。
-
-The A button also toggles quick navigation. To control the menu while underwater, use your controller’s ray to select its open or close button.
-
-### 海底清理 · 捡垃圾并投放回收篮 / Seabed Cleanup · Collect and Deposit Litter
-
-绳索附近的海底散落着 **9 件垃圾**，包括塑料瓶、饮料罐和废弃包装。潜水员到达海底后会提示清理方法。
-
-There are **9 pieces of litter** near the rope, including plastic bottles, drinks cans and discarded packaging. The diver explains the cleanup activity when he reaches the seabed.
-
-1. 找到垃圾，按住握把将它捡起。<br>Find a piece of litter and hold the grip button to pick it up.
-2. 带到绿色回收篮旁，将垃圾放进篮内。<br>Take it to the green collection basket and place it inside.
-3. 松开握把，投放成功后回收进度增加。<br>Release the grip button. A successful deposit increases the collection count.
-4. 收集全部 9 件垃圾后，说明板显示完成提示。<br>After all 9 items are collected, the instruction board displays a completion message.
-
-**计数发生在投放回收篮后，单纯捡起不会计数。** 每件垃圾只计一次。想再次收集，可以先松开物体，再点击 **重新收集 / Reset cleanup**。
-
-**An item counts only after it is deposited in the basket; picking it up alone does not count.** Each item counts once. To repeat the activity, release any held object and select **Reset cleanup**.
-
-### 沿绳上浮 · 返回平台 / Rope Ascent · Return to the Platform
-
-回到海底绳索旁，握住上浮手柄，或点击 **上浮 / Ascend**。玩家会沿绳索平滑上升，再移动到平台落脚点，随后恢复自由操作。
-
-Return to the rope on the seabed and grip the ascent handle, or select **Ascend**. You rise smoothly along the rope and move onto the platform landing point before free control resumes.
-
-## 展览辅助功能 / Additional Exhibition Features
-
-### 快捷导航 / Quick Navigation
-
-导航菜单提供 **起点、ACT 1、ACT 2、ACT 3、ACT 4** 五个目的地。左右手都可用射线和扳机点击；菜单放在视野侧边，并使用半透明背景。
-
-The navigation menu offers five destinations: **Start, ACT 1, ACT 2, ACT 3 and ACT 4**. Use either controller’s ray and trigger to select a destination. The menu sits to the side of your view and has a translucent background.
-
-按右手 A 主按钮或点击菜单按钮可以收起、展开导航。海底往返使用绳索交互，菜单中没有独立的海底目的地。
-
-Press the right controller’s A primary button or select the menu button to open or close navigation. Travel to and from the seabed uses the rope; the menu has no separate seabed destination.
-
-### 视频展屏 / Video Displays
-
-`vedio1`、`vedio2`、`vedio3` 是三个独立的视频展屏，保留各自的位置和大小，显示播放器样式的黑色画面、播放按钮、进度条和时间。
-
-`vedio1`, `vedio2` and `vedio3` are three independent video displays. Each retains its own position and size and shows a player-style black screen, play button, progress bar and time display.
-
-当前它们是视频占位屏。未添加影片时，点击播放会提示暂无视频；配置影片后，支持播放、暂停和进度调整。
-
-They currently serve as video placeholders. Selecting Play without an assigned video displays a message that no video has been added. Once configured, the displays support playback, pause and seeking.
-
-## 场景调整与内容替换 / Scene Editing & Content Replacement
-
-这一部分供布展或后续制作时使用。
-
-This section is for exhibition setup and further production.
-
-| 想修改什么 / What to Change | 在哪里调整 / Where to Edit |
+| 路径 | 作用 |
 | --- | --- |
-| 静态布景的位置、旋转、大小<br>Scenery position, rotation and scale | 展开 `Harbour Museum and Diver Workshop` → `Static Scenery (editable)`，选择对应提示板、展墙、展柜或工作台，调整 Transform 后保存场景<br>Expand `Harbour Museum and Diver Workshop` → `Static Scenery (editable)`. Select a sign, gallery wall, cabinet or workbench, adjust its Transform and save the scene |
-| 静态提示板文字<br>Static sign text | 展开提示板，找到 `Caption` 或文字对象，修改 Text 内容<br>Expand the sign, find `Caption` or its text object and edit the Text content |
-| 操作说明板的位置<br>Instruction board position | 选择对应说明板的父对象，调整 Transform 后保存<br>Select the board’s parent object, adjust its Transform and save |
-| 重新按头盔正面对齐提示板<br>Realign signs with the helmet front | 在 `HarbourSceneDressing` 组件面板点击“按头盔前部视窗重新对齐提示板”<br>In the `HarbourSceneDressing` Inspector, select “按头盔前部视窗重新对齐提示板” (Realign signs with the helmet’s front viewport) |
-| 视频内容<br>Video content | 选中 `vedio1`、`vedio2` 或 `vedio3`，在 `ExhibitVideoScreen` 的 `Video Clip` 中指定影片，或填写 `Video Url`；影片文件优先于链接<br>Select `vedio1`, `vedio2` or `vedio3`. Assign a `Video Clip` or enter a `Video Url` in `ExhibitVideoScreen`. An assigned clip takes priority over the URL |
-| 视频标题、循环与音量<br>Video title, looping and volume | 修改对应视频展屏组件的 `Screen Title`、`Loop` 和 `Volume`<br>Edit the display component’s `Screen Title`, `Loop` and `Volume` fields |
-| 起点和头盔介绍文字<br>Welcome and helmet introduction text | 修改对应 `StartIntroduction` 组件中的标题、正文、字号和面板尺寸<br>Edit the title, body text, font sizes and panel size in the relevant `StartIntroduction` component |
+| `Assets/script/` | 展项交互、会话流程、教程、区域引导、音视频、凝视、全局复位和日志等运行脚本 |
+| `Assets/Editor/` | 会话配置、音频检查、视频配置及材质导入等编辑器工具 |
+| `Assets/Scenes/BasicScene.unity` | 已接入三个 ACT、起点说明、快捷导航和水下预制体的体验场景 |
+| `Assets/Scenes/SampleScene.scene` | 当前构建列表中的场景；不能直接视为上述体验场景的等价入口 |
+| `Assets/Modle/divinghelmet.fbx` | 潜水头盔模型资源，目录名称在工程中确实拼作 `Modle` |
+| `Assets/Audio/Narration/` | ACT 1–3 的本地英文旁白 |
+| `Assets/Audio/Ambience/`、`Assets/Resources/ExperienceAudio/` | 背景音乐、环境及反馈音、音频映射和混音器配置 |
+| `Assets/Vedio/` | 视频展台使用的本地视频，目录名称在工程中确实拼作 `Vedio` |
+| `Assets/UnderwaterTour/` | 水下港湾环境预制体 |
+| `Assets/VRTemplateAssets/` | VR 模板资源与辅助脚本 |
+| `Assets/Samples/` | XR Interaction Toolkit 示例，包括 Starter Assets 和 XR Device Simulator |
+| `Assets/XR/`、`Assets/XRI/` | XR 加载器、OpenXR 与交互配置 |
+| `Assets/Settings/` | 渲染及项目配置资源 |
+| `Packages/`、`ProjectSettings/` | 包依赖和引擎项目设置 |
+| `Library/`、`Temp/`、`Logs/` | 本地缓存、临时文件和日志，分析业务逻辑时优先查看 Assets |
 
-展品提示板以头盔模型的 `forward` 前部视窗方向作为正面，布置在前方侧边。独立布景对象可以逐个调整，保存后保留布局；点击重新对齐会重新放置相关提示板。
+### 核心脚本职责
 
-Exhibit signs use the helmet model’s `forward` front viewport to define the front direction and sit to one side of it. Scenery objects can be adjusted individually, and their layout is retained when the scene is saved. Selecting realignment repositions the relevant signs.
+| 脚本 | 主要职责 |
+| --- | --- |
+| `StartIntroduction.cs` | 生成可编辑的世界空间引言面板，支持正文滚动 |
+| `ActDirectionSign.cs` | 生成箭头和文字，指向下一展项 |
+| `DivingHelmetWearable.cs` | 设置头盔抓取和物理组件，处理佩戴、头部跟随、落地及展台复位 |
+| `HelmetInteractionGuidance.cs` | 展示 ACT 1 操作说明与短暂的成功提示 |
+| `HelmetDetailInspection.cs` | 设置 ACT 2 整盔抓取、旋转、零件拆装、详情和复位 |
+| `DiverNpcInteraction.cs` | 生成简易 NPC 和对话界面，运行时复用穿戴脚本将头盔戴到 NPC 头部 |
+| `PlayerQuickTravel.cs` | 生成快捷导航菜单，处理起点和 ACT 1–4 的目的地移动 |
+| `UnderwaterTour.cs` | 驱动鱼群运动，根据玩家位置切换并恢复水下雾效 |
+| `SessionController.cs`、`SessionState.cs`、`StageCoordinator.cs` | 统一管理会话状态、阶段推进和展项活动 |
+| `RegionalActions.cs`、`BriefingPractice.cs`、`TutorialButton.cs` | 分步教程、抓球及释放判定、教程按钮输入 |
+| `StaffSessionUI.cs`、`GlobalReset.cs`、`ResetProtocol.cs` | 工作人员操作面板及各模块的统一安全复位 |
+| `RegionGuide.cs` | 按区域位置和体验进度显示或隐藏引导 |
+| `AudioDirector.cs`、`AudioMap.cs`、`AudioPolicy.cs` | 环境音、旁白、反馈音及播放控制 |
+| `NarrationRegionPanels.cs` | 自由探索中的区域旁白重播入口 |
+| `GazeInput.cs`、`GazeDwell.cs`、`GazeFeedback.cs` | 凝视选择、停留计时和视觉反馈 |
+| `AccessibilityUI.cs`、`AccessibleButton.cs`、`AccessibleTaskAction.cs` | 辅助模式设置、按钮输入协调和辅助任务接口 |
+| `DiveRopeStation.cs`、`DiveShaftGeometry.cs` | 绳索上下潜、安全移动位置和交互范围 |
+| `SeabedCleanup.cs`、`ExperienceEndingUI.cs` | 垃圾收集及复位、完成提示、自由探索和退出 |
+| `ExhibitVideoScreen.cs` | 视频播放、离开暂停、进度保留及复位 |
+| `SessionTelemetry.cs`、`ControlProtocol.cs`、`TaskEndpoint.cs` | 操作日志、状态快照、控制命令与任务事件接口 |
 
-## 打开体验场景 / Open the Experience Scene
+多个展示脚本带有 `[ExecuteAlways]`，因此编辑模式中也可以生成展示内容。部分 UI、材质、几何体和交互组件由脚本动态创建；了解功能时需要同时查看场景引用和脚本，不能仅凭 Hierarchy 中的静态物体判断。
 
-使用项目记录的团结引擎 **1.6.13（2022.3.61t14）** 打开工程，等待资源和脚本加载，再打开 `Assets/Scenes/BasicScene.unity`，使用已配置的 XR 运行环境和手柄进入 Play。
+脚本按功能命名，便于团队共同维护。详细入口见 [体验系统代码索引](Experience-Code-Guide.md)，后续移动端开发可参考 [移动端接入说明](Mobile-Integration.md)。
 
-Open the project with its recorded Tuanjie Engine version, **1.6.13 (2022.3.61t14)**. Wait for assets and scripts to load, open `Assets/Scenes/BasicScene.unity`, then enter Play using the configured XR runtime and controllers.
+## 4. 如何打开与检查
 
-打包前需把 `BasicScene.unity` 加入构建场景并确认启动顺序；当前构建列表启用的是 `SampleScene.scene`。
+1. 优先使用项目记录的团结引擎版本 `1.6.13` 打开工程，等待资源导入和包解析。
+2. 打开 `Assets/Scenes/BasicScene.unity`，检查起点说明、ACT 1–3、XR 玩家与 EventSystem 的配置。
+3. 在有兼容 XR 运行环境和手柄的情况下进入 Play，通过工作人员面板 Start 开始，依次检查教程、ACT 1–3、下潜、垃圾清理、上浮、自由探索和退出。
+4. 若使用键鼠模拟，需先检查并配置 XR Device Simulator。工程已导入示例，但 `XRDeviceSimulatorSettings.asset` 中自动实例化开关为关闭，且模拟器预制体引用为空。
+5. 打包前确认构建场景列表。当前 `EditorBuildSettings.asset` 只启用了 `Assets/Scenes/SampleScene.scene`，没有列入 `BasicScene.unity`。如果目标是交付本文描述的体验，应在编辑器中将实际体验场景加入并设置合适的启动顺序。
+6. 检查区域内外引导、旁白首次播放及重播、位置音景切换、入水出水音效，以及视频离开暂停和返回续播。
+7. 在抓取、NPC 移动、上下潜、旁白播放和暂停状态下分别检查全局 Reset，并连续运行多轮会话，确认没有上一轮的任务、对象或播放状态残留。
 
-Before building, add `BasicScene.unity` to the build scene list and confirm the startup order. The current build list enables `SampleScene.scene`.
+### 主要操作速查
 
-近期新增功能已进行代码编译检查；完整参观流程、视频播放和头显上的视觉与交互效果仍需运行验证。本导览描述当前功能，不作为真机验收记录。
+| 操作 | 用途 |
+| --- | --- |
+| 手柄射线 + 扳机 | 点击对话、导航、Reset 等按钮 |
+| 按住握把 | 抓取头盔或零件 |
+| 头盔靠近头部后松手 | 玩家试戴或为 NPC 戴头盔 |
+| B / Y 对应次要按钮 | ACT 1 佩戴状态下将头盔返回展台 |
+| 右手主按钮，界面标为 A | 展开或收起快捷导航 |
+| 零件靠近原位置后松手 | 将零件装回 |
+| 展项 Reset | 恢复对应展项；持有物体时需先松手 |
+| 辅助模式下持续看向按钮 | 凝视进度完成后选择，移开视线取消 |
+| 绳索附近的下潜／上浮按钮 | 先定位到安全位置，再进行垂直移动 |
+| 自由探索中的旁白重播按钮 | 重新播放本区解说 |
+| 工作人员全局 Reset | 统一停止当前活动并恢复整轮体验 |
+| 退出体验 | 结束会话并提示等待工作人员协助摘下头显 |
 
-Recent additions have passed code compilation checks. The full visitor journey, video playback and headset visuals and interactions still require runtime testing. This guide describes the current features; it is not a record of headset acceptance testing.
+具体按键名称和交互响应仍取决于实际设备、输入绑定和运行配置。
+
+## 5. 当前实现边界与后续关注点
+
+- **启动场景需要核对。** 三个 ACT 的自定义脚本引用在 `BasicScene.unity` 中能确认，而构建入口是 `SampleScene.scene`，两者目前不同。
+- **中文字体需要准备。** 检查到的展项字体引用为空，脚本尝试使用系统字体。正式部署时应指定包含中英文字符的随包字体，并验证目标设备上的显示。
+- **模型命名影响拆装。** ACT 2 通过物体名称最后一个 `.` 后的后缀匹配零件，同时要求该物体带 Renderer；改动模型层级或命名后需核对可拆零件。
+- **历史信息仍有待补充。** 铭牌介绍明确说明制造信息尚未确认，固定件的准确功能也需结合实物型号确认。当前展项说明应视为项目内容，不能替代经过来源核验的藏品说明。
+- **物理任务的凝视替代尚未完整接入。** 当前可通过凝视选择按钮，但抓球、佩戴和装配等操作仍需手柄或后续辅助接口支持。
+- **移动端功能尚未完成。** 已有统一会话、操作日志和命令接口；iPad 页面、实际通信、连接管理及远程控制联调仍需开发。本地日志也不等于跨设备存档。
+- **旁白内容仍需扩充。** ACT 1–3 已接入英文录音，其他需要正式解说的环节仍需团队确认文本并补充本地录音。
+- **设备与运行效果需要持续验证。** 现有逻辑回归和编译检查不能替代目标头显、完整旅程和构建测试，仍需验证帧率、UI 可读性、音频舒适度及连续多轮复位效果。
+
+## 6. 分析依据
+
+主要依据为工程 `XRG4_BeneathTheHarber` 中的 `Assets/script/`、`Assets/Editor/`、`Assets/Scenes/BasicScene.unity`、水下环境预制体、音视频资源、包依赖、项目设置和 XR 配置，以及团队的体验流程与接口文档。本文工程内路径均相对于该工程目录。
+
+本文以团队整体功能为单位说明当前实现。后续更新交互、流程、资源或接口时，应同步维护相关内容，并区分已实现功能和待开发部分。本次仅更新本文档，没有修改脚本、场景、模型或构建配置。
