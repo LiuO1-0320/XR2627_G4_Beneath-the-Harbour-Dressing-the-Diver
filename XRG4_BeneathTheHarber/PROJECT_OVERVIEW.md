@@ -4,7 +4,7 @@
 
 **Beneath the Harbour · Dressing the Diver**
 
-更新日期 / Updated: 2026-10-11
+更新日期 / Updated: 2026-10-16
 
 欢迎来到海港潜水装备馆。这里的体验从岸上的博物馆开始：认识铜制潜水头盔，亲手观察和拆装零件，再走进潜水员的工作室，帮助他准备下潜。最后沿绳索进入水下港湾，探索海底并参与垃圾回收。
 
@@ -16,22 +16,23 @@ This guide covers the visitor route, interactions and scene editing options curr
 
 ## 参观路线 / Visitor Route
 
-**起点 → ACT 1 认识与试戴 → ACT 2 拆装观察 → ACT 3 潜水员工作室 → ACT 4 沿绳下潜 → 海底探索与清理 → 沿绳上浮**
+**工作人员启动 → 欢迎介绍与操作教程 → ACT 1 认识与试戴 → ACT 2 拆装观察 → ACT 3 潜水员工作室 → ACT 4 沿绳下潜 → 海底探索与清理 → 沿绳上浮返回平台 → 自由探索或退出**
 
-**Start → ACT 1 Discover & Try On → ACT 2 Disassemble & Inspect → ACT 3 Diver’s Workshop → ACT 4 Rope Descent → Seabed Exploration & Cleanup → Rope Ascent**
+**Staff Start → Welcome & Tutorial → ACT 1 Discover & Try On → ACT 2 Disassemble & Inspect → ACT 3 Diver’s Workshop → ACT 4 Rope Descent → Seabed Exploration & Cleanup → Return to the Platform → Free Exploration or Exit**
 
-第一次体验建议按路线参观。再次体验时，可以通过快捷导航直接前往起点或 ACT 1–4。
+团队将各展项连接为统一的体验流程。系统根据真实的点击、佩戴、装配和任务完成事件判断进度，记录操作并触发后续环节；进入区域、听完旁白或使用快捷导航本身不会算作任务完成。完成展项后，用户按引导自行前往下一处，不会因为阶段结束而被直接传送。
 
-For your first visit, follow the route in order. On return visits, use quick navigation to travel directly to Start or ACT 1–4.
+The exhibits form one coordinated visitor journey. Progress follows actual selections, helmet fitting, assembly and task completion events, with actions recorded for review. Entering an area, finishing narration or using quick travel does not itself complete a task. After an exhibit, follow the guidance to the next area; stage completion does not automatically teleport you there.
 
 | 区域 / Area | 主要体验 / Main Experience | 你可以做什么 / What You Can Do |
 | --- | --- | --- |
-| 起点 / Start | 了解展览主题 Discover the exhibition theme | 阅读中英文引言，熟悉操作 Read the bilingual introduction and learn the controls |
+| 起点 / Start | 了解主题并熟悉设备 Discover the theme and controls | 阅读引言，完成按钮选择和抓球练习 Read the introduction and practise selecting buttons, grabbing and releasing a ball |
 | ACT 1 | 认识铜制潜水头盔 Discover the copper diving helmet | 抓取、观察、试戴和归还头盔 Pick up, inspect, wear and return the helmet |
 | ACT 2 | 探索头盔结构 Explore the helmet’s construction | 移动整盔，拆下零件，阅读介绍并装回 Move the helmet, remove parts, read their descriptions and reattach them |
 | ACT 3 | 帮助潜水员准备 Help the diver prepare | 打招呼、对话、戴头盔并跟随潜水员 Greet the diver, talk, fit his helmet and follow him |
 | ACT 4 | 从岸上进入水下 Travel from shore to the seabed | 交互绳索，体验平滑的下潜过程 Use the rope for a smooth descent |
 | 海底 / Seabed | 探索与保护海港 Explore and care for the harbour | 观察环境，捡垃圾并投放回收篮，沿绳返回平台 Explore, collect litter, deposit it in the basket and return via the rope |
+| 返回平台 / Return to the platform | 完成主要流程 Finish the guided journey | 选择自由探索或退出 Choose free exploration or exit |
 
 ## 开始前：操作速查 / Before You Begin: Controls
 
@@ -45,6 +46,10 @@ For your first visit, follow the route in order. On return visits, use quick nav
 | 查看长篇介绍 / Read longer descriptions | 拖动文字区域或滚动条Drag the text area or scrollbar |
 | 打开、收起导航 / Open or close navigation | 按右手 A 主按钮，或点击菜单的打开、收起按钮 Press the right controller’s A primary button, or select the menu’s open or close button |
 | 重新体验展项 / Reset an activity | 松开手里的物体，再点击对应 Reset / 重置按钮 Release any held object, then select the activity’s Reset button |
+| 凝视选择 / Gaze selection | 开启辅助模式后，看向按钮并停留；移开视线取消 In Accessible Mode, look at a button and dwell to select it; look away to cancel |
+| 绳索上下潜 / Rope travel | 靠近绳索，在水上选择下潜，在水下选择上浮 Approach the rope; choose Descend on the surface or Ascend underwater |
+| 重听旁白 / Replay narration | 自由探索时在展台选择“再次播放本区解说” During free exploration, select the exhibit’s narration replay button |
+| 退出体验 / Exit experience | 在完成提示或自由探索界面选择退出，然后等待工作人员协助 Select Exit at the ending prompt or during free exploration, then wait for staff assistance |
 
 按钮名称以常见手柄布局和场景提示为准，其他设备的按键名称可能不同。
 
@@ -52,11 +57,19 @@ Button names follow common controller layouts and the on-screen instructions. Na
 
 ## 第一站：博物馆探索 / Stop 1: Explore the Museum
 
-### 起点 · 阅读欢迎介绍 / Start · Read the Welcome Introduction
+### 起点 · 欢迎介绍与新手教程 / Start · Welcome and Tutorial
 
 从入口的介绍板了解展览主题，再沿指引前往展项。介绍支持中英文阅读和滚动浏览。
 
 Read the introduction board at the entrance, then follow the signs to the exhibits. The introduction supports Chinese and English text and scrolling.
+
+工作人员点击 **Start** 前，体验保持待机。启动后，教程通过简单步骤和鼓励性提示，带你依次选择左右目标按钮，再抓住并松开练习球。各步骤需按顺序完成，没有必须在限定时间内完成的要求；完成后会收到鼓励，并被引导开始参观。
+
+The experience waits until staff select **Start**. A short tutorial uses encouraging prompts to guide you through selecting the left and right targets, then grabbing and releasing a practice ball. Complete the steps in order, without a time limit. A success message then guides you into the exhibition.
+
+按钮选择可使用手柄或辅助模式下的头部凝视。**抓球练习目前仍需手柄：先抓住，再由同一手柄主动松开，才算完成。** 暂停、取消抓取或只拿着球不放，都不会完成这一练习。
+
+Select buttons with a controller or head gaze in Accessible Mode. **The ball exercise still requires a controller: grab it, then deliberately release it with the same controller to finish.** Pausing, cancelling a grab or holding the ball without releasing it does not complete the exercise.
 
 前段空间采用展墙、黄铜说明牌、器材展柜和休息凳，营造博物馆参观氛围。展品保持开放，方便靠近观察和亲手操作。
 
@@ -76,6 +89,10 @@ Examine the copper helmet’s shell, viewports and connections. Read the introdu
 佩戴时，头盔跟随头部运动，外壳不会覆盖玩家的正常视野。也可以把头盔带回展台附近松手，让它归位。
 
 While worn, the helmet follows your head without its shell blocking your view. You can also return a held helmet by releasing it near the stand.
+
+这一环节以实际佩戴成功为完成依据，单纯抓起头盔不会推进流程。
+
+This stage completes when the helmet is successfully worn; picking it up alone does not advance the journey.
 
 ### ACT 2 · 拆解和观察零件 / Disassemble and Inspect the Parts
 
@@ -146,6 +163,10 @@ On arrival, the diver explains how to descend. He follows the rope down first an
 
 You move into position beside the rope, then descend smoothly to the seabed. Free control resumes on arrival. Head tracking remains active so you can look around during the journey. Quick travel is temporarily unavailable during rope movement to avoid interrupting the descent or ascent.
 
+绳索交互需在附近的触发范围内使用，单纯走近不会自动下潜。选择上下潜后，系统先把用户定位到安全的绳索轴线，再进行垂直移动，减少与水面围栏穿模。面板平时位于绳索附近，用户靠近后才跟随；移动过程中保持在视野内，并根据水上或水下状态显示对应操作。
+
+Rope interaction is available within its nearby activation area; approaching alone does not start a descent. After a travel selection, the system first aligns you with the safe rope axis, then moves vertically to reduce clipping through the surface railing. The panel stays near the rope until you approach, remains in view during travel, and offers the appropriate action for your surface or underwater position.
+
 ### 海底探索 · 观察港湾环境 / Seabed Exploration · Discover the Harbour
 
 水下空间包含海床、礁石、珊瑚、海草、港湾支柱和缓慢游动的鱼群。进入水下后，蓝绿色雾效帮助表现海水氛围。
@@ -161,6 +182,10 @@ The pool has been enlarged and fitted with blue perimeter boundaries to create a
 水中设有独立的重力与沉降控制。进入水中后，玩家会缓慢下沉；**按住手柄 A 键可以主动上浮**，松开后逐渐恢复下沉。离开水域后恢复陆地重力。
 
 The water uses a separate gravity and sinking system. After entering the water, you slowly sink. **Hold the controller’s A button to swim upward**; releasing it gradually resumes sinking. Normal land gravity returns when you leave the water.
+
+水中垂直移动还受绳索安全区域限制；在该区域外不会通过上浮、下沉穿过平台围栏。正常返回平台应使用绳索上浮交互。
+
+Vertical swimming is also limited to the safe rope area, preventing ascent or sinking through the platform railing outside that area. Use the rope ascent interaction to return to the platform.
 
 这种上浮方式用于水中的自由探索。若要沿指定路线返回平台，可以使用绳索手柄或 **上浮 / Ascend** 按钮。
 
@@ -191,7 +216,51 @@ There are **9 pieces of litter** near the rope, including plastic bottles, drink
 
 Return to the rope on the seabed and grip the ascent handle, or select **Ascend**. You rise smoothly along the rope and move onto the platform landing point before free control resumes.
 
+### 完成体验 · 自由探索或退出 / Finish · Explore Freely or Exit
+
+首次完成海底清理后，仍需上浮返回陆地平台，系统才显示整段体验完成。如果工作人员跳过清理任务，也保留返回平台的要求；跳过会单独记录，不算用户成功完成清理。
+
+After your first completed cleanup, return to the land platform before the system presents the end of the guided experience. If staff skip cleanup, returning to the platform is still required. A skip is recorded separately from successful task completion.
+
+完成提示提供 **自由探索 / Free exploration** 和 **退出体验 / Exit experience**。选择自由探索后，可继续参观和重听区域解说，界面保留明显的退出入口，便于随时结束。
+
+The completion prompt offers **Free exploration** and **Exit experience**. Free exploration lets you revisit exhibits and replay narration, with a clearly visible exit control available whenever you wish to finish.
+
+选择退出后，系统进入结束状态，显示感谢信息，并提醒你停留原地，等待工作人员协助摘下头显。工作人员可随后全局复位，准备下一轮体验。
+
+On exit, the session ends with a thank-you message asking you to remain still and wait for staff to help remove the headset. Staff can then reset the experience for the next visitor.
+
 ## 展览辅助功能 / Additional Exhibition Features
+
+### 按进度显示的区域引导 / Guidance Based on Progress
+
+处于任一体验区域内时，路线引导隐藏，给用户留出观察和探索空间。离开区域、处于展区之间时，系统根据体验进度提示下一步前往哪里；到达目标展台后，引导消失。到达范围以展台及配置区域为依据，不以字幕牌的位置判断。
+
+Route guidance hides while you are inside an experience area, leaving room to observe and explore. Between areas, it shows where to go next based on your progress, then disappears when you reach the target exhibit. Arrival uses the exhibit’s configured area rather than the position of its text panel.
+
+### 环境音与自动旁白 / Ambience and Automatic Narration
+
+博物馆内播放柔和背景音乐；靠近港口时逐渐过渡为风声和海浪声；实际进入水下后切换为水下氛围。背景音由用户位置决定，佩戴头盔等行为音效由真实操作事件触发。给潜水员戴上头盔不会把游客当成佩戴者并切换水下背景音。入水、出水时分别播放相应音效。
+
+Soft music accompanies the museum visit, gradually blending into wind and waves near the harbour and underwater ambience when you enter the water. Background sound follows your location; actions such as fitting a helmet trigger their own feedback. Fitting the diver’s helmet does not treat you as the wearer or switch your background to underwater sound. Water entry and exit have separate sound effects.
+
+ACT 1–3 已接入本地英文旁白。首次进入展台的指定范围时自动播放；正式流程中的目标展台还会等待到达引导淡出后开始。自由探索时，可在展台选择 **再次播放本区解说 / Replay this area's narration**，重复播放不会叠加多条解说。
+
+ACT 1–3 include local English narration that plays automatically on your first arrival within the exhibit area. For the current guided destination, playback also waits for the arrival guidance to fade out. During free exploration, select **Replay this area's narration** at the exhibit to listen again without overlapping narration tracks.
+
+旁白、环境音和操作反馈分开控制，旁白播放时环境音适当降低。Pause 暂停播放，Resume 从暂停处继续，Skip 清理旧阶段解说及相关反馈，Reset 清除播放进度和本轮访问记录。已接入的音频资源保存在本地，不依赖联网播放。
+
+Narration, ambience and feedback have separate controls, with ambience lowered during narration. Pause holds playback, Resume continues from that position, Skip clears the previous stage’s narration and related feedback, and Reset clears playback progress and visit history. Integrated audio is stored locally and does not require streaming.
+
+### 凝视辅助模式 / Accessible Head-Gaze Mode
+
+开始前可选择常规模式或辅助模式。辅助模式使用头部朝向，用户看向按钮并停留一段可调整的时间即可选择，不要求眼球追踪硬件；同时保留手柄操作。
+
+Choose Standard or Accessible Mode before starting. Accessible Mode uses your head direction: look at a button for an adjustable dwell time to select it. Eye-tracking hardware is not required, and controller input remains available.
+
+凝视时显示选择进度，移开视线会取消；长时间注视同一目标不会连续重复激活，手柄和凝视也不会重复提交同一次操作。当前主要支持按钮和菜单，抓取、佩戴、装配等物理任务的完整凝视替代仍需后续辅助操作接口，不能视为完全免手柄体验。
+
+A progress indicator shows the dwell selection; looking away cancels it. Continued gaze does not repeatedly activate the same target, and controller and gaze input do not duplicate the same submission. Current support focuses on buttons and menus. Full alternatives for grabbing, wearing and assembly still require assisted-action integration, so the experience is not yet entirely controller-free.
 
 ### 快捷导航 / Quick Navigation
 
@@ -209,9 +278,41 @@ Press the right controller’s A primary button or select the menu button to ope
 
 `vedio1`, `vedio2` and `vedio3` are three independent video displays. Each retains its own position and size and shows a player-style black screen, play button, progress bar and time display.
 
-当前它们是视频占位屏。未添加影片时，点击播放会提示暂无视频；配置影片后，支持播放、暂停和进度调整。
+三个展屏已接入 `Assets/Vedio/` 中的本地影片：`vedio1` 播放 `helmet_history.mp4`，`vedio2` 播放 `helmet_component.mp4`，`vedio3` 播放 `Diver.mp4`，支持播放、暂停和进度调整。
 
-They currently serve as video placeholders. Selecting Play without an assigned video displays a message that no video has been added. Once configured, the displays support playback, pause and seeking.
+The displays now use local films from `Assets/Vedio/`: `vedio1` plays `helmet_history.mp4`, `vedio2` plays `helmet_component.mp4`, and `vedio3` plays `Diver.mp4`. They support playback, pause and seeking.
+
+离开视频区域一定距离后，视频自动暂停并保留当前进度；返回时可点击播放继续观看。全局 Reset 清零视频进度，下一位游客从头开始。
+
+Moving beyond the viewing distance automatically pauses the video and preserves its position. Select Play on returning to continue. Global Reset clears video progress so the next visitor starts from the beginning.
+
+## 工作人员操作与接待准备 / Staff Controls and Visitor Handover
+
+统一工作人员面板显示会话状态和当前阶段，方便团队测试和现场协助。
+
+The staff panel shows session status and the current stage to support team testing and visitor assistance.
+
+| 操作 / Control | 系统行为 / Behaviour |
+| --- | --- |
+| Start | 从待机开始正式体验 Start the guided experience from Waiting |
+| Pause | 暂停流程、相关活动和音频 Pause the flow, related activities and audio |
+| Resume | 从暂停位置继续 Resume from the paused state |
+| Skip | 跳过当前环节并记为 Skipped，不当作任务成功 Skip the current stage and record Skipped rather than successful completion |
+| Reset | 停止当前动作并恢复初始会话，回到 Waiting Stop current actions, restore initial session state and return to Waiting |
+
+全局 Reset 统一恢复头盔、零件、潜水员位置和任务状态、用户初始位置与朝向、上下潜过程、垃圾对象和计数、音视频播放状态，以及界面和凝视进度。系统先终止抓取、移动或播放等活动，再恢复状态，便于准备下一位游客，而不必逐个重置展项或重新启动编辑器。
+
+Global Reset restores helmets, parts, the diver’s position and task state, the visitor’s starting position and orientation, rope travel, litter and counts, audio/video playback, UI and gaze progress. It first stops ongoing grabs, movement or playback, then restores state for the next visitor without individually resetting exhibits or restarting the editor.
+
+### 日志与移动端接入准备 / Logs and Mobile Integration Preparation
+
+系统提供会话状态、阶段进度、完成或跳过结果、用户操作记录，以及状态查询和控制命令接口，为后续 iPad 或其他移动端工作人员页面提供基础。日志可帮助团队分析体验进度和问题发生的位置。
+
+The system provides session status, stage progress, completion or skip results, user action records, state queries and control command interfaces. These support future staff interfaces on iPad or other mobile devices and help the team review progress and locate issues.
+
+**移动端页面、设备间实际通信和连接管理仍需后续开发。** 当前完成的是项目内的状态、日志和控制接口，并不代表已经能够通过 iPad 远程控制体验。
+
+**The mobile interface, actual communication between devices and connection management still require development.** The current implementation provides the in-project state, logging and control interfaces; it does not yet provide working iPad remote control.
 
 ## 场景调整与内容替换 / Scene Editing & Content Replacement
 
@@ -238,6 +339,10 @@ Exhibit signs use the helmet model’s `forward` front viewport to define the fr
 使用项目记录的团结引擎 **1.6.13（2022.3.61t14）** 打开工程，等待资源和脚本加载，再打开 `Assets/Scenes/BasicScene.unity`，使用已配置的 XR 运行环境和手柄进入 Play。
 
 Open the project with its recorded Tuanjie Engine version, **1.6.13 (2022.3.61t14)**. Wait for assets and scripts to load, open `Assets/Scenes/BasicScene.unity`, then enter Play using the configured XR runtime and controllers.
+
+进入 Play 后由工作人员面板点击 **Start**，再按教程和路线体验。使用真实头显时应停用键鼠模拟器。验证时还应检查 Pause、Resume、Skip，以及抓取、移动和播放期间的 Reset，并连续运行多轮体验，确认没有继承上一轮状态。
+
+In Play mode, select **Start** on the staff panel, then follow the tutorial and route. Disable the keyboard/mouse simulator when using a real headset. Also check Pause, Resume, Skip and Reset during grabs, movement and playback, and run multiple sessions to confirm that previous state does not carry over.
 
 打包前需把 `BasicScene.unity` 加入构建场景并确认启动顺序；当前构建列表启用的是 `SampleScene.scene`。
 
