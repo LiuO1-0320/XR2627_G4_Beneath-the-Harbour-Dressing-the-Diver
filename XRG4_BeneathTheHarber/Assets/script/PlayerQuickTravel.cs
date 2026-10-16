@@ -9,6 +9,13 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 public class PlayerQuickTravel : MonoBehaviour
 {
     public Transform start, act1, act2, act3, act4;
+    // Rotate the XR Origin, not the tracked camera: the original briefing remains to the right.
+    public Vector3 BriefingTutorialForward(Vector3 visitorPosition)
+    {
+        Vector3 towardBoard = start ? Vector3.ProjectOnPlane(start.position - visitorPosition, Vector3.up) : Vector3.forward;
+        if (towardBoard.sqrMagnitude < .001f) towardBoard = Vector3.forward;
+        return Quaternion.AngleAxis(-90f, Vector3.up) * towardBoard.normalized;
+    }
     public Font font;
     [Tooltip("Menu position relative to the player's headset, in metres.")]
     public Vector3 viewOffset = new Vector3(-1.0f, -0.1f, 1.4f);
@@ -24,6 +31,11 @@ public class PlayerQuickTravel : MonoBehaviour
 
     void Update()
     {
+        if (Application.isPlaying && StageCoordinator.Current)
+        {
+            if (panel) panel.SetActive(false);
+            return;
+        }
         if (!panel) Build();
         if (!Application.isPlaying) return;
         bool pressed = InputDevices.GetDeviceAtXRNode(XRNode.RightHand)
@@ -51,6 +63,7 @@ public class PlayerQuickTravel : MonoBehaviour
     }
     public void TravelTo(int index)
     {
+        if (StageCoordinator.Current) return;
         if (!Application.isPlaying) return;
         if (DiveRopeStation.IsPlayerTravelling)
         { status.text = "沿绳移动中，请稍候\nRope travel in progress"; return; }
@@ -83,6 +96,7 @@ public class PlayerQuickTravel : MonoBehaviour
         if (Physics.Raycast(position + Vector3.up * 2f, Vector3.down, out var hit, 5f, ~0, QueryTriggerInteraction.Ignore))
             position.y = hit.point.y;
         Vector3 facing = Vector3.ProjectOnPlane(lookAt - position, Vector3.up).normalized;
+        if (index == 0) facing = BriefingTutorialForward(position);
         var request = new TeleportRequest {
             destinationPosition = position,
             destinationRotation = Quaternion.LookRotation(facing),
@@ -90,6 +104,34 @@ public class PlayerQuickTravel : MonoBehaviour
         };
         if (teleport.QueueTeleportRequest(request)) status.text = "目的地 / Destination\n" + (index == 0 ? "Start" : "ACT " + index);
         else status.text = "暂时无法跳转 / Please try again";
+    }
+    // The session owns routing; move immediately so Reset cannot leave a queued teleport behind.
+    public void SessionTravelTo(int index)
+    {
+        Transform[] destinations = { start, act1, act2, act3, act4 };
+        if (index < 0 || index >= destinations.Length || !destinations[index] || !Camera.main) return;
+        var destination = destinations[index];
+        var origin = Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+        if (!origin) return;
+        Vector3 position = destination.position + (index == 1 || index == 2 ? Vector3.left * 2.8f : Vector3.back * 3f);
+        position.y = 0;
+        if (index == 4)
+        {
+            var rope = destination.GetComponentInChildren<DiveRopeStation>();
+            if (rope) position = rope.SurfaceDock;
+        }
+        else if (Physics.Raycast(position + Vector3.up * 2, Vector3.down, out var hit, 5, ~0, QueryTriggerInteraction.Ignore)) position.y = hit.point.y;
+        var controller = origin.GetComponent<CharacterController>();
+        bool wasEnabled = controller && controller.enabled;
+        if (wasEnabled) controller.enabled = false;
+        Vector3 facing = Vector3.ProjectOnPlane(destination.position - position, Vector3.up);
+        if (index == 0) facing = BriefingTutorialForward(position);
+        Vector3 forward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up);
+        if (facing.sqrMagnitude > 0.001f && forward.sqrMagnitude > 0.001f)
+            origin.transform.RotateAround(Camera.main.transform.position, Vector3.up, Vector3.SignedAngle(forward, facing, Vector3.up));
+        Vector3 offset = Camera.main.transform.position - origin.transform.position; offset.y = 0;
+        origin.transform.position = position - offset;
+        if (wasEnabled) controller.enabled = true;
     }
     void Build()
     {
@@ -162,14 +204,14 @@ public class PlayerQuickTravel : MonoBehaviour
 }
 
 /// <summary>Respond on trigger press so a moving headset menu cannot cancel the click on release.</summary>
-public class QuickTravelPressButton : Button
+public class QuickTravelPressButton : AccessibleButton
 {
     public override void OnPointerDown(PointerEventData eventData)
     {
         base.OnPointerDown(eventData);
         // XR uses the left mouse button event for the trigger on either hand.
         if (eventData.button == PointerEventData.InputButton.Left && IsActive() && IsInteractable())
-            onClick.Invoke();
+            SubmitOnce(false);
     }
 
     // The action already ran on press. Keep Button's hover, release and keyboard submit behaviour.

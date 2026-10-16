@@ -2,8 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [ExecuteAlways]
-public class HelmetInteractionGuidance : MonoBehaviour
+public class HelmetInteractionGuidance : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 100;
+    public void PrepareReset() { remaining=0; previousWorn=false; if(notificationGroup) notificationGroup.alpha=0; }
+    public void RestoreReset() { remaining=0; previousWorn=false; if(notificationGroup) notificationGroup.alpha=0; if(stationText) stationText.text=instructions; }
+
     public DivingHelmetWearable wearable;
     public Font font;
     [TextArea(4, 10)] public string instructions = "试戴潜水头盔 / Try the diving helmet\n按住握把抓取 → 移到头部附近 → 松开佩戴\nHold grip → bring to your head → release\n按 B / Y 取下并放回展台 / Return to stand";

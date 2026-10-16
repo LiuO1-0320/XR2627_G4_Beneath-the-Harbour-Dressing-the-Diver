@@ -572,7 +572,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 29
     m_FontStyle: 0
     m_BestFit: 0
@@ -739,6 +739,122 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 40511547}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &44065438
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 44065442}
+  - component: {fileID: 44065441}
+  - component: {fileID: 44065440}
+  - component: {fileID: 44065439}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Experience Session
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &44065439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44065438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d4797d2f1c04ab5b2b62ab8956bd5a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeInSeconds: 1.5
+  fadeOutSeconds: 0.4
+  arrivalRadius: 3
+  exhibitArrivalRadius: 1.25
+  arrivalHeightTolerance: 2
+  font: {fileID: 0}
+--- !u!114 &44065440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44065438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa79fb2c0c187dc4abbe978117009c1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stages:
+  - title: Briefing
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 0}
+    objects: []
+    activities: []
+  - title: The Case
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 199062040}
+    objects: []
+    activities: []
+  - title: Scale-up
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 107858611}
+    objects: []
+    activities: []
+  - title: Inside (included in ACT1)
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 0}
+    objects: []
+    activities: []
+  - title: Dress the Diver
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 594411106}
+    objects: []
+    activities: []
+  - title: Descent
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 0}
+    objects: []
+    activities: []
+  - title: Seabed cleanup
+    narration: {fileID: 0}
+    arrivalArea: {fileID: 0}
+    objects: []
+    activities: []
+  navigation: {fileID: 810000005}
+  explorationAreaPadding: 2
+  explorationFallbackRadius: 5
+--- !u!114 &44065441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44065438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9cfbe12f0ef90a43b2833ce0ff459c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &44065442
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44065438}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &44385975
 GameObject:
   m_ObjectHideFlags: 0
@@ -811,7 +927,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -1605,6 +1721,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 106484246}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &107858610
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 107858612}
+  - component: {fileID: 107858611}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: ACT2_ArrivalArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &107858611
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107858610}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4, y: 2.5, z: 5}
+  m_Center: {x: 0, y: 1.25, z: 0}
+--- !u!4 &107858612
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107858610}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 141.54, y: 0, z: -1.99}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &115668260
 GameObject:
   m_ObjectHideFlags: 0
@@ -1822,7 +1992,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -1835,7 +2005,8 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "03  \u88C5\u5907\u51C6\u5907 / SUITING UP\n\u5E2E\u52A9\u6F5C\u6C34\u5458\u6234\u597D\u5934\u76D4\nHelp
-    the diver put on the helmet"
+    the diver put on the helmet\n\u9760\u8FD1\u4EE5\u8046\u542C\u89E3\u8BF4\nCome
+    closer to hear the narration"
 --- !u!222 &116470229
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2789,6 +2960,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 194436183}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &199062039
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 199062041}
+  - component: {fileID: 199062040}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: ACT1_ArrivalArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &199062040
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 199062039}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 2.5, z: 5}
+  m_Center: {x: 0, y: 1.25, z: 0}
+--- !u!4 &199062041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 199062039}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 146.5, y: 0.07, z: -18.97}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &206368941
 GameObject:
   m_ObjectHideFlags: 0
@@ -4418,7 +4643,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -5052,7 +5277,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -6426,7 +6651,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 27
     m_FontStyle: 0
     m_BestFit: 0
@@ -8009,6 +8234,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 590002201}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &594411105
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 594411107}
+  - component: {fileID: 594411106}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: ACT3_ArrivalArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &594411106
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 594411105}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5, y: 2.5, z: 3}
+  m_Center: {x: 0, y: 1.25, z: 0}
+--- !u!4 &594411107
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 594411105}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 161.459, y: 0.055, z: 16.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &602011893
 GameObject:
   m_ObjectHideFlags: 0
@@ -9037,7 +9316,7 @@ MonoBehaviour:
   introduction: "\r \u6B22\u8FCE\u6765\u5230\u6D77\u4E8B\u535A\u7269\u9986\r\n\u63A5\u4E0B\u6765\u6211\u4EEC\u5C06\u901A\u8FC7\u4E00\u4E2A\u7B80\u77ED\u7684\u4EFB\u52A1\u5F15\u5BFC\u6765\u8BA9\u4F60\u5B66\u4E60\u4E86\u89E3\u548C\u201C\u94DC\u5236\u5934\u76D4\u201D\u4EE5\u53CA\u5176\u80CC\u540E\u548C\u9999\u6E2F\u7EF4\u591A\u5229\u4E9A\u6E2F\u6709\u5173\u7684\u5386\u53F2\u6545\u4E8B\u3002\n\r\nWelcome
     to the Maritime Museum\r\nNext, we\u2019ll take you through a short guided tour
     to help you learn about the \u2018Bronze Helmet\u2019 and the historical story
-    behind it, which is linked to Victoria Harbour in Hong Kong.\n\n\u73B0\u5728\u4EB2\u5411\u53F3\u8F6C\nnow
+    behind it, which is linked to Victoria Harbour in Hong Kong.\n\n\u73B0\u5728\u8BF7\u5411\u53F3\u8F6C\nnow
     please turn right\n\n"
   font: {fileID: 0}
   backgroundColor: {r: 0.025, g: 0.09, b: 0.12, a: 0.97}
@@ -9119,7 +9398,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -9442,6 +9721,38 @@ MonoBehaviour:
   font: {fileID: 0}
   fontSize: 79
   arrowColor: {r: 0.2, g: 0.85, b: 0.72, a: 1}
+--- !u!21 &741065196
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  m_Shader: {fileID: 10101, guid: 0000000000000000e000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 1711864399}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
 --- !u!1 &750000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -10041,7 +10352,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -10054,7 +10365,8 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "01  \u94DC\u5236\u6F5C\u6C34\u5934\u76D4\nDIVING HELMET\n\u9760\u8FD1\u89C2\u5BDF
-    \xB7 \u6293\u53D6\u63A2\u7D22\nApproach, inspect and handle"
+    \xB7 \u6293\u53D6\u63A2\u7D22\nApproach, inspect and handle\n\u9760\u8FD1\u4EE5\u8046\u542C\u89E3\u8BF4\nCome
+    closer to hear the narration"
 --- !u!222 &781316347
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10535,7 +10847,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
@@ -10607,7 +10919,6 @@ MonoBehaviour:
   seabed: {fileID: 860000014}
   font: {fileID: 0}
   travelDuration: 9
-  interactionDistance: 3.5
 --- !u!114 &860000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11016,10 +11327,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   screenTitle: EXHIBIT FILM 1
-  videoClip: {fileID: 0}
+  videoClip: {fileID: 32900000, guid: 42b37d7cf6db5654eb0c83937337af33, type: 3}
   videoUrl: 
   loop: 1
   volume: 0.65
+  viewingDistance: 4
+  viewingAnchor: {fileID: 0}
 --- !u!114 &890002005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11033,10 +11346,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   screenTitle: EXHIBIT FILM 2
-  videoClip: {fileID: 0}
+  videoClip: {fileID: 32900000, guid: b6990b9542ce4d54bad3ff0c8e5f9e45, type: 3}
   videoUrl: 
   loop: 1
   volume: 0.65
+  viewingDistance: 4
+  viewingAnchor: {fileID: 0}
 --- !u!114 &890003005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11050,10 +11365,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   screenTitle: EXHIBIT FILM 3
-  videoClip: {fileID: 0}
+  videoClip: {fileID: 32900000, guid: 0aebf6589fc20ef45b93c29d94979b91, type: 3}
   videoUrl: 
   loop: 1
   volume: 0.65
+  viewingDistance: 4
+  viewingAnchor: {fileID: 0}
 --- !u!1 &891692426
 GameObject:
   m_ObjectHideFlags: 0
@@ -12580,7 +12897,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -12593,7 +12910,8 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "02  \u6F5C\u6C34\u88C5\u5907\u63A2\u7D22\nEQUIPMENT STUDY\n\u89C2\u5BDF\u90E8\u4EF6
-    \xB7 \u5C1D\u8BD5\u4E92\u52A8\nInspect the parts and interact"
+    \xB7 \u5C1D\u8BD5\u4E92\u52A8\nInspect the parts and interact\n\u9760\u8FD1\u4EE5\u8046\u542C\u89E3\u8BF4\nCome
+    closer to hear the narration"
 --- !u!222 &1045107964
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12674,7 +12992,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -13686,6 +14004,38 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1110488986}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!128 &1112330068
+Font:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  serializedVersion: 5
+  m_LineSpacing: 63.351562
+  m_DefaultMaterial: {fileID: 741065196}
+  m_FontSize: 48
+  m_Texture: {fileID: 1711864399}
+  m_AsciiStartOffset: 0
+  m_Tracking: 1
+  m_CharacterSpacing: 0
+  m_CharacterPadding: 1
+  m_ConvertCase: -2
+  m_CharacterRects: []
+  m_KerningValues: []
+  m_PixelScale: 0.1
+  m_FontData: 
+  m_Ascent: 50.789062
+  m_Descent: 0
+  m_DefaultStyle: 0
+  m_FontNames:
+  - Microsoft YaHei
+  - Noto Sans CJK SC
+  - Arial
+  m_FallbackFonts: []
+  m_FontRenderingMode: 0
+  m_UseLegacyBoundsCalculation: 0
+  m_ShouldRoundAdvanceValue: 1
 --- !u!1 &1114170059
 GameObject:
   m_ObjectHideFlags: 0
@@ -15897,38 +16247,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2a8f4e3902e9456448887552a6387fe1, type: 3}
   m_PrefabInstance: {fileID: 436221740}
   m_PrefabAsset: {fileID: 0}
---- !u!21 &1304186371
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  m_Shader: {fileID: 10101, guid: 0000000000000000e000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 1956716159}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
 --- !u!1 &1307050223
 GameObject:
   m_ObjectHideFlags: 0
@@ -16478,7 +16796,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -18905,7 +19223,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
@@ -19587,7 +19905,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 44
     m_FontStyle: 0
     m_BestFit: 0
@@ -20012,7 +20330,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -20830,7 +21148,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 30
     m_FontStyle: 0
     m_BestFit: 0
@@ -21447,6 +21765,63 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1706015940}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!28 &1711864399
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 4
+  m_Width: 0
+  m_Height: 0
+  m_CompleteImageSize: 0
+  m_MipsStripped: 0
+  m_WebStreaming: 0
+  m_PriorityLevel: 0
+  m_UploadedMode: 0
+  m_DataStreamData:
+    size: 0
+    path: 
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 0
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 0
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 0
+  _typelessdata: 
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
+  m_OriginalWidth: 0
+  m_OriginalHeight: 0
+  m_OriginalAssetGuid: 00000000000000000000000000000000
 --- !u!1 &1722324735
 GameObject:
   m_ObjectHideFlags: 0
@@ -23902,7 +24277,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -24325,7 +24700,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 38
     m_FontStyle: 0
     m_BestFit: 0
@@ -24929,63 +25304,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1949384041}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!28 &1956716159
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 4
-  m_Width: 0
-  m_Height: 0
-  m_CompleteImageSize: 0
-  m_MipsStripped: 0
-  m_WebStreaming: 0
-  m_PriorityLevel: 0
-  m_UploadedMode: 0
-  m_DataStreamData:
-    size: 0
-    path: 
-  m_TextureFormat: 4
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 0
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 0
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_LightmapFormat: 0
-  m_ColorSpace: 0
-  m_PlatformBlob: 
-  image data: 0
-  _typelessdata: 
-  m_StreamData:
-    serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
-  m_OriginalWidth: 0
-  m_OriginalHeight: 0
-  m_OriginalAssetGuid: 00000000000000000000000000000000
 --- !u!1 &1970074249
 GameObject:
   m_ObjectHideFlags: 0
@@ -25318,38 +25636,6 @@ Transform:
   - {fileID: 770000010}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!128 &2025332383
-Font:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  serializedVersion: 5
-  m_LineSpacing: 63.351562
-  m_DefaultMaterial: {fileID: 1304186371}
-  m_FontSize: 48
-  m_Texture: {fileID: 1956716159}
-  m_AsciiStartOffset: 0
-  m_Tracking: 1
-  m_CharacterSpacing: 0
-  m_CharacterPadding: 1
-  m_ConvertCase: -2
-  m_CharacterRects: []
-  m_KerningValues: []
-  m_PixelScale: 0.1
-  m_FontData: 
-  m_Ascent: 50.789062
-  m_Descent: 0
-  m_DefaultStyle: 0
-  m_FontNames:
-  - Microsoft YaHei
-  - Noto Sans CJK SC
-  - Arial
-  m_FallbackFonts: []
-  m_FontRenderingMode: 0
-  m_UseLegacyBoundsCalculation: 0
-  m_ShouldRoundAdvanceValue: 1
 --- !u!1 &2028597663
 GameObject:
   m_ObjectHideFlags: 0
@@ -26318,7 +26604,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 2025332383}
+    m_Font: {fileID: 1112330068}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -26582,3 +26868,7 @@ SceneRoots:
   - {fileID: 495891220}
   - {fileID: 1704385523}
   - {fileID: 870000004}
+  - {fileID: 44065442}
+  - {fileID: 199062041}
+  - {fileID: 107858612}
+  - {fileID: 594411107}

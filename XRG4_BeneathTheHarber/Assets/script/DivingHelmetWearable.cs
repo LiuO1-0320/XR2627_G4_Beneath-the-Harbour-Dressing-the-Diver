@@ -5,8 +5,12 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 /// <summary>Grab, release near the HMD to wear, then B/Y to return to the exhibit.</summary>
-public class DivingHelmetWearable : MonoBehaviour
+public class DivingHelmetWearable : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 0;
+    public void PrepareReset() { PrepareSessionReset(); }
+    public void RestoreReset() { ReturnToStand(); previousButton=false; if(IsWorn || (grab && grab.isSelected)) throw new System.InvalidOperationException("Helmet reset did not release the visitor."); }
+
     public Transform helmet;
     public Transform head;
     [Min(0.1f)] public float wearDistance = 0.4f;
@@ -28,6 +32,7 @@ public class DivingHelmetWearable : MonoBehaviour
     bool docked = true;
     int wearFrame = -1;
     bool previousButton;
+    System.Guid examinationSession;
 
     void Start()
     {
@@ -71,6 +76,10 @@ public class DivingHelmetWearable : MonoBehaviour
 
     void OnGrab(SelectEnterEventArgs args)
     {
+        SessionTelemetry.Report("HelmetGrabbed", this);
+        if (StageCoordinator.Current && StageCoordinator.Current.Audio) StageCoordinator.Current.Audio.PlayFeedback(false);
+        examinationSession = StageCoordinator.Current && !GetComponent<DiverNpcInteraction>() && StageCoordinator.Allows(ExperienceStage.TheCase)
+            ? StageCoordinator.Current.Controller.Session.SessionId : System.Guid.Empty;
         wearFrame = -1;
         docked = false;
         body.detectCollisions = true;
@@ -78,6 +87,8 @@ public class DivingHelmetWearable : MonoBehaviour
     }
     void OnRelease(SelectExitEventArgs args)
     {
+        SessionTelemetry.Report(args.isCanceled ? "HelmetGrabCancelled" : "HelmetReleased", this);
+        if (args.isCanceled) { wearFrame = -1; examinationSession = System.Guid.Empty; return; }
         // Resolve every release after XR has restored its cached Rigidbody state.
         // The cached state is kinematic while docked, so gravity alone is insufficient.
         if (!IsWorn) wearFrame = Time.frameCount + 2;
@@ -86,18 +97,31 @@ public class DivingHelmetWearable : MonoBehaviour
     {
         if (!helmet || !grab) return;
         if (!head && Camera.main) head = Camera.main.transform;
+        // A worn helmet must keep following tracking, including during pause and routing.
+        FollowHead();
+        bool canRemoveWorn = IsWorn && (!StageCoordinator.Current ||
+            StageCoordinator.Current.Controller.Session.Status == SessionStatus.Running);
+        if (!StageCoordinator.AllowsHelmet(this) && !canRemoveWorn) return;
         if (wearFrame >= 0 && Time.frameCount >= wearFrame)
         {
             wearFrame = -1;
             if (!grab.isSelected && head && Vector3.Distance(helmet.TransformPoint(center), head.position) <= wearDistance)
             {
                 IsWorn = true; grab.enabled = false;
+                SessionTelemetry.Report("HelmetFitted", this, GetComponent<DiverNpcInteraction>() ? "Diver" : "Visitor");
+                if (StageCoordinator.Current && StageCoordinator.Current.Audio) StageCoordinator.Current.Audio.PlayFeedback(true);
                 body.isKinematic = true; body.useGravity = false; body.detectCollisions = false;
                 if (hideShellWhileWorn)
                     foreach (var renderer in renderers) renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                FollowHead();
+                // Publish only after the same successful fitting that drives regional guidance.
+                if (examinationSession != System.Guid.Empty && StageCoordinator.Current)
+                    StageCoordinator.Current.QueueInteraction(examinationSession, ExperienceStage.TheCase, VisitorAction.HelmetEquipped);
+                examinationSession = System.Guid.Empty;
             }
             else if (!grab.isSelected && !IsWorn)
             {
+                SessionTelemetry.Report("HelmetFitMissed", this, "Released outside fitting distance");
                 if (NearStand()) ReturnToStand();
                 else
                 {
@@ -110,17 +134,23 @@ public class DivingHelmetWearable : MonoBehaviour
             }
         }
         bool button = SecondaryPressed(XRNode.LeftHand) || SecondaryPressed(XRNode.RightHand);
-        if (returnWithSecondaryButton && IsWorn && button && !previousButton) ReturnToStand();
-        previousButton = button;
-        if (IsWorn && head)
+        if (returnWithSecondaryButton && IsWorn && button && !previousButton)
         {
-            helmet.rotation = head.rotation * Quaternion.Euler(wornEulerOffset);
-            helmet.position += head.TransformPoint(wornCenterOffset) - helmet.TransformPoint(center);
+            ReturnToStand();
         }
+        previousButton = button;
+        FollowHead();
         if (!IsWorn && !grab.isSelected && helmet.position.y < initialPosition.y - 10) ReturnToStand();
+    }
+    void FollowHead()
+    {
+        if (!IsWorn || !head || !helmet) return;
+        helmet.rotation = head.rotation * Quaternion.Euler(wornEulerOffset);
+        helmet.position += head.TransformPoint(wornCenterOffset) - helmet.TransformPoint(center);
     }
     void FixedUpdate()
     {
+        if (!StageCoordinator.AllowsHelmet(this)) return;
         if (!helmet || !grab || IsWorn || docked || grab.isSelected || wearFrame >= 0) return;
         if (NearStand()) ReturnToStand();
     }
@@ -135,11 +165,18 @@ public class DivingHelmetWearable : MonoBehaviour
     {
         return InputDevices.GetDeviceAtXRNode(node).TryGetFeatureValue(CommonUsages.secondaryButton, out bool pressed) && pressed;
     }
+    public void PrepareSessionReset()
+    {
+        examinationSession = System.Guid.Empty;
+        wearFrame = -1;
+        if (grab) grab.enabled = false;
+    }
     [ContextMenu("Return helmet to stand")]
     public void ReturnToStand()
     {
         if (!body || grab.isSelected) return;
         IsWorn = false; wearFrame = -1;
+        examinationSession = System.Guid.Empty;
         if (!body.isKinematic) { body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
         docked = true;
         body.isKinematic = true; body.useGravity = false; body.detectCollisions = true;

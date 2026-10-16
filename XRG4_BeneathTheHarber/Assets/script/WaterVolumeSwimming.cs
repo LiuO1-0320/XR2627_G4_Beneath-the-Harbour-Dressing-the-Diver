@@ -6,8 +6,8 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Gravity;
 
 /// <summary>
-/// Minecraft-style buoyancy for a water body: while the player's head is inside this
-/// trigger volume, the GravityProvider is locked off and the player slowly sinks;
+/// Input-driven buoyancy for a water body: while the player's head is inside this
+/// trigger volume, the GravityProvider is locked off and depth is held without input;
 /// left thumbstick up/down (or the jump button) swims up/down. Exiting the volume
 /// restores normal gravity. Land behavior is untouched.
 /// Setup: put this on a trigger collider covering the water body; the volume's top
@@ -15,8 +15,12 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion.Gravity;
 /// by the rig's existing Jump and Move providers.
 /// </summary>
 [AddComponentMenu("XR/Locomotion/Water Volume Swimming")]
-public class WaterVolumeSwimming : LocomotionProvider, IGravityController
+public class WaterVolumeSwimming : LocomotionProvider, IGravityController, IResettable
 {
+    public int ResetOrder => 50;
+    public void PrepareReset() { ExitWater(); }
+    public void RestoreReset() { ExitWater(); verticalSpeed=0; if(gravityProvider) gravityProvider.ResetFallForce(); }
+
     [Header("References (auto-found if empty)")]
     [SerializeField] XROrigin origin;
     [SerializeField] GravityProvider gravityProvider;
@@ -42,10 +46,40 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
     float verticalSpeed;
     bool submerged;
     bool gravityLocked;
+    DiveRopeStation diveStation;
 
     public bool canProcess => isActiveAndEnabled;
     public bool gravityPaused => submerged;
     public bool IsSubmerged => submerged;
+    public float DistanceToShore(Vector3 position)
+    {
+        var volume = waterVolume ? waterVolume : GetComponent<Collider>();
+        if (!volume || !volume.enabled || !volume.gameObject.activeInHierarchy) return float.PositiveInfinity;
+        return AudioDirector.HorizontalDistance(position, volume.bounds);
+    }
+    // Audio must query geometry even while rope travel disables this locomotion provider.
+    public bool ContainsHead(Vector3 position, bool wasInWater = false)
+    {
+        var volume = waterVolume ? waterVolume : GetComponent<Collider>();
+        if (!volume || !volume.enabled || !volume.gameObject.activeInHierarchy) return false;
+        var bounds = volume.bounds;
+        return position.x >= bounds.min.x && position.x <= bounds.max.x
+            && position.z >= bounds.min.z && position.z <= bounds.max.z && position.y >= bounds.min.y
+            && position.y < bounds.max.y + (wasInWater ? 0.05f : -0.05f);
+    }
+    public bool IsAboveSurface(Vector3 position)
+    {
+        var volume = waterVolume ? waterVolume : GetComponent<Collider>();
+        return volume && position.y >= volume.bounds.max.y;
+    }
+    public bool IsOverWater(Vector3 position)
+    {
+        var volume = waterVolume ? waterVolume : GetComponent<Collider>();
+        if (!volume || !volume.enabled || !volume.gameObject.activeInHierarchy) return false;
+        var bounds = volume.bounds;
+        return position.x >= bounds.min.x && position.x <= bounds.max.x
+            && position.z >= bounds.min.z && position.z <= bounds.max.z;
+    }
 
     protected override void Awake()
     {
@@ -53,6 +87,7 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
         if (origin == null) origin = FindFirstObjectByType<XROrigin>();
         if (gravityProvider == null) gravityProvider = FindFirstObjectByType<GravityProvider>();
         if (waterVolume == null) waterVolume = GetComponent<Collider>();
+        diveStation = FindFirstObjectByType<DiveRopeStation>();
     }
 
     protected virtual void OnEnable()
@@ -80,6 +115,7 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
 
     protected virtual void Update()
     {
+        if (StageCoordinator.Current && StageCoordinator.Current.Controller.Session.Status != SessionStatus.Running) return;
         if (origin == null || gravityProvider == null || waterVolume == null)
             return;
 
@@ -115,9 +151,14 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
         }
         else
         {
-            // Minecraft feel: gentle sink toward a terminal sinking speed
-            verticalSpeed = Mathf.MoveTowards(verticalSpeed, -maxSinkSpeed, sinkAcceleration * Time.deltaTime);
+            // Releasing input must not start/continue an unintended dive near the rope.
+            verticalSpeed = 0;
         }
+
+        // Use the same opening for keyboard/controller swimming as for the rope buttons.
+        // Horizontal exploration remains available; vertical movement outside the shaft stops.
+        if (diveStation && IsOverWater(diveStation.transform.position) && !diveStation.IsInsideShaft(head.position))
+            verticalSpeed = 0;
 
         TryStartLocomotionImmediately();
         if (locomotionState != LocomotionState.Moving)
@@ -129,7 +170,7 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
 
     void EnterWater()
     {
-        verticalSpeed = -maxSinkSpeed;
+        verticalSpeed = 0;
         if (gravityProvider != null)
             gravityLocked = gravityProvider.TryLockGravity(this, GravityOverride.ForcedOff);
     }

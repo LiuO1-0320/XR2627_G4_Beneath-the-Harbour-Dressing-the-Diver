@@ -7,8 +7,12 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 
 /// <summary>Pick up litter with either hand and release it into the seabed collection basket.</summary>
 [ExecuteAlways]
-public class SeabedCleanup : MonoBehaviour
+public class SeabedCleanup : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 30;
+    public void PrepareReset() {  }
+    public void RestoreReset() { ResetForSession(); if(collected!=0) throw new System.InvalidOperationException("Cleanup count was not cleared."); }
+
     public Transform seabed;
     class Litter
     {
@@ -25,7 +29,11 @@ public class SeabedCleanup : MonoBehaviour
     Transform basket, panel;
     Font font;
     Text progress;
+    Button resetButton;
     int collected;
+    public Transform CollectionTarget => basket;
+    public int CollectedCount => collected;
+    public int TotalCount => litter.Count;
     float Bottom => seabed ? transform.InverseTransformPoint(seabed.TransformPoint(Vector3.up * .5f)).y : -6.41f;
     HideFlags Flags => Application.isPlaying ? HideFlags.None : HideFlags.HideAndDontSave;
     void OnEnable() { Build(); }
@@ -102,6 +110,17 @@ public class SeabedCleanup : MonoBehaviour
             if (facing.sqrMagnitude > .001f) panel.rotation = Quaternion.LookRotation(facing);
         }
         if (!Application.isPlaying) return;
+        var current = StageCoordinator.Current;
+        if (resetButton) resetButton.interactable = !current ||
+            (current.Controller.Session.Status == SessionStatus.Running && current.Controller.Session.Stage == ExperienceStage.FreeExploration);
+        if (!StageCoordinator.Allows(ExperienceStage.SeabedCleanup)) return;
+        if (current && current.Controller.Session.Stage == ExperienceStage.SeabedCleanup && current.Controller.Session.CleanupResolved)
+        {
+            progress.text = current.Controller.Session.CleanupCompleted
+                ? "全部回收完成！请上浮返回陆地平台\nALL COLLECTED - RETURN TO THE LAND PLATFORM"
+                : "工作人员已跳过回收，请上浮返回陆地平台\nCOLLECTION SKIPPED - RETURN TO THE LAND PLATFORM";
+            return;
+        }
         foreach (var item in litter)
         {
             if (item.collected || !item.grab) continue;
@@ -111,19 +130,43 @@ public class SeabedCleanup : MonoBehaviour
             if (item.held && Mathf.Abs(inBasket.x) < .65f && Mathf.Abs(inBasket.z) < .55f && inBasket.y > .2f && inBasket.y < 1.5f)
             {
                 item.collected = true; collected++;
+                SessionTelemetry.Report("LitterCollected", item.root, collected.ToString());
                 item.root.gameObject.SetActive(false); RefreshProgress(); continue;
             }
             Vector3 position = generated.transform.InverseTransformPoint(item.root.position);
             if (position.y < Bottom - 1 || Vector3.Distance(position, item.start) > 35) ReturnItem(item);
         }
+        var coordinator = StageCoordinator.Current;
+        if (coordinator)
+            coordinator.Controller.Session.ReportCleanupProgress(coordinator.Controller.Session.SessionId, collected, litter.Count);
     }
     public void ResetCleanup()
     {
+        // Guided progress cannot be erased mid-task. Replay is available in free exploration.
+        var coordinator = StageCoordinator.Current;
+        if (Application.isPlaying && coordinator && coordinator.Controller.Session.Status != SessionStatus.Idle
+            && !(coordinator.Controller.Session.Status == SessionStatus.Running
+                && coordinator.Controller.Session.Stage == ExperienceStage.FreeExploration)) return;
         foreach (var item in litter)
             if (item.grab && item.grab.isSelected) { progress.text = "请先松开手里的垃圾，再重置\nRelease the item before resetting"; return; }
         collected = 0;
         foreach (var item in litter) { item.collected = item.held = false; ReturnItem(item); }
         RefreshProgress();
+    }
+    public void ResetForSession()
+    {
+        if (!generated) return;
+        // Cancel selection before restoring transforms; the public visitor reset still asks for release.
+        var enabledGrabs = new List<XRGrabInteractable>();
+        foreach (var item in litter)
+            if (item.grab && item.grab.enabled) { enabledGrabs.Add(item.grab); item.grab.enabled = false; }
+        try
+        {
+            foreach (var item in litter)
+                if (item.grab && item.grab.isSelected) throw new System.InvalidOperationException("Cleanup item is still selected after cancellation.");
+            ResetCleanup();
+        }
+        finally { foreach (var grab in enabledGrabs) if (grab) grab.enabled = true; }
     }
     void ReturnItem(Litter item)
     {
@@ -134,7 +177,7 @@ public class SeabedCleanup : MonoBehaviour
     }
     void RefreshProgress()
     {
-        progress.text = collected == litter.Count ? "全部回收完成！感谢你保护海港\nALL LITTER COLLECTED · THANK YOU!" :
+        progress.text = collected == litter.Count ? "全部回收完成！请上浮到水面\nALL LITTER COLLECTED - ASCEND TO THE SURFACE" :
             "已回收 / Collected: " + collected + " / " + litter.Count;
     }
     void BuildPanel()
@@ -151,7 +194,7 @@ public class SeabedCleanup : MonoBehaviour
         progress = Label(panel, "", new Vector2(0, -45), 38);
         var image = Graphic<Image>(panel, "Reset collection", new Vector2(0, -225), new Vector2(700, 90));
         image.color = new Color(.05f, .38f, .34f); image.raycastTarget = true;
-        var button = image.gameObject.AddComponent<QuickTravelPressButton>(); button.targetGraphic = image;
+        var button = image.gameObject.AddComponent<QuickTravelPressButton>(); button.targetGraphic = image; resetButton = button;
         button.onClick.AddListener(ResetCleanup);
         Label(image.transform, "重新收集 / Reset cleanup", Vector2.zero, 32);
     }

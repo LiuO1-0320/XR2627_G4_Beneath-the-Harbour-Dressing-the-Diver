@@ -180,7 +180,7 @@ public class HarbourSceneDressing : MonoBehaviour
         Assemble(number + " 提示板 · Exhibit information", label, () => {
             Box("Exhibit label pedestal", label + Vector3.up * .58f, new Vector3(.08f, 1.16f, .08f), brass, true);
             Sign("Exhibit caption " + number, label + Vector3.up * 1.28f, yaw, 1.3f, .78f,
-                number + "  " + title + "\n" + caption, ink, 34);
+                number + "  " + title + "\n" + caption + "\n靠近以聆听解说\nCome closer to hear the narration", ink, 34);
             Box("Exhibit label base", label + Vector3.up * .04f, new Vector3(.45f, .08f, .45f), ink, true);
         });
     }

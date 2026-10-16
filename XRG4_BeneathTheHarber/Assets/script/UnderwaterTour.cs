@@ -2,8 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Local harbour atmosphere and gentle fish movement; no forced XR camera motion.</summary>
-public class UnderwaterTour : MonoBehaviour
+public class UnderwaterTour : MonoBehaviour, IResettable
 {
+    public int ResetOrder => 60;
+    public void PrepareReset() { RestoreFog(); }
+    public void RestoreReset() { RestoreFog(); animationTime=0; for(int i=0;i<fish.Count;i++) if(fish[i]) fish[i].localPosition=origins[i]; }
+
     readonly List<Transform> fish = new List<Transform>();
     readonly List<Vector3> origins = new List<Vector3>();
     Transform waterSurface, seabed;
@@ -12,6 +16,7 @@ public class UnderwaterTour : MonoBehaviour
     Color oldColor;
     FogMode oldMode;
     float oldDensity, oldStart, oldEnd;
+    float animationTime;
 
     void Start()
     {
@@ -24,9 +29,11 @@ public class UnderwaterTour : MonoBehaviour
 
     void Update()
     {
+        if (!StageCoordinator.Current || StageCoordinator.Current.Controller.Session.Status == SessionStatus.Running)
+            animationTime += Time.deltaTime;
         for (int i = 0; i < fish.Count; i++)
         {
-            float phase = Time.time * 0.22f + i * 0.7f;
+            float phase = animationTime * 0.22f + i * 0.7f;
             fish[i].localPosition = origins[i] + new Vector3(Mathf.Sin(phase) * 2.5f,
                 Mathf.Sin(phase * 1.7f) * 0.25f, Mathf.Cos(phase) * 1.5f);
             fish[i].localRotation = Quaternion.LookRotation(new Vector3(Mathf.Cos(phase) * 2.5f, 0, -Mathf.Sin(phase) * 1.5f));
