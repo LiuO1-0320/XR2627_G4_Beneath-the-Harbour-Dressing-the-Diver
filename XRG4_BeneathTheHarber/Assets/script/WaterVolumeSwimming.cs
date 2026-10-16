@@ -35,8 +35,10 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
     [Min(0f)] public float sinkAcceleration = 0.6f;
     [Min(0f)] public float maxSinkSpeed = 1.2f;
     [Min(0f)] public float swimUpSpeed = 1.8f;
-    [Min(0f)] public float swimDownSpeed = 1.2f;
+    [Min(0f)] public float swimDownSpeed = 2.4f;
     [Min(0f)] public float surfaceHysteresis = 0.15f;
+    [Tooltip("Height above the XR Origin (feet) that counts as 'in the water'. Knee height starts swimming as soon as the player wades in, without dipping their head.")]
+    [Min(0f)] public float submersionProbeHeight = 0.5f;
 
     readonly XROriginMovement transformation = new XROriginMovement();
     float verticalSpeed;
@@ -84,12 +86,14 @@ public class WaterVolumeSwimming : LocomotionProvider, IGravityController
             return;
 
         var bounds = waterVolume.bounds;
+        // XZ from the camera (works in keyboard-simulator "flying head" mode, rope travel
+        // and real headset alike), Y from the rig + probe height (the physical body).
         var head = origin.Camera != null ? origin.Camera.transform : origin.transform;
-        bool inWater = bounds.Contains(head.position);
+        var probe = new Vector3(head.position.x, origin.transform.position.y + submersionProbeHeight, head.position.z);
+        bool inWater = bounds.Contains(probe);
         bool wasSubmerged = submerged;
         // Hysteresis: needs to rise a bit above the surface plane before leaving the water
-        submerged = inWater && (wasSubmerged || head.position.y < bounds.max.y - surfaceHysteresis)
-            || (!inWater && wasSubmerged && head.position.y < bounds.max.y - surfaceHysteresis);
+        submerged = inWater || (wasSubmerged && probe.y < bounds.max.y + surfaceHysteresis);
 
         if (submerged && !wasSubmerged) EnterWater();
         else if (!submerged && wasSubmerged) ExitWater();
