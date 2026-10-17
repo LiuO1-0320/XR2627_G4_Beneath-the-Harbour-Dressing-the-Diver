@@ -18,7 +18,7 @@ This guide covers the visitor route, interactions and scene editing options curr
 
 |  | group member | student id |
 | --- | --- | --- |
-| m1 | KWOK San Chin | 22009626g |
+| m1 | KWOK San Chin | 22009726g |
 | m2 | LIN Wanting | 26051852g |
 | m3 | LIU Luiyi | 26054562g |
 | m4 | RAN Kehan | 26126733g |
