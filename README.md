@@ -15,13 +15,15 @@ Welcome to the harbour diving equipment gallery. Begin in the museum on shore: d
 This guide covers the visitor route, interactions and scene editing options currently available in the project. The experience scene is `Assets/Scenes/BasicScene.unity`.
 
 
-小组成员及学号 / group member and student id
-m1   KWOK San Chin 22009626g 
-m2   LIN Wanting 26051852g 
-m3   LIU Luoyi 26054562g 
-m4   RAN Kehan 26126733g 
-m5   XIAO Wayuan 26124677g 
-m6   XU Siyuan 26069603g 
+
+|  | group member | student id |
+| --- | --- | --- |
+| m1 | KWOK San Chin | 22009626g |
+| m2 | LIN Wanting | 26051852g |
+| m3 | LIU Luiyi | 26054562g |
+| m4 | RAN Kehan | 26126733 |
+| m5 | XIAO Wayuan | 26124677g |
+| m6 | XU Siyuan | 26069603g |
 
 
 ## 参观路线 / Visitor Route
