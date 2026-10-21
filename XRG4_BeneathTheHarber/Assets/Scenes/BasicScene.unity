@@ -650,7 +650,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 29
     m_FontStyle: 0
     m_BestFit: 0
@@ -948,12 +948,12 @@ MonoBehaviour:
     objects: []
     activities: []
   - title: The Case
-    narration: {fileID: 0}
+    narration: {fileID: 8300000, guid: d9826d9ec632d8045a785e3a418c9ed5, type: 3}
     arrivalArea: {fileID: 199062040}
     objects: []
     activities: []
   - title: Scale-up
-    narration: {fileID: 0}
+    narration: {fileID: 8300000, guid: 0f11ec62f1c92674fbb8d4668aa9d2f1, type: 3}
     arrivalArea: {fileID: 107858611}
     objects: []
     activities: []
@@ -963,7 +963,7 @@ MonoBehaviour:
     objects: []
     activities: []
   - title: Dress the Diver
-    narration: {fileID: 0}
+    narration: {fileID: 8300000, guid: 493d52a16e69332458777abe36b2c9c3, type: 3}
     arrivalArea: {fileID: 594411106}
     objects: []
     activities: []
@@ -1079,7 +1079,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -2209,7 +2209,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -3401,7 +3401,7 @@ GameObject:
   - component: {fileID: 193290655}
   - component: {fileID: 193290654}
   - component: {fileID: 193290653}
-  - component: {fileID: 193290652}
+  - component: {fileID: 193290656}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Cylinder
@@ -3410,29 +3410,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!136 &193290652
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 193290651}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &193290653
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3502,6 +3479,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1421556672}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!64 &193290656
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193290651}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &194045803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3721,7 +3720,7 @@ Transform:
   m_GameObject: {fileID: 199062039}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 146.5, y: 0.07, z: -18.97}
+  m_LocalPosition: {x: 148.37, y: 0.07, z: -14.524}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6111,7 +6110,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -6814,7 +6813,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -7774,6 +7773,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: act3
       objectReference: {fileID: 0}
+    - target: {fileID: 1172659954771670040, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
+      propertyPath: m_Name
+      value: divinghelmet3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -7790,6 +7793,38 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 71332047387206541, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
   m_PrefabInstance: {fileID: 442221344}
   m_PrefabAsset: {fileID: 0}
+--- !u!128 &444731157
+Font:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  serializedVersion: 5
+  m_LineSpacing: 63.351562
+  m_DefaultMaterial: {fileID: 1241102225}
+  m_FontSize: 48
+  m_Texture: {fileID: 1579900070}
+  m_AsciiStartOffset: 0
+  m_Tracking: 1
+  m_CharacterSpacing: 0
+  m_CharacterPadding: 1
+  m_ConvertCase: -2
+  m_CharacterRects: []
+  m_KerningValues: []
+  m_PixelScale: 0.1
+  m_FontData: 
+  m_Ascent: 50.789062
+  m_Descent: 0
+  m_DefaultStyle: 0
+  m_FontNames:
+  - Microsoft YaHei
+  - Noto Sans CJK SC
+  - Arial
+  m_FallbackFonts: []
+  m_FontRenderingMode: 0
+  m_UseLegacyBoundsCalculation: 0
+  m_ShouldRoundAdvanceValue: 1
 --- !u!1001 &446119345
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8793,7 +8828,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 27
     m_FontStyle: 0
     m_BestFit: 0
@@ -10429,7 +10464,7 @@ Transform:
   m_GameObject: {fileID: 594411105}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 161.459, y: 0.055, z: 16.01}
+  m_LocalPosition: {x: 160.18, y: 0.055, z: 9.17}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10666,7 +10701,6 @@ GameObject:
   - component: {fileID: 611022203}
   - component: {fileID: 611022206}
   - component: {fileID: 611022205}
-  - component: {fileID: 611022204}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Cylinder (3)
@@ -10690,29 +10724,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1951152626}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &611022204
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 611022202}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &611022205
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10870,12 +10881,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 613349247}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 161.2283, y: 8.52, z: -1.1401}
-  m_LocalScale: {x: 13.418517, y: 0.7961101, z: 6.3821545}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.779908, y: 0, z: 0.096207924}
+  m_LocalScale: {x: 0.6544394, y: 1, z: 0.180396}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1676368101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &617042220
 GameObject:
@@ -11816,7 +11827,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -12352,7 +12363,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 981782876236416799b358b02c5ab912, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destination: {fileID: 0}
+  destination: {fileID: 1540324066}
   message: "\u4E0B\u4E00\u7AD9\uFF1AACT 2\n\u8BF7\u6CBF\u7BAD\u5934\u65B9\u5411\u524D\u5F80
     / Follow the arrow"
   font: {fileID: 0}
@@ -12695,7 +12706,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 962f427a238443128e35cc6ca1907731, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  helmet: {fileID: 0}
+  helmet: {fileID: 2100470245}
   font: {fileID: 0}
   reattachDistance: 0.15
   descriptions:
@@ -12956,7 +12967,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 981782876236416799b358b02c5ab912, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destination: {fileID: 976892861}
+  destination: {fileID: 442221345}
   message: "\u4E0B\u4E00\u7AD9 / Next stop: ACT 3\n\u8BF7\u6CBF\u7BAD\u5934\u65B9\u5411\u524D\u5F80
     / Follow the arrow"
   font: {fileID: 0}
@@ -13099,7 +13110,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -13516,9 +13527,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   start: {fileID: 1315271509}
-  act1: {fileID: 0}
-  act2: {fileID: 0}
-  act3: {fileID: 976892861}
+  act1: {fileID: 2019121993}
+  act2: {fileID: 1540324066}
+  act3: {fileID: 442221345}
   act4: {fileID: 1838547438}
   font: {fileID: 0}
   viewOffset: {x: -1, y: -0.1, z: 1.4}
@@ -13689,6 +13700,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 250112e12f1c135489c16d90839ad209, type: 3}
+--- !u!4 &826235577 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1949478820562988706, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
+  m_PrefabInstance: {fileID: 442221344}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &833750189
 GameObject:
   m_ObjectHideFlags: 0
@@ -13761,7 +13777,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
@@ -14009,12 +14025,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eef4c0cbd4c4d38ae2cb5d4f4c615e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  act1: {fileID: 0}
-  act2: {fileID: 0}
+  act1: {fileID: 2019121993}
+  act2: {fileID: 1540324066}
   act3: {fileID: 976892861}
   helmet1: {fileID: 750000010}
-  helmet2: {fileID: 0}
-  helmet3: {fileID: 1294052398}
+  helmet2: {fileID: 2100470245}
+  helmet3: {fileID: 826235577}
   introductionBoard: {fileID: 0}
   helmetInstructionsBoard: {fileID: 0}
   detailsBoard: {fileID: 770000004}
@@ -16534,7 +16550,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -16629,7 +16645,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -19767,6 +19783,38 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1239434172}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!21 &1241102225
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  m_Shader: {fileID: 10101, guid: 0000000000000000e000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 1579900070}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
 --- !u!1 &1244905195
 GameObject:
   m_ObjectHideFlags: 0
@@ -20264,63 +20312,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
---- !u!28 &1260793269
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 4
-  m_Width: 0
-  m_Height: 0
-  m_CompleteImageSize: 0
-  m_MipsStripped: 0
-  m_WebStreaming: 0
-  m_PriorityLevel: 0
-  m_UploadedMode: 0
-  m_DataStreamData:
-    size: 0
-    path: 
-  m_TextureFormat: 4
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 0
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 0
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_LightmapFormat: 0
-  m_ColorSpace: 0
-  m_PlatformBlob: 
-  image data: 0
-  _typelessdata: 
-  m_StreamData:
-    serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
-  m_OriginalWidth: 0
-  m_OriginalHeight: 0
-  m_OriginalAssetGuid: 00000000000000000000000000000000
 --- !u!1 &1267237708
 GameObject:
   m_ObjectHideFlags: 0
@@ -21408,7 +21399,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -24391,7 +24382,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
@@ -25021,12 +25012,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1538364977}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 170.8513, y: 8.52, z: 7.6088}
-  m_LocalScale: {x: 32.666706, y: 0.7961101, z: 11.522214}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.2492349, y: 0, z: 0.3435016}
+  m_LocalScale: {x: 1.5931998, y: 1, z: 0.32568333}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1676368101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1540324065
 PrefabInstance:
@@ -25080,6 +25071,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: act2
       objectReference: {fileID: 0}
+    - target: {fileID: 1172659954771670040, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
+      propertyPath: m_Name
+      value: divinghelmet2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -25104,7 +25099,7 @@ GameObject:
   - component: {fileID: 1543680976}
   - component: {fileID: 1543680979}
   - component: {fileID: 1543680978}
-  - component: {fileID: 1543680977}
+  - component: {fileID: 1543680980}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Cylinder (1)
@@ -25128,29 +25123,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1421556672}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &1543680977
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1543680975}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &1543680978
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -25204,6 +25176,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1543680975}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!64 &1543680980
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1543680975}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1545518271
 GameObject:
@@ -25308,12 +25302,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1545518271}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 145.2372, y: 8.52, z: -4.5438}
-  m_LocalScale: {x: 20.503834, y: 0.7961101, z: 35.378582}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1676368101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1549299464
 GameObject:
@@ -25422,7 +25416,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 44
     m_FontStyle: 0
     m_BestFit: 0
@@ -25697,6 +25691,63 @@ Transform:
   - {fileID: 185152935}
   m_Father: {fileID: 1421556672}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!28 &1579900070
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Microsoft YaHei
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 4
+  m_Width: 0
+  m_Height: 0
+  m_CompleteImageSize: 0
+  m_MipsStripped: 0
+  m_WebStreaming: 0
+  m_PriorityLevel: 0
+  m_UploadedMode: 0
+  m_DataStreamData:
+    size: 0
+    path: 
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 0
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 0
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 0
+  _typelessdata: 
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
+  m_OriginalWidth: 0
+  m_OriginalHeight: 0
+  m_OriginalAssetGuid: 00000000000000000000000000000000
 --- !u!1001 &1583211385
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26020,7 +26071,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -27068,6 +27119,41 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1673755115}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1676368100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1676368101}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: roof
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1676368101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1676368100}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 145.2372, y: 8.52, z: -4.5438}
+  m_LocalScale: {x: 20.503834, y: 0.7961101, z: 35.378582}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1545518275}
+  - {fileID: 1538364981}
+  - {fileID: 613349251}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1686314048
 GameObject:
   m_ObjectHideFlags: 0
@@ -27250,7 +27336,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 30
     m_FontStyle: 0
     m_BestFit: 0
@@ -28527,38 +28613,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1727536536}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!128 &1746728883
-Font:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  serializedVersion: 5
-  m_LineSpacing: 63.351562
-  m_DefaultMaterial: {fileID: 2048496743}
-  m_FontSize: 48
-  m_Texture: {fileID: 1260793269}
-  m_AsciiStartOffset: 0
-  m_Tracking: 1
-  m_CharacterSpacing: 0
-  m_CharacterPadding: 1
-  m_ConvertCase: -2
-  m_CharacterRects: []
-  m_KerningValues: []
-  m_PixelScale: 0.1
-  m_FontData: 
-  m_Ascent: 50.789062
-  m_Descent: 0
-  m_DefaultStyle: 0
-  m_FontNames:
-  - Microsoft YaHei
-  - Noto Sans CJK SC
-  - Arial
-  m_FallbackFonts: []
-  m_FontRenderingMode: 0
-  m_UseLegacyBoundsCalculation: 0
-  m_ShouldRoundAdvanceValue: 1
 --- !u!1 &1748679279
 GameObject:
   m_ObjectHideFlags: 0
@@ -30796,7 +30850,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -31329,7 +31383,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 38
     m_FontStyle: 0
     m_BestFit: 0
@@ -32784,7 +32838,6 @@ GameObject:
   - component: {fileID: 2041205482}
   - component: {fileID: 2041205485}
   - component: {fileID: 2041205484}
-  - component: {fileID: 2041205483}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Cylinder (2)
@@ -32808,29 +32861,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1610443256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &2041205483
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2041205481}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &2041205484
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -33025,38 +33055,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3688141844422375567, guid: 5d7b4edb85998ea4f99160f106da58f7, type: 3}
   m_PrefabInstance: {fileID: 2047449321}
   m_PrefabAsset: {fileID: 0}
---- !u!21 &2048496743
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Microsoft YaHei
-  m_Shader: {fileID: 10101, guid: 0000000000000000e000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 1260793269}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
 --- !u!1001 &2049129963
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33942,6 +33940,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &2100470245 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1949478820562988706, guid: cf2c8b4c82570f54ca5def354616ee0a, type: 3}
+  m_PrefabInstance: {fileID: 1540324065}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2101660121
 GameObject:
   m_ObjectHideFlags: 0
@@ -34124,7 +34127,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 1746728883}
+    m_Font: {fileID: 444731157}
     m_FontSize: 46
     m_FontStyle: 0
     m_BestFit: 0
@@ -35003,9 +35006,7 @@ SceneRoots:
   - {fileID: 2092139010}
   - {fileID: 1249617921}
   - {fileID: 1662686409}
-  - {fileID: 1545518275}
-  - {fileID: 1538364981}
-  - {fileID: 613349251}
+  - {fileID: 1676368101}
   - {fileID: 1421556672}
   - {fileID: 710009000}
   - {fileID: 1496927265}

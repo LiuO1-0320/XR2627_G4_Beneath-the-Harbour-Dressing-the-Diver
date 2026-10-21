@@ -272,6 +272,9 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
     void PlacePanel()
     {
         if (!Camera.main || practice.Holding) return;
+        var head = Camera.main.transform;
+        var origin = head.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+        float floorY = origin ? origin.transform.position.y : head.position.y - 1.6f;
         var forward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < .1f) forward = Vector3.forward;
         // First placement matches the welcome/reset orientation even if the visitor
@@ -284,7 +287,14 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         float boardDistance = board ? Vector3.Dot(board.position - Camera.main.transform.position, forward) : 0;
         float distance = boardDistance > .5f ? Mathf.Min(1.8f, Mathf.Max(.65f, boardDistance-.25f)) : 1.8f;
         panel.transform.localScale = Vector3.one * (.0013f * distance / 1.8f);
-        panel.transform.SetPositionAndRotation(Camera.main.transform.position + forward*distance - Vector3.up*(.12f*distance/1.8f),
+        var position = head.position + forward*distance - Vector3.up*(.12f*distance/1.8f);
+        // The card is world-anchored: use standing height while the simulator is
+        // still starting, so it does not stay low after the eye-height correction.
+        if (origin && head.position.y - floorY < .5f)
+            position.y = floorY + 1.72f - .12f*distance/1.8f;
+        float halfHeight = panel.GetComponent<RectTransform>().rect.height * panel.transform.localScale.y * .5f;
+        position.y = Mathf.Max(position.y, floorY + halfHeight + .15f);
+        panel.transform.SetPositionAndRotation(position,
             Quaternion.LookRotation(forward,Vector3.up));
         placed = true;
     }
