@@ -119,7 +119,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     void Detach(Part part)
     {
         SessionTelemetry.Report("PartDetached", part.transform, part.info.key);
-        if (Application.isPlaying && StageCoordinator.Current && StageCoordinator.Current.Audio) StageCoordinator.Current.Audio.PlayFeedback(false);
+        // Keep ACT2 part grabs silent while investigating the native audio resampler crash.
         part.releaseFrame = -1; part.detached = true;
         part.transform.SetParent(null, true);
         string english = string.IsNullOrWhiteSpace(part.info.englishDescription)
