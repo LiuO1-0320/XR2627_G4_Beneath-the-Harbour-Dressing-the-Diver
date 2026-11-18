@@ -483,6 +483,39 @@
                     "action": "Toggle Primary 2D Axis Target",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "8d0b2d1e-4b54-4b72-8146-ec6528c4d700",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Y Translate",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "d901e2a7-d193-4d17-aa2c-5afbbf4d1885",
+                    "path": "<Keyboard>/pageDown",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Y Translate",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "2d0581b7-450e-46e2-bc3c-0fff569c516f",
+                    "path": "<Keyboard>/pageUp",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Y Translate",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         },

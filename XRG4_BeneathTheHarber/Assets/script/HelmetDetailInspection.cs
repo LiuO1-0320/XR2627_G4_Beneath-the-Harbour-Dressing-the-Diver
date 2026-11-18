@@ -10,7 +10,7 @@ using UnityEngine.XR.Interaction.Toolkit.Filtering;
 
 /// <summary>Independent exhibit for helmet 2. Exact part keys exclude nail2 through nail12.</summary>
 [ExecuteAlways]
-public class HelmetDetailInspection : MonoBehaviour, IResettable
+public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
 {
     public int ResetOrder => 10;
     public void PrepareReset() { PrepareSessionReset(); }
@@ -44,15 +44,34 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
         public XRGrabInteractable grab;
         public Rigidbody body;
         public bool detached;
+        public Renderer renderer;
+        public MaterialPropertyBlock original;
+        public LineRenderer outline, socket;
+        public Bounds meshBounds;
         public int releaseFrame = -1;
         public PartDescription info;
         public Action<SelectEnterEventArgs> entered;
         public Action<SelectExitEventArgs> exited;
     }
+    Guid taskSession;
+    bool taskActive, taskPaused, completing;
+    readonly HashSet<string> inspected = new HashSet<string>();
+    public int InspectedCount => inspected.Count;
+    public int RequiredCount => parts.Count;
+    public void BeginStage(Guid sessionId, ExperienceStage stage)
+    { taskSession = sessionId; taskActive = stage == ExperienceStage.ScaleUp; taskPaused = completing = false; inspected.Clear(); UpdateStatus(); }
+    public void SetStagePaused(bool paused) { taskPaused = paused; }
+    public void EndStage() { taskActive = false; }
+    public void ResetActivity() { taskActive = taskPaused = completing = false; inspected.Clear(); ResetExhibit(); }
     readonly List<Part> parts = new List<Part>();
     Vector3 baseScale, basePosition, localCenter;
     Quaternion baseRotation;
-    Text details, status;
+    Text details, status, checklist, actionHint;
+    GameObject hintPanel;
+    Material outlineMaterial;
+    bool panelPlaced;
+    string lastFeedback;
+    float feedbackUntil;
     ScrollRect detailsScroll;
     GameObject panel;
     Font fallback;
@@ -97,6 +116,11 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
             var box = child.gameObject.AddComponent<BoxCollider>();
             var mesh = child.GetComponent<MeshFilter>();
             if (mesh && mesh.sharedMesh) { box.center = mesh.sharedMesh.bounds.center; box.size = mesh.sharedMesh.bounds.size; }
+            // Give small fittings a usable ray target, protruding beyond the shell surface.
+            Vector3 scale = child.lossyScale;
+            Vector3 padding = new Vector3(.025f / Mathf.Max(.001f, Mathf.Abs(scale.x)),
+                .025f / Mathf.Max(.001f, Mathf.Abs(scale.y)), .025f / Mathf.Max(.001f, Mathf.Abs(scale.z)));
+            box.size += padding;
             var grab = child.GetComponent<XRGrabInteractable>();
             if (!grab) grab = child.gameObject.AddComponent<XRGrabInteractable>();
             grab.colliders.Clear(); grab.colliders.Add(box);
@@ -109,6 +133,11 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
             part.exited = args => { if (!args.isCanceled) part.releaseFrame = Time.frameCount + 2; };
             grab.selectEntered.AddListener(part.entered.Invoke);
             grab.selectExited.AddListener(part.exited.Invoke);
+            part.renderer = child.GetComponent<Renderer>();
+            part.original = new MaterialPropertyBlock(); part.renderer.GetPropertyBlock(part.original);
+            part.meshBounds = mesh && mesh.sharedMesh ? mesh.sharedMesh.bounds : new Bounds(Vector3.zero, Vector3.one * .1f);
+            part.outline = MakeOutline("可拆部件 " + info.key);
+            part.socket = MakeOutline("装回位置 " + info.key);
             parts.Add(part);
         }
         SetupWholeGrab();
@@ -118,6 +147,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     }
     void Detach(Part part)
     {
+        if (taskActive && !taskPaused && StageCoordinator.Allows(ExperienceStage.ScaleUp)) inspected.Add(part.info.key);
         SessionTelemetry.Report("PartDetached", part.transform, part.info.key);
         // Keep ACT2 part grabs silent while investigating the native audio resampler crash.
         part.releaseFrame = -1; part.detached = true;
@@ -130,14 +160,22 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     }
     void LateUpdate()
     {
-        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
         if (!Application.isPlaying) return;
+        UpdateInteractionFeedback();
+        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
         foreach (var part in parts)
         {
             if (part.releaseFrame < 0 || Time.frameCount < part.releaseFrame) continue;
             part.releaseFrame = -1;
             if (!part.grab.isSelected && Vector3.Distance(part.transform.position, part.parent.TransformPoint(part.position)) <= reattachDistance)
                 Restore(part);
+        }
+        if (taskActive && !taskPaused && !completing && parts.Count > 0
+            && parts.TrueForAll(p => inspected.Contains(p.info.key) && !p.detached) && !Held()
+            && StageCoordinator.Current)
+        {
+            completing = true;
+            StageCoordinator.Current.Controller.Session.CompleteTask(taskSession, ExperienceStage.ScaleUp);
         }
     }
     bool Held() { return (wholeGrab && wholeGrab.isSelected) || parts.Exists(p => p.grab.isSelected); }
@@ -154,9 +192,12 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
         // Re-register only after the fixed-part collider list is complete. OnEnable
         // initially sees the imported hierarchy and its separate part colliders.
         wholeGrab.enabled = false;
+        // Non-convex shell surfaces support raycasts, but not Physics.ClosestPoint.
+        wholeGrab.distanceCalculationMode = XRBaseInteractable.DistanceCalculationMode.TransformPosition;
         wholeGrab.addDefaultGrabTransformers = false;
         wholeGrab.selectMode = InteractableSelectMode.Multiple;
         wholeGrab.useDynamicAttach = true;
+        wholeGrab.snapToColliderVolume = false;
         wholeGrab.reinitializeDynamicAttachEverySingleGrab = true;
         wholeGrab.trackScale = false;
         wholeGrab.throwOnDetach = false;
@@ -172,16 +213,23 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
         {
             if (!mesh.sharedMesh || !mesh.GetComponent<Renderer>()) continue;
             if (parts.Exists(part => mesh.transform == part.transform || mesh.transform.IsChildOf(part.transform))) continue;
-            var collider = mesh.gameObject.AddComponent<BoxCollider>();
-            collider.center = mesh.sharedMesh.bounds.center;
-            collider.size = mesh.sharedMesh.bounds.size;
+            // A shell's bounding box fills its openings and can occlude removable viewports.
+            // The whole exhibit is kinematic, so use its actual mesh surface for ray targeting.
+            var collider = mesh.gameObject.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh.sharedMesh;
+            collider.convex = false;
             wholeGrab.colliders.Add(collider);
         }
         wholeGrab.enabled = true;
     }
     void Restore(Part part)
     {
-        if (part.detached) SessionTelemetry.Report("PartRestored", part.transform, part.info.key);
+        if (part.detached)
+        {
+            SessionTelemetry.Report("PartRestored", part.transform, part.info.key);
+            lastFeedback = part.info.title + " · 已装回 ✓"; feedbackUntil = Time.time + 2;
+            // Keep reattachment silent too: preserve model-testing audio crash mitigation.
+        }
         part.body.isKinematic = true;
         part.transform.SetParent(part.parent, false);
         part.transform.localPosition = part.position; part.transform.localRotation = part.rotation; part.transform.localScale = part.scale;
@@ -199,6 +247,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     {
         if (!Application.isPlaying || !helmet || !wholeGrab) return;
         if (Held()) { status.text = "请先松开零件，再复位 / Release part first"; return; }
+        inspected.Clear();
         helmet.localScale = baseScale; helmet.localPosition = basePosition; helmet.localRotation = baseRotation;
         foreach (var part in parts) Restore(part);
         ShowDetails(defaultDetails); UpdateStatus();
@@ -215,11 +264,124 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     }
     void UpdateStatus()
     {
-        if (status) status.text = $"已拆下 {parts.FindAll(p => p.detached).Count}/{parts.Count}";
+        if (checklist)
+        {
+            var lines = new System.Text.StringBuilder("部件清单 / Parts\n\n");
+            foreach (var part in parts) lines.Append(part.detached ? "待装回 ○ " : inspected.Contains(part.info.key) ? "已完成 ✓ " : "未观察 · ").Append(part.info.title).Append("\n\n");
+            checklist.text = lines.ToString();
+        }
+        if (status) status.text = $"已观察 {inspected.Count}/{parts.Count} · 未归位 {parts.FindAll(p => p.detached).Count}\n逐一抓取所有可拆零件并装回，完成后前往潜水员装备区";
+    }
+    public void RecoverLooseParts()
+    {
+        if (!StageCoordinator.Allows(ExperienceStage.ScaleUp) || Held()) return;
+        // Recovery is not a successful manual reattachment: recovered parts must be inspected again.
+        foreach (var part in parts) if (part.detached) { inspected.Remove(part.info.key); Restore(part); }
+        lastFeedback = "散落零件已归位，其他完成进度保留"; feedbackUntil = Time.time + 3;
+        UpdateStatus();
+    }
+    LineRenderer MakeOutline(string name)
+    {
+        if (!outlineMaterial)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (!shader) shader = Shader.Find("Sprites/Default");
+            outlineMaterial = new Material(shader);
+        }
+        var obj = new GameObject(name); obj.transform.SetParent(transform, false);
+        var line = obj.AddComponent<LineRenderer>(); line.sharedMaterial = outlineMaterial;
+        line.useWorldSpace = true; line.widthMultiplier = .003f; line.positionCount = 16;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false; line.enabled = false;
+        return line;
+    }
+    void DrawOutline(LineRenderer line, Part part, bool socket, Color color)
+    {
+        // Bounding outlines have no colliders and cannot intercept the controller ray.
+        int[] edges = {0,1,3,2,0,4,5,1,5,7,3,7,6,2,6,4};
+        for (int i = 0; i < edges.Length; i++)
+        {
+            int corner = edges[i];
+            Vector3 local = part.meshBounds.center + Vector3.Scale(part.meshBounds.extents * 1.04f,
+                new Vector3((corner & 1) == 0 ? -1 : 1, (corner & 2) == 0 ? -1 : 1, (corner & 4) == 0 ? -1 : 1));
+            Vector3 world = socket ? part.parent.TransformPoint(part.position + part.rotation * Vector3.Scale(part.scale, local))
+                : part.transform.TransformPoint(local);
+            line.SetPosition(i, world);
+        }
+        line.startColor = line.endColor = color; line.enabled = true;
+    }
+    void UpdateInteractionFeedback()
+    {
+        bool allowed = StageCoordinator.Allows(ExperienceStage.ScaleUp);
+        if (allowed && !panelPlaced && panel && helmet && Camera.main
+            && Vector3.Distance(helmet.position, Camera.main.transform.position) < 4f)
+        {
+            var viewer = Camera.main.transform;
+            // Place once on arrival: stand to the right of the exhibit in the visitor's frontal view.
+            Vector3 forward = Vector3.ProjectOnPlane(helmet.position - viewer.position, Vector3.up).normalized;
+            if (forward.sqrMagnitude < .001f) forward = Vector3.forward;
+            // Canvas fronts face opposite their forward vector. Choose the visitor-facing side once.
+            if (Vector3.Dot(forward, helmet.position - viewer.position) < 0) forward = -forward;
+            Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+            Vector3 position = helmet.position + right * 1.6f;
+            position.y = helmet.position.y + .45f;
+            panel.transform.SetPositionAndRotation(position, Quaternion.LookRotation(forward));
+            panel.transform.localScale = Vector3.one * .001f;
+            panelPlaced = true;
+        }
+        string message = "指向标记部件，按住握把抓取 / Point at a part and hold grip";
+        if (wholeGrab && (wholeGrab.isSelected || wholeGrab.isHovered))
+            message = wholeGrab.isSelected ? "移动或旋转整盔；松开整盔后再拆零件" : "固定外壳：按住握把可移动整盔";
+        foreach (var part in parts)
+        {
+            bool near = part.detached && Vector3.Distance(part.transform.position, part.parent.TransformPoint(part.position)) <= reattachDistance;
+            bool highlighted = allowed && (part.grab.isHovered || part.grab.isSelected);
+            var color = near ? new Color(.25f, 1, .55f) : highlighted ? Color.yellow : new Color(.25f,.8f,1);
+            if (allowed && (!inspected.Contains(part.info.key) || highlighted)) DrawOutline(part.outline, part, false, color);
+            else part.outline.enabled = false;
+            if (allowed && part.detached) DrawOutline(part.socket, part, true, near ? Color.green : new Color(.3f,.8f,1));
+            else part.socket.enabled = false;
+            if (highlighted)
+            {
+                var block = new MaterialPropertyBlock(); part.renderer.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", color); block.SetColor("_Color", color); part.renderer.SetPropertyBlock(block);
+                message = part.info.title + "\n" + (part.grab.isSelected
+                    ? near ? "松开握把即可装回 / Release grip to reattach"
+                        : "转动手柄观察；移向蓝色原位轮廓装回"
+                    : "按住握把抓取 / Hold grip to grab");
+#if UNITY_EDITOR
+                message += " · 键盘 G";
+#endif
+            }
+            else part.renderer.SetPropertyBlock(part.original);
+        }
+        if (Time.time < feedbackUntil && !Held()) message = lastFeedback;
+        if (hintPanel)
+        {
+            bool interacting = parts.Exists(p => p.grab.isHovered || p.grab.isSelected)
+                || (wholeGrab && (wholeGrab.isHovered || wholeGrab.isSelected));
+            hintPanel.SetActive(allowed && interacting && Camera.main
+                && Vector3.Distance(Camera.main.transform.position, helmet.position) < 3f);
+            if (allowed && Camera.main)
+            {
+                var viewer = Camera.main.transform;
+                var camera = Camera.main;
+                const float depth = 2f;
+                float height = 2f * depth * Mathf.Tan(camera.fieldOfView * .5f * Mathf.Deg2Rad);
+                float width = height * camera.aspect;
+                float cardWidth = Mathf.Min(width * .36f, height * .65f);
+                hintPanel.transform.localScale = Vector3.one * (cardWidth / 1100f);
+                hintPanel.transform.SetPositionAndRotation(viewer.TransformPoint(new Vector3(
+                    width * .5f - cardWidth * .5f - width * .03f,
+                    height * .5f - height * .06f - (cardWidth * 230f/900f) - .12f, depth)), viewer.rotation);
+                actionHint.text = message;
+            }
+        }
+        UpdateStatus();
     }
     void BuildPanel()
     {
-        fallback = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 40);
+        fallback = Font.CreateDynamicFontFromOSFont(new[] { "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 40);
         panel = new GameObject("Helmet 2 Detail Controls", typeof(RectTransform), typeof(Canvas), typeof(TrackedDeviceGraphicRaycaster));
         panel.hideFlags = HideFlags.HideAndDontSave;
         panel.transform.SetParent(transform, false); panel.transform.localScale = Vector3.one * 0.002f;
@@ -266,7 +428,22 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
         scrollbar.direction = Scrollbar.Direction.BottomToTop;
         detailsScroll.verticalScrollbar = scrollbar;
         status = TextLabel("Status", new Vector2(0, -295), new Vector2(1100, 65), 30);
-        Button("复位 / Reset", 0, ResetExhibit);
+        Button("重新开始 / Restart", 0, ResetExhibit);
+        InformationButton("散落零件归位（保留其他进度）", new Vector2(850, -640), RecoverLooseParts);
+        checklist = TextLabel("Part checklist", new Vector2(-850, 0), new Vector2(450, 850), 28);
+        checklist.alignment = TextAnchor.UpperLeft; checklist.raycastTarget = false;
+        var checklistBackground = Element<Image>("Checklist background", new Vector2(-850,0), new Vector2(500,900));
+        checklistBackground.color = new Color(.02f,.09f,.12f,.97f); checklistBackground.raycastTarget = false;
+        checklistBackground.transform.SetAsFirstSibling();
+        hintPanel = new GameObject("Act 2 action hint", typeof(RectTransform), typeof(Canvas), typeof(Image));
+        hintPanel.transform.SetParent(transform, false); hintPanel.transform.localScale = Vector3.one * .001f;
+        hintPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(1100, 150);
+        hintPanel.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+        hintPanel.GetComponent<Image>().color = new Color(.02f,.09f,.12f,.94f);
+        hintPanel.GetComponent<Image>().raycastTarget = false;
+        actionHint = TextLabel("Action", Vector2.zero, new Vector2(1060,140), 30);
+        actionHint.transform.SetParent(hintPanel.transform, false); actionHint.raycastTarget = false;
+        hintPanel.SetActive(false);
         // Information-only alternatives; viewing a description never reports M3 task success.
         for (int i=0;i<descriptions.Length;i++)
         {
@@ -342,7 +519,15 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
     {
         if (panel) { if (Application.isPlaying) Destroy(panel); else DestroyImmediate(panel); }
         if (fallback) { if (Application.isPlaying) Destroy(fallback); else DestroyImmediate(fallback); }
+        if (hintPanel) { if (Application.isPlaying) Destroy(hintPanel); else DestroyImmediate(hintPanel); }
+        foreach (var part in parts)
+        {
+            if (part.outline) part.outline.enabled = false;
+            if (part.socket) part.socket.enabled = false;
+            if (part.renderer) part.renderer.SetPropertyBlock(part.original);
+        }
         panel = null;
+        panelPlaced = false;
         fallback = null;
     }
     void OnDestroy()
@@ -354,6 +539,9 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable
             part.grab.selectExited.RemoveListener(part.exited.Invoke);
             if (part.detached && part.transform) Destroy(part.transform.gameObject);
         }
+        foreach (var part in parts) { if (part.outline) Destroy(part.outline.gameObject); if (part.socket) Destroy(part.socket.gameObject); }
+        if (outlineMaterial) Destroy(outlineMaterial);
+        if (hintPanel) Destroy(hintPanel);
         if (panel) Destroy(panel);
         if (fallback) Destroy(fallback);
     }

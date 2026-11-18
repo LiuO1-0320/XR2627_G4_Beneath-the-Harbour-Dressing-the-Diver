@@ -115,6 +115,7 @@ public sealed class SessionTelemetry : MonoBehaviour
                 case "Start": return state.Start();
                 case "Pause": return state.Pause();
                 case "Resume": return state.Resume();
+                case "Back": return coordinator.BackToPreviousStage();
                 case "Skip": return state.Skip();
                 case "Reset":
                     Record("ResetStarted", "Session", "");

@@ -84,6 +84,41 @@ public sealed class SessionState
         return session == SessionId && stage == Stage && IsTask(stage) &&
             Status == SessionStatus.Running && Advance(StageResult.Completed);
     }
+    public bool CanGoBack => (Status == SessionStatus.Running || Status == SessionStatus.Paused)
+        && Stage != ExperienceStage.Briefing;
+    public ExperienceStage PreviousStage
+    {
+        get
+        {
+            switch (Stage)
+            {
+                case ExperienceStage.TheCase: return ExperienceStage.Briefing;
+                case ExperienceStage.ScaleUp: return ExperienceStage.TheCase;
+                case ExperienceStage.DressTheDiver: return ExperienceStage.ScaleUp;
+                case ExperienceStage.Descent: return ExperienceStage.DressTheDiver;
+                case ExperienceStage.SeabedCleanup: return ExperienceStage.Descent;
+                case ExperienceStage.ExperienceComplete: return ExperienceStage.SeabedCleanup;
+                default: return ExperienceStage.ExperienceComplete;
+            }
+        }
+    }
+    // Capture progress before the existing full scene reset. A new generation ID rejects stale activity callbacks.
+    public Action CaptureBackRestore()
+    {
+        if (publishing || !CanGoBack) return null;
+        var target = PreviousStage; var status = Status;
+        var saved = (StageResult[])results.Clone();
+        return () =>
+        {
+            if (Status != SessionStatus.Idle) throw new InvalidOperationException("Back requires a completed scene reset.");
+            Array.Clear(results, 0, results.Length);
+            for (int i = 0; i < (int)target; i++) results[i] = saved[i];
+            if (target == ExperienceStage.ScaleUp) results[(int)ExperienceStage.Inside] = StageResult.Completed;
+            results[(int)target] = StageResult.Active;
+            CleanupCollected = CleanupTotal = 0; HasReturnedAfterCleanup = false;
+            SessionId = Guid.NewGuid(); Stage = target; Status = status; Publish();
+        };
+    }
     public bool Skip()
     {
         if (publishing || (Status != SessionStatus.Running && Status != SessionStatus.Paused)) return false;

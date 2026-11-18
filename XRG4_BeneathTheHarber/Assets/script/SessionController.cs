@@ -10,6 +10,7 @@ public sealed class SessionController : MonoBehaviour
     public void StartSession() => Telemetry.ExecuteLocal("Start");
     public void PauseSession() => Telemetry.ExecuteLocal("Pause");
     public void ResumeSession() => Telemetry.ExecuteLocal("Resume");
+    public CommandReply BackStage() => Telemetry.ExecuteLocal("Back");
     public void SkipStage() => Telemetry.ExecuteLocal("Skip");
     public void ResetSession() => Telemetry.ExecuteLocal("Reset");
 }

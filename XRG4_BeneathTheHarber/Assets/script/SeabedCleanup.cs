@@ -22,6 +22,9 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         public Rigidbody body;
         public XRGrabInteractable grab;
         public bool held, collected;
+        public Renderer[] renderers;
+        public MaterialPropertyBlock[] originalProperties;
+        public bool highlighted;
     }
     readonly List<Litter> litter = new List<Litter>();
     readonly List<Material> materials = new List<Material>();
@@ -95,7 +98,17 @@ public class SeabedCleanup : MonoBehaviour, IResettable
                 item.grab.colliders.Clear(); item.grab.colliders.Add(collider);
                 item.grab.useDynamicAttach = true; item.grab.throwOnDetach = false;
                 item.grab.retainTransformParent = true; item.grab.movementType = XRBaseInteractable.MovementType.Kinematic;
-                item.grab.selectEntered.AddListener(args => item.held = true);
+                item.renderers = root.GetComponentsInChildren<Renderer>();
+                item.originalProperties = new MaterialPropertyBlock[item.renderers.Length];
+                for (int j = 0; j < item.renderers.Length; j++)
+                {
+                    item.originalProperties[j] = new MaterialPropertyBlock();
+                    item.renderers[j].GetPropertyBlock(item.originalProperties[j]);
+                }
+                item.grab.hoverEntered.AddListener(args => RefreshHighlight(item));
+                item.grab.hoverExited.AddListener(args => RefreshHighlight(item));
+                item.grab.selectEntered.AddListener(args => { item.held = true; SetHighlight(item, false); });
+                item.grab.selectExited.AddListener(args => RefreshHighlight(item));
             }
             litter.Add(item);
         }
@@ -124,6 +137,7 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         foreach (var item in litter)
         {
             if (item.collected || !item.grab) continue;
+            RefreshHighlight(item);
             if (item.grab.isSelected) { item.held = true; continue; }
             Vector3 inBasket = basket.InverseTransformPoint(item.root.position);
             // Release inside the open basket, including a small area above its rim.
@@ -139,6 +153,26 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         var coordinator = StageCoordinator.Current;
         if (coordinator)
             coordinator.Controller.Session.ReportCleanupProgress(coordinator.Controller.Session.SessionId, collected, litter.Count);
+    }
+    void RefreshHighlight(Litter item)
+    {
+        SetHighlight(item, item.grab && item.grab.isActiveAndEnabled && item.grab.isHovered
+            && !item.grab.isSelected && !item.collected && StageCoordinator.Allows(ExperienceStage.SeabedCleanup));
+    }
+    void SetHighlight(Litter item, bool active)
+    {
+        if (item.highlighted == active || item.renderers == null) return;
+        item.highlighted = active;
+        for (int i = 0; i < item.renderers.Length; i++)
+        {
+            if (!item.renderers[i]) continue;
+            if (!active) { item.renderers[i].SetPropertyBlock(item.originalProperties[i]); continue; }
+            var properties = new MaterialPropertyBlock();
+            item.renderers[i].GetPropertyBlock(properties);
+            properties.SetColor("_BaseColor", new Color(1f, .85f, .15f, 1f));
+            properties.SetColor("_Color", new Color(1f, .85f, .15f, 1f));
+            item.renderers[i].SetPropertyBlock(properties);
+        }
     }
     public void ResetCleanup()
     {
