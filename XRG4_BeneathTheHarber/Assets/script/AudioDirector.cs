@@ -49,6 +49,12 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     {
         if (initialized) return;
         coordinator = GetComponent<StageCoordinator>();
+        if (AudioDiagnostics.Disabled)
+        {
+            waterVolumes = FindObjectsOfType<WaterVolumeSwimming>(true);
+            initialized = true; Status = "Audio disabled (diagnostic build)";
+            return;
+        }
         if (!map) map = Resources.Load<AudioMap>("ExperienceAudio/DefaultAudioMap");
         voice = Source("Narration", map ? map.narrationGroup : null, false, 0);
         museum = Source("Museum music", map ? map.ambienceGroup : null, true, 128);
@@ -76,6 +82,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     public void Synchronize(SessionState state, AudioClip legacyNarration)
     {
         Initialize();
+        if (AudioDiagnostics.Disabled) return;
         if (!isActiveAndEnabled) { StopAll(); return; }
         if (!map) return;
         bool nextActive = AudioPolicy.Active(state.Status);
@@ -123,7 +130,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
             return new[] { coordinator.stages[(int)region].narration };
         return map ? map.Narration(region) : new AudioClip[0];
     }
-    public bool HasRegionNarration(ExperienceStage region) => Array.Exists(RegionClips(region), clip => clip);
+    public bool HasRegionNarration(ExperienceStage region) => !AudioDiagnostics.Disabled && Array.Exists(RegionClips(region), clip => clip);
     public bool RequestRegionNarration(Guid id, ExperienceStage region, bool replay)
     {
         if (!active || paused || !coordinator || !coordinator.NarrationArrivalReady(region) || !HasRegionNarration(region)) return false;
@@ -152,6 +159,15 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     }
     void LateUpdate()
     {
+        if (AudioDiagnostics.Disabled)
+        {
+            // Water location is gameplay evidence even when all audio processing is disabled.
+            if (!initialized) Initialize();
+            headInWater = false;
+            if (Camera.main) foreach (var water in waterVolumes)
+                if (water && water.ContainsHead(Camera.main.transform.position, false)) { headInWater = true; break; }
+            return;
+        }
         if (!initialized || !map || !active || paused) return;
         // Physical region visits are independent of task success; first visits in free mode count too.
         if (coordinator)
@@ -286,6 +302,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     public void StopAll()
     {
         if (!initialized) return;
+        if (AudioDiagnostics.Disabled) { headInWater = false; Status = "Audio disabled (diagnostic build)"; return; }
         foreach (var source in new[] { voice, museum, harbour, underwater, feedback, splash }) if (source) { source.Stop(); source.volume = 0; source.clip = null; }
         pending.Clear(); scheduled.Clear(); active = paused = hadVoice = insideScheduled = submerged = false;
         arrivalGate.Clear();
