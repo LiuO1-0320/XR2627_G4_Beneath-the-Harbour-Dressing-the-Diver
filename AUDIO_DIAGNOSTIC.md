@@ -1,30 +1,43 @@
-# Audio crash isolation — first diagnostic build
+# Audio crash isolation — Windows comparison builds
 
 This is an isolation experiment, not a confirmed repair for the native resampler crash.
 
 ## Build
 
-1. Exit Play mode and save the project.
-2. Use the same Tuanjie version as the baseline (current project: 1.6.14).
-3. Install Windows Build Support for that editor if necessary.
-4. Select `Tools > Experience > Audio > Build Windows - AUDIO DISABLED diagnostic`.
-5. Choose a NEW empty output folder and the executable name. Do not overwrite v1.
-6. Copy the entire generated folder to the test PC, including the Data directory and DLLs.
+Use Tuanjie 1.6.13 and the Windows IL2CPP/C++ toolchain on the build computer.
+Exit Play mode and save, then use `Tools > Experience > Audio`:
 
-The command temporarily enables `Disable Unity Audio`, adds the build-only
-`ER_AUDIO_DISABLED` define, disables audio on built scene copies, and restores the
-original audio setting in `finally`, including after a normal build failure.
-Normal Build Settings builds retain the project's original audio configuration.
-If the EDITOR itself crashes while building, check Project Settings > Audio >
-Disable Unity Audio before the next normal build: a process crash cannot run finally.
+| Menu suffix | Mode in marker/log | Playback |
+| --- | --- | --- |
+| Build Windows - NORMAL audio control | NORMAL | All current audio enabled |
+| Build Windows - AUDIO DISABLED diagnostic | AUDIO_DISABLED | Engine audio off, all video tracks off |
+| Build Windows - NO AMBIENCE diagnostic | NO_AMBIENCE | Museum music, harbour and underwater loops off; narration, video and feedback on |
+| Build Windows - NO NARRATION AND VIDEO diagnostic | NO_NARRATION_VIDEO | All AudioDirector narration (including helmet interior) and video tracks off; ambience and feedback on |
 
-Verify `AUDIO_DIAGNOSTIC.txt` alongside the executable and the startup log line
-`ER AUDIO DIAGNOSTIC: engine audio disabled at build time` in Player.log.
-A silent volume slider alone is not proof that the correct package was tested.
-Video images and controls remain available, with video audio output set to None.
-The experience audio director creates no audio sources in this build.
-Water-position detection remains active; narration replay is unavailable.
-Task completion remains driven by interactions, not fabricated narration-finished events.
+NPC text, animation and task interactions remain available. No mode restores the
+previously removed part pickup sounds. Partial modes prevent the relevant clips
+from being scheduled/played; they do not merely lower the volume to zero.
+
+Choose a NEW EMPTY output folder for each variant. All four menus use Development
+Build and the current project backend; use the same commit, scenes, backend and
+engine version for comparisons. The menus do not install Windows Build Support,
+Visual Studio C++ tools or a Windows SDK. Do not set ER_AUDIO_* symbols manually
+in Player Settings: the menus pass them only to the selected player build.
+
+Each successful build writes AUDIO_DIAGNOSTIC.txt beside the executable with mode,
+audio switches, UTC time, engine version and BuildGUID. Player.log prints the same
+mode at startup (`ER AUDIO DIAGNOSTIC: mode=...`). A marker is written for NORMAL too,
+so its mere presence no longer means fully silent: read its Mode field.
+
+The command temporarily changes Disable Unity Audio (off for normal/partial modes,
+on only for fully disabled), then restores the original value even after a normal
+build failure. The build copies of scenes are processed; source scenes are untouched.
+If the EDITOR itself crashes while building, check Project Settings > Audio before
+the next build: a process crash cannot run finally.
+
+Copy the ENTIRE successful output folder to the headset test computer, including
+its Data directory and DLLs. That computer needs no IL2CPP development tools.
+Keep generated BackUpThisFolder/Burst debug information for crash analysis.
 
 ## Same-machine test
 
@@ -45,4 +58,5 @@ they do not prove the root cause or guarantee future stability.
 If it still crashes, resolve the NEW package's stack using its matching symbols.
 If stable, the next comparison is engine audio enabled with no playback, then
 restore narration, video sound, ambience and water/feedback separately.
-This change implements only the fully-disabled comparison, not those later variants.
+The menus implement the four comparisons above. An engine-on/no-playback variant
+is not yet implemented; add it if the initial results require device-only isolation.

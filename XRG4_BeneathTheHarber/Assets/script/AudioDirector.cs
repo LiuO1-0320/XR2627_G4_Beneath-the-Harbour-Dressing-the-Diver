@@ -105,12 +105,15 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
             session = state.SessionId.ToString(); stage = state.Stage; active = true;
             regionHistory.Begin(session);
             arrivalGate.Begin(session, stage);
-            if (!harbour.clip) harbour.clip = map.harbour;
-            if (!museum.clip) museum.clip = map.museumMusic;
-            if (!underwater.clip) underwater.clip = map.underwater;
-            if (harbour.clip && !harbour.isPlaying && !paused) harbour.Play();
-            if (museum.clip && !museum.isPlaying && !paused) museum.Play();
-            if (underwater.clip && !underwater.isPlaying && !paused) underwater.Play();
+            if (!AudioDiagnostics.AmbienceDisabled)
+            {
+                if (!harbour.clip) harbour.clip = map.harbour;
+                if (!museum.clip) museum.clip = map.museumMusic;
+                if (!underwater.clip) underwater.clip = map.underwater;
+                if (harbour.clip && !harbour.isPlaying && !paused) harbour.Play();
+                if (museum.clip && !museum.isPlaying && !paused) museum.Play();
+                if (underwater.clip && !underwater.isPlaying && !paused) underwater.Play();
+            }
             // Existing authored stage recordings take precedence over the default map.
             Status = "Waiting for first arrival at a narrated region";
             SessionTelemetry.Report("AudioStage", this, stage + ": " + Status);
@@ -130,7 +133,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
             return new[] { coordinator.stages[(int)region].narration };
         return map ? map.Narration(region) : new AudioClip[0];
     }
-    public bool HasRegionNarration(ExperienceStage region) => !AudioDiagnostics.Disabled && Array.Exists(RegionClips(region), clip => clip);
+    public bool HasRegionNarration(ExperienceStage region) => !AudioDiagnostics.NarrationAndVideoDisabled && Array.Exists(RegionClips(region), clip => clip);
     public bool RequestRegionNarration(Guid id, ExperienceStage region, bool replay)
     {
         if (!active || paused || !coordinator || !coordinator.NarrationArrivalReady(region) || !HasRegionNarration(region)) return false;
@@ -147,7 +150,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     }
     void Enqueue(AudioClip[] clips)
     {
-        if (clips == null) return;
+        if (AudioDiagnostics.NarrationAndVideoDisabled || clips == null) return;
         foreach (var clip in clips) if (clip && scheduled.Add(clip)) pending.Enqueue(clip);
     }
     void SetPaused(bool value)
