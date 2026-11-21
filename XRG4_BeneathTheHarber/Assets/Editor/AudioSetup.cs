@@ -65,7 +65,6 @@ public sealed class AudioBuildCheck : UnityEditor.Build.IPreprocessBuildWithRepo
     public int callbackOrder => 0;
     public void OnPreprocessBuild(UnityEditor.Build.Reporting.BuildReport report)
     {
-        if (AudioDiagnosticBuild.Building) return;
         AudioSetup.ImportNarration();
         AudioSetup.Validate();
     }
