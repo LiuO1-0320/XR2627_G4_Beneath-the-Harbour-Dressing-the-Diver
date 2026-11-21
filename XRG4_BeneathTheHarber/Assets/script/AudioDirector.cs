@@ -229,12 +229,6 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
                     voice.clip = pending.Dequeue();
                     voice.volume = 0;
                     voiceEnvelope = 0;
-                    // Log the attempt before native playback; this does not confirm playback succeeded.
-                    Debug.Log($"[NarrationPlay] utc={DateTime.UtcNow:O} t={Time.realtimeSinceStartup:F3} " +
-                        $"stage={stage} session={session} clip=\"{voice.clip.name}\" " +
-                        $"frequency={voice.clip.frequency} channels={voice.clip.channels} length={voice.clip.length:F2} " +
-                        $"loadState={voice.clip.loadState} outputSampleRate={AudioSettings.outputSampleRate} " +
-                        $"mode={AudioDiagnostics.Mode}", this);
                     voice.Play();
                     hadVoice = true;
                     Status = "Playing: " + CurrentNarration;
