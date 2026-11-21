@@ -4,7 +4,7 @@ using UnityEngine;
 public sealed class AudioDiagnosticWindow : EditorWindow
 {
     static readonly string[] Labels = {
-        "正常播放", "禁止环境循环音", "禁止旁白与视频声音", "禁止全部播放（底层音频系统保留）"
+        "正常播放", "禁止环境循环音", "禁止旁白与视频声音", "禁止全部播放（底层音频系统保留）", "仅禁止旁白（视频保留）", "仅禁止视频声音（旁白保留）"
     };
     [MenuItem("Tools/Experience/Audio/Editor audio test panel")]
     public static void ShowPanel()
@@ -26,7 +26,7 @@ public sealed class AudioDiagnosticWindow : EditorWindow
             if (GUILayout.Button("恢复正常播放模式")) UnityEditor.SessionState.SetInt(AudioDiagnostics.EditorModeKey, 0);
         }
         if (playing) EditorGUILayout.LabelField("本轮生效模式：", AudioDiagnostics.Mode);
-        else EditorGUILayout.LabelField("当前选择：", Labels[UnityEditor.SessionState.GetInt(AudioDiagnostics.EditorModeKey, 0)]);
+        else EditorGUILayout.LabelField("当前选择：", Labels[Mathf.Clamp(UnityEditor.SessionState.GetInt(AudioDiagnostics.EditorModeKey, 0), 0, Labels.Length - 1)]);
         EditorGUILayout.Space();
         EditorGUILayout.HelpBox("禁止全部播放：跳过项目音源创建和播放，关闭视频音轨；引擎仍可初始化音频设备。它不等同于 AUDIO DISABLED 独立诊断包。", MessageType.Warning);
         EditorGUILayout.LabelField("环境音：博物馆音乐、港口及水下循环音", EditorStyles.wordWrappedLabel);

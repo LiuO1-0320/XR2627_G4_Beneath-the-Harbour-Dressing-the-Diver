@@ -13,7 +13,7 @@ using UnityEngine.Video;
 public sealed class AudioDiagnosticBuild : IProcessSceneWithReport
 {
     public static bool Building { get; private set; }
-    enum Mode { Normal, Disabled, NoAmbience, NoNarrationVideo }
+    enum Mode { Normal, Disabled, NoAmbience, NoNarrationVideo, NoNarration, NoVideo }
     static Mode mode;
     public int callbackOrder => 1000;
 
@@ -25,6 +25,11 @@ public sealed class AudioDiagnosticBuild : IProcessSceneWithReport
     public static void BuildNoNarrationVideo() { Build(Mode.NoNarrationVideo); }
 
 
+    [MenuItem("Tools/Experience/Audio/Build Windows - NO NARRATION diagnostic")]
+    public static void BuildNoNarration() { Build(Mode.NoNarration); }
+    [MenuItem("Tools/Experience/Audio/Build Windows - NO VIDEO AUDIO diagnostic")]
+    public static void BuildNoVideo() { Build(Mode.NoVideo); }
+
     [MenuItem("Tools/Experience/Audio/Build Windows - AUDIO DISABLED diagnostic")]
     public static void BuildWindows() { Build(Mode.Disabled); }
 
@@ -35,14 +40,14 @@ public sealed class AudioDiagnosticBuild : IProcessSceneWithReport
         if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
             throw new InvalidOperationException("Install Windows Build Support for this Tuanjie editor, then run this command again.");
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-        var diagnostics = new[] { "ER_AUDIO_DISABLED", "ER_AUDIO_NO_AMBIENCE", "ER_AUDIO_NO_NARRATION_VIDEO" };
+        var diagnostics = new[] { "ER_AUDIO_DISABLED", "ER_AUDIO_NO_AMBIENCE", "ER_AUDIO_NO_NARRATION_VIDEO", "ER_AUDIO_NO_NARRATION", "ER_AUDIO_NO_VIDEO" };
         var globalDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone).Split(';');
         if (globalDefines.Any(d => diagnostics.Contains(d.Trim())))
             throw new BuildFailedException("Remove ER_AUDIO_* diagnostic symbols from Player Settings. Use the dedicated build menus to select the mode.");
         string symbol = requestedMode == Mode.Disabled ? diagnostics[0] : requestedMode == Mode.NoAmbience ? diagnostics[1] :
-            requestedMode == Mode.NoNarrationVideo ? diagnostics[2] : null;
+            requestedMode == Mode.NoNarrationVideo ? diagnostics[2] : requestedMode == Mode.NoNarration ? diagnostics[3] : requestedMode == Mode.NoVideo ? diagnostics[4] : null;
         string label = requestedMode == Mode.Disabled ? "AUDIO_DISABLED" : requestedMode == Mode.NoAmbience ? "NO_AMBIENCE" :
-            requestedMode == Mode.NoNarrationVideo ? "NO_NARRATION_VIDEO" : "NORMAL";
+            requestedMode == Mode.NoNarrationVideo ? "NO_NARRATION_VIDEO" : requestedMode == Mode.NoNarration ? "NO_NARRATION" : requestedMode == Mode.NoVideo ? "NO_VIDEO" : "NORMAL";
         var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
         if (scenes.Length == 0) scenes = new[] { "Assets/Scenes/BasicScene.unity" };
         string output = EditorUtility.SaveFilePanel("Windows audio test: " + label, "", "ER_" + label + ".exe", "exe");
@@ -68,7 +73,8 @@ public sealed class AudioDiagnosticBuild : IProcessSceneWithReport
             File.WriteAllText(Path.Combine(Path.GetDirectoryName(output), "AUDIO_DIAGNOSTIC.txt"),
                 "Mode=" + label + "\nEngineAudio=" + (requestedMode != Mode.Disabled) +
                 "\nAmbience=" + (requestedMode != Mode.Disabled && requestedMode != Mode.NoAmbience) +
-                "\nNarrationAndVideo=" + (requestedMode != Mode.Disabled && requestedMode != Mode.NoNarrationVideo) +
+                "\nNarration=" + (requestedMode != Mode.Disabled && requestedMode != Mode.NoNarrationVideo && requestedMode != Mode.NoNarration) +
+                "\nVideo=" + (requestedMode != Mode.Disabled && requestedMode != Mode.NoNarrationVideo && requestedMode != Mode.NoVideo) +
                 "\nFeedback=" + (requestedMode != Mode.Disabled) +
                 "\nUTC=" + DateTime.UtcNow.ToString("O") + "\nUnity=" + Application.unityVersion +
                 "\nBuildGUID=" + report.summary.guid + "\nOptions=Development\nScenes=" + string.Join(",", scenes) + "\n");
@@ -89,7 +95,7 @@ public sealed class AudioDiagnosticBuild : IProcessSceneWithReport
             if (mode == Mode.Disabled)
                 foreach (var source in root.GetComponentsInChildren<AudioSource>(true))
                 { source.playOnAwake = false; source.clip = null; source.enabled = false; }
-            if (mode == Mode.Disabled || mode == Mode.NoNarrationVideo)
+            if (mode == Mode.Disabled || mode == Mode.NoNarrationVideo || mode == Mode.NoVideo)
                 foreach (var video in root.GetComponentsInChildren<VideoPlayer>(true))
                 { video.audioOutputMode = VideoAudioOutputMode.None; video.controlledAudioTrackCount = 0; }
         }

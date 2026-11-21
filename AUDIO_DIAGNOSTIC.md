@@ -13,12 +13,14 @@ Exit Play mode and save, then use `Tools > Experience > Audio`:
 | Build Windows - AUDIO DISABLED diagnostic | AUDIO_DISABLED | Engine audio off, all video tracks off |
 | Build Windows - NO AMBIENCE diagnostic | NO_AMBIENCE | Museum music, harbour and underwater loops off; narration, video and feedback on |
 | Build Windows - NO NARRATION AND VIDEO diagnostic | NO_NARRATION_VIDEO | All AudioDirector narration (including helmet interior) and video tracks off; ambience and feedback on |
+| Build Windows - NO NARRATION diagnostic | NO_NARRATION | Narration off; video audio, ambience and feedback on |
+| Build Windows - NO VIDEO AUDIO diagnostic | NO_VIDEO | Video audio off; narration, ambience and feedback on |
 
 NPC text, animation and task interactions remain available. No mode restores the
 previously removed part pickup sounds. Partial modes prevent the relevant clips
 from being scheduled/played; they do not merely lower the volume to zero.
 
-Choose a NEW EMPTY output folder for each variant. All four menus use Development
+Choose a NEW EMPTY output folder for each variant. All six menus use Development
 Build and the current project backend; use the same commit, scenes, backend and
 engine version for comparisons. The menus do not install Windows Build Support,
 Visual Studio C++ tools or a Windows SDK. Do not set ER_AUDIO_* symbols manually
@@ -58,13 +60,13 @@ they do not prove the root cause or guarantee future stability.
 If it still crashes, resolve the NEW package's stack using its matching symbols.
 If stable, the next comparison is engine audio enabled with no playback, then
 restore narration, video sound, ambience and water/feedback separately.
-The menus implement the four comparisons above. An engine-on/no-playback variant
+The menus implement the six comparisons above. An engine-on/no-playback variant
 is not yet implemented; add it if the initial results require device-only isolation.
 
 ## Editor-only playback isolation
 
 Open `Tools > Experience > Audio > Editor audio test panel`.
-Exit Play, choose Normal / No ambience / No narration and video / No playback,
+Exit Play, choose Normal / No ambience / No narration and video / No playback / No narration / No video audio,
 then enter Play and connect the headset as usual. Controls are locked during Play.
 The selection lasts for the current editor session only, is not committed to the
 project and is not included in player builds. The selected mode is captured before
@@ -83,3 +85,10 @@ For editor tests, collect the editor log, not Player.log. Copy it after each run
 Windows `%LOCALAPPDATA%/Tuanjie/Editor/Editor.log` (if absent, check the editor's
 Console menu > Open Editor Log); macOS `~/Library/Logs/Tuanjie/Editor.log`.
 Use the actual log opened by the editor if the installation uses a different path.
+
+For the next split comparison, alternate NO_NARRATION and NO_VIDEO using the same
+operations and similar duration; include video play/pause/seek and region-arrival
+narration triggers. Exit Play before every change. Verify the startup log's Mode,
+narration and video fields. Save a copy of Editor.log immediately after each run.
+Neither split mode is a mute slider or a confirmed fix; repeated non-crash runs
+alone do not prove which subsystem caused a prior crash. Preserve every crash dump.

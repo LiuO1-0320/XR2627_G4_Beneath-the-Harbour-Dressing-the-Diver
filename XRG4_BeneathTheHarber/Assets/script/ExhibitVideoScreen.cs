@@ -160,7 +160,7 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         player.renderMode = VideoRenderMode.RenderTexture; player.aspectRatio = VideoAspectRatio.FitInside;
         texture = new RenderTexture(1280, 720, 0) { name = name + " video", hideFlags = HideFlags.HideAndDontSave };
         texture.Create(); player.targetTexture = texture;
-        if (AudioDiagnostics.NarrationAndVideoDisabled)
+        if (AudioDiagnostics.VideoDisabled)
         {
             player.audioOutputMode = VideoAudioOutputMode.None;
             player.controlledAudioTrackCount = 0;

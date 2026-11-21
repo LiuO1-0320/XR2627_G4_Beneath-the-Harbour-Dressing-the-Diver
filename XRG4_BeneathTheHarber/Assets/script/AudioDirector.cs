@@ -133,7 +133,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
             return new[] { coordinator.stages[(int)region].narration };
         return map ? map.Narration(region) : new AudioClip[0];
     }
-    public bool HasRegionNarration(ExperienceStage region) => !AudioDiagnostics.NarrationAndVideoDisabled && Array.Exists(RegionClips(region), clip => clip);
+    public bool HasRegionNarration(ExperienceStage region) => !AudioDiagnostics.NarrationDisabled && Array.Exists(RegionClips(region), clip => clip);
     public bool RequestRegionNarration(Guid id, ExperienceStage region, bool replay)
     {
         if (!active || paused || !coordinator || !coordinator.NarrationArrivalReady(region) || !HasRegionNarration(region)) return false;
@@ -150,7 +150,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     }
     void Enqueue(AudioClip[] clips)
     {
-        if (AudioDiagnostics.NarrationAndVideoDisabled || clips == null) return;
+        if (AudioDiagnostics.NarrationDisabled || clips == null) return;
         foreach (var clip in clips) if (clip && scheduled.Add(clip)) pending.Enqueue(clip);
     }
     void SetPaused(bool value)
