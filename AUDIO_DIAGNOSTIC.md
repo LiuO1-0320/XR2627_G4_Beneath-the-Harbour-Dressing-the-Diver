@@ -60,3 +60,26 @@ If stable, the next comparison is engine audio enabled with no playback, then
 restore narration, video sound, ambience and water/feedback separately.
 The menus implement the four comparisons above. An engine-on/no-playback variant
 is not yet implemented; add it if the initial results require device-only isolation.
+
+## Editor-only playback isolation
+
+Open `Tools > Experience > Audio > Editor audio test panel`.
+Exit Play, choose Normal / No ambience / No narration and video / No playback,
+then enter Play and connect the headset as usual. Controls are locked during Play.
+The selection lasts for the current editor session only, is not committed to the
+project and is not included in player builds. The selected mode is captured before
+scene Awake, including when domain reload is disabled. Check the Console startup
+line `ER AUDIO DIAGNOSTIC: mode=...` for each run.
+
+No playback skips experience audio source creation, blocks video audio, and stops
+authored scene AudioSources after scene load. It does not shut down the editor's
+native audio system/device and is not equivalent to AUDIO_DISABLED builds.
+Scene playOnAwake audio can initialize before sceneLoaded, so use the fully-disabled
+standalone package for complete native-audio isolation. Partial modes gate the
+project AudioDirector and ExhibitVideoScreen; independently added third-party
+sources are not classified automatically. Existing task and water detection stay active.
+
+For editor tests, collect the editor log, not Player.log. Copy it after each run:
+Windows `%LOCALAPPDATA%/Tuanjie/Editor/Editor.log` (if absent, check the editor's
+Console menu > Open Editor Log); macOS `~/Library/Logs/Tuanjie/Editor.log`.
+Use the actual log opened by the editor if the installation uses a different path.

@@ -49,10 +49,10 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     {
         if (initialized) return;
         coordinator = GetComponent<StageCoordinator>();
-        if (AudioDiagnostics.Disabled)
+        if (AudioDiagnostics.PlaybackDisabled)
         {
             waterVolumes = FindObjectsOfType<WaterVolumeSwimming>(true);
-            initialized = true; Status = "Audio disabled (diagnostic build)";
+            initialized = true; Status = "Audio playback disabled (diagnostic)";
             return;
         }
         if (!map) map = Resources.Load<AudioMap>("ExperienceAudio/DefaultAudioMap");
@@ -82,7 +82,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     public void Synchronize(SessionState state, AudioClip legacyNarration)
     {
         Initialize();
-        if (AudioDiagnostics.Disabled) return;
+        if (AudioDiagnostics.PlaybackDisabled) return;
         if (!isActiveAndEnabled) { StopAll(); return; }
         if (!map) return;
         bool nextActive = AudioPolicy.Active(state.Status);
@@ -162,7 +162,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     }
     void LateUpdate()
     {
-        if (AudioDiagnostics.Disabled)
+        if (AudioDiagnostics.PlaybackDisabled)
         {
             // Water location is gameplay evidence even when all audio processing is disabled.
             if (!initialized) Initialize();
@@ -305,7 +305,7 @@ public sealed class AudioDirector : MonoBehaviour, IResettable
     public void StopAll()
     {
         if (!initialized) return;
-        if (AudioDiagnostics.Disabled) { headInWater = false; Status = "Audio disabled (diagnostic build)"; return; }
+        if (AudioDiagnostics.PlaybackDisabled) { headInWater = false; Status = "Audio playback disabled (diagnostic)"; return; }
         foreach (var source in new[] { voice, museum, harbour, underwater, feedback, splash }) if (source) { source.Stop(); source.volume = 0; source.clip = null; }
         pending.Clear(); scheduled.Clear(); active = paused = hadVoice = insideScheduled = submerged = false;
         arrivalGate.Clear();
