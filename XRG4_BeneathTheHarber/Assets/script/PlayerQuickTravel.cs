@@ -148,7 +148,7 @@ public class PlayerQuickTravel : MonoBehaviour
         drawer.GetComponent<RectTransform>().sizeDelta = new Vector2(420, 1000);
         uiParent = drawer.transform;
         var background = Element<Image>("Background", Vector2.zero, new Vector2(420, 1000));
-        background.color = new Color(0.025f, 0.09f, 0.12f, 0.65f);
+        background.color = new Color(0.025f, 0.09f, 0.12f, 0.97f);
         background.raycastTarget = false;
         Label("Title", "快捷跳转\nQuick travel", new Vector2(0, 400), new Vector2(380, 120), 36);
         string[] captions = { "起点 / Start", "ACT 1", "ACT 2", "ACT 3", "ACT 4" };
@@ -157,7 +157,7 @@ public class PlayerQuickTravel : MonoBehaviour
             int index = i;
             MakeButton(captions[i], new Vector2(0, 260 - i * 115), () => TravelTo(index), out _);
         }
-        status = Label("Hint", "指向按钮，按扳机\nPoint + trigger\nA 键展开 / 收起", new Vector2(0, -325), new Vector2(380, 120), 26);
+        status = Label("Hint", "指向按钮，按扳机\nPoint + trigger\nA键展开 / 收起 B键行走加速", new Vector2(0, -325), new Vector2(380, 120), 26);
         // Keep this button outside the drawer so it remains interactive when collapsed.
         uiParent = panel.transform;
         toggleCaption = MakeButton("收起 / Close", new Vector2(0, -450), ToggleMenu, out toggleRect);
@@ -167,12 +167,16 @@ public class PlayerQuickTravel : MonoBehaviour
     {
         var image = Element<Image>(caption, position, new Vector2(360, 110));
         rect = image.rectTransform;
-        image.color = new Color(0.1f, 0.42f, 0.42f, 0.8f);
+        // Frameless option: transparent hit area, caption framed by two deep-blue
+        // long arcs (maritime-museum motif).
+        image.color = Color.clear;
+        var frame = OptionFrame.Apply(image.gameObject);
         var button = image.gameObject.AddComponent<QuickTravelPressButton>();
-        button.targetGraphic = image;
+        if (frame != null) button.targetGraphic = frame;
         button.onClick.AddListener(action);
         var text = Label(caption + " Label", caption, Vector2.zero, new Vector2(340, 100), 32);
         text.transform.SetParent(image.transform, false);
+        text.rectTransform.anchoredPosition = new Vector2(360f * 0.044f, 0f);
         return text;
     }
     T Element<T>(string name, Vector2 position, Vector2 size) where T : Graphic

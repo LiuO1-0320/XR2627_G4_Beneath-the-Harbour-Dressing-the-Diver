@@ -521,12 +521,14 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
     Text MakeButton(string caption, Vector2 position, UnityEngine.Events.UnityAction action)
     {
         var image = Element<Image>(caption, position, new Vector2(480, 100));
-        image.color = new Color(0.1f, 0.42f, 0.42f);
+        image.color = Color.clear;
+        var frame = OptionFrame.Apply(image.gameObject);
         var button = image.gameObject.AddComponent<AccessibleButton>();
-        button.targetGraphic = image;
+        if (frame != null) button.targetGraphic = frame;
         button.onClick.AddListener(action);
         var label = Label(caption + " Label", caption, Vector2.zero, new Vector2(460, 90), 34);
         label.transform.SetParent(image.transform, false);
+        label.rectTransform.anchoredPosition = new Vector2(480f * 0.044f, 0f);
         return label;
     }
     void OnDisable()

@@ -142,7 +142,9 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         var button = play.gameObject.AddComponent<QuickTravelPressButton>(); button.targetGraphic = play;
         playButtons.Add(button);
         button.onClick.AddListener(TogglePlayback);
-        playLabels.Add(Label(play.transform, "▶ 播放 / Play", Vector2.zero, new Vector2(250, 55), 27));
+        var playLabel = Label(play.transform, "▶ 播放 / Play", Vector2.zero, new Vector2(250, 55), 27);
+        playLabel.rectTransform.anchoredPosition = new Vector2(260f * 0.044f, 0f);
+        playLabels.Add(playLabel);
         var track = Graphic<Image>(canvas.transform, "Progress track", new Vector2(10, -260), new Vector2(330, 14));
         track.color = new Color(.2f, .26f, .28f); track.raycastTarget = true;
         var fill = Graphic<Image>(track.transform, "Progress fill", Vector2.zero, new Vector2(330, 14));

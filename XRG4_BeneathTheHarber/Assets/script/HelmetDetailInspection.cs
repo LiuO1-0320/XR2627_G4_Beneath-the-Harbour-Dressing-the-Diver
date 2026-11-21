@@ -429,7 +429,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         detailsScroll.verticalScrollbar = scrollbar;
         status = TextLabel("Status", new Vector2(0, -295), new Vector2(1100, 65), 30);
         Button("重新开始 / Restart", 0, ResetExhibit);
-        InformationButton("散落零件归位（保留其他进度）", new Vector2(850, -640), RecoverLooseParts);
+        InformationButton("散落零件归位（保留其他进度）", new Vector2(850, -557.5f), RecoverLooseParts, 15f);
         checklist = TextLabel("Part checklist", new Vector2(-850, 0), new Vector2(450, 850), 28);
         checklist.alignment = TextAnchor.UpperLeft; checklist.raycastTarget = false;
         var checklistBackground = Element<Image>("Checklist background", new Vector2(-850,0), new Vector2(500,900));
@@ -448,26 +448,27 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         for (int i=0;i<descriptions.Length;i++)
         {
             var info=descriptions[i]; if (info==null) continue;
-            InformationButton(info.title,new Vector2(850,350-i*105),()=>
+            InformationButton(info.title,new Vector2(850, 432.5f - i * 105),()=>
             {
                 if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
                 ShowDetails(info.title+"\n\n"+info.description+"\n\n"+info.englishDescription);
                 SessionTelemetry.Report("InformationViewed",this,info.key);
-            });
+            }, info.key=="fixing" ? 15f : 0f);
         }
-        InformationButton("文字上移 / Scroll up",new Vector2(850,-440),()=>ScrollInformation(.35f));
-        InformationButton("文字下移 / Scroll down",new Vector2(850,-535),()=>ScrollInformation(-.35f));
+        InformationButton("文字上移 / Scroll up",new Vector2(850,-357.5f),()=>ScrollInformation(.35f));
+        InformationButton("文字下移 / Scroll down",new Vector2(850,-452.5f),()=>ScrollInformation(-.35f));
     }
     void ScrollInformation(float delta)
     {
         if (!StageCoordinator.Allows(ExperienceStage.ScaleUp)) return;
         detailsScroll.StopMovement(); detailsScroll.verticalNormalizedPosition=Mathf.Clamp01(detailsScroll.verticalNormalizedPosition+delta);
     }
-    void InformationButton(string caption,Vector2 position,UnityEngine.Events.UnityAction action)
+    void InformationButton(string caption,Vector2 position,UnityEngine.Events.UnityAction action,float labelShiftX=0)
     {
-        var image=Element<Image>(caption,position,new Vector2(440,85)); image.color=new Color(.06f,.28f,.32f);
-        var button=image.gameObject.AddComponent<AccessibleButton>(); button.targetGraphic=image; button.onClick.AddListener(action);
-        var label=TextLabel(caption+" label",Vector2.zero,new Vector2(425,80),27);
+        var image=Element<Image>(caption,position,new Vector2(440,85)); image.color=Color.clear;
+        var frame=OptionFrame.Apply(image.gameObject);
+        var button=image.gameObject.AddComponent<AccessibleButton>(); if (frame != null) button.targetGraphic=frame; button.onClick.AddListener(action);
+        var label=TextLabel(caption+" label",new Vector2(labelShiftX,0),new Vector2(425,80),27);
         label.text=caption; label.transform.SetParent(image.transform,false); label.raycastTarget=false;
     }
     void ShowDetails(string message)
@@ -494,12 +495,21 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
     void Button(string caption, float x, UnityEngine.Events.UnityAction action)
     {
         var image = Element<Image>(caption, new Vector2(x, -390), new Vector2(320, 95));
-        image.color = new Color(0.1f, 0.42f, 0.42f);
-        var button = image.gameObject.AddComponent<AccessibleButton>(); button.targetGraphic = image;
+        image.color = Color.clear;
+        var frame = OptionFrame.Apply(image.gameObject);
+        if (frame != null)
+        {
+            var fr = frame.GetComponent<RectTransform>();
+            fr.offsetMin = new Vector2(-16, -4);
+            fr.offsetMax = new Vector2(16, -4);
+        }
+        var button = image.gameObject.AddComponent<AccessibleButton>();
+        if (frame != null) button.targetGraphic = frame;
         button.onClick.AddListener(action);
         var text = TextLabel(caption + " Label", Vector2.zero, new Vector2(310, 85), 34);
         text.text = caption;
         text.transform.SetParent(image.transform, false); text.raycastTarget = false;
+        text.rectTransform.anchoredPosition = new Vector2(320f * 0.044f, 0f);
     }
     Text TextLabel(string name, Vector2 position, Vector2 size, int fontSize)
     {
