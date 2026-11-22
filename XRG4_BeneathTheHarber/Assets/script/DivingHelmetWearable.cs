@@ -20,6 +20,11 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
     public bool returnWithSecondaryButton = true;
     [Min(0.1f)] public float standSnapDistance = 0.7f;
     public bool IsWorn { get; private set; }
+    public bool ReadyToWear => helmet && head && grab && grab.isSelected && !IsWorn
+        && StageCoordinator.AllowsHelmet(this)
+        && Vector3.Distance(helmet.TransformPoint(center), head.position) <= wearDistance;
+    bool fittingHighlight;
+    MaterialPropertyBlock[] originalProperties;
     XRGrabInteractable grab;
     Rigidbody body;
     Renderer[] renderers;
@@ -47,6 +52,12 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
         shadows = new ShadowCastingMode[renderers.Length];
         for (int i = 0; i < renderers.Length; i++)
         { bounds.Encapsulate(renderers[i].bounds); shadows[i] = renderers[i].shadowCastingMode; }
+        originalProperties = new MaterialPropertyBlock[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            originalProperties[i] = new MaterialPropertyBlock();
+            renderers[i].GetPropertyBlock(originalProperties[i]);
+        }
         center = helmet.InverseTransformPoint(bounds.center);
         body = helmet.GetComponent<Rigidbody>();
         if (!body) body = helmet.gameObject.AddComponent<Rigidbody>();
@@ -97,6 +108,7 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
     {
         if (!helmet || !grab) return;
         if (!head && Camera.main) head = Camera.main.transform;
+        SetFittingHighlight(ReadyToWear);
         // A worn helmet must keep following tracking, including during pause and routing.
         FollowHead();
         bool canRemoveWorn = IsWorn && (!StageCoordinator.Current ||
@@ -134,13 +146,43 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
             }
         }
         bool button = SecondaryPressed(XRNode.LeftHand) || SecondaryPressed(XRNode.RightHand);
-        if (returnWithSecondaryButton && IsWorn && button && !previousButton)
+        bool editorRemove = false;
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        editorRemove = keyboard != null && (keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame);
+#endif
+        if (editorRemove && !GetComponent<DiverNpcInteraction>())
+        {
+            if (!IsWorn) Debug.Log("Helmet removal: helmet is not fitted. Bring it close to the head and release the grip first.", this);
+            else if (!canRemoveWorn) Debug.Log("Helmet removal: resume the session first.", this);
+            else
+            {
+                ReturnToStand();
+                Debug.Log(IsWorn ? "Helmet removal blocked: release the grip first." : "Helmet returned to stand.", this);
+            }
+        }
+        else if (returnWithSecondaryButton && IsWorn && button && !previousButton)
         {
             ReturnToStand();
         }
         previousButton = button;
         FollowHead();
         if (!IsWorn && !grab.isSelected && helmet.position.y < initialPosition.y - 10) ReturnToStand();
+    }
+    void SetFittingHighlight(bool active)
+    {
+        if (fittingHighlight == active || originalProperties == null) return;
+        fittingHighlight = active;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (!renderers[i]) continue;
+            if (!active) { renderers[i].SetPropertyBlock(originalProperties[i]); continue; }
+            var properties = new MaterialPropertyBlock();
+            renderers[i].GetPropertyBlock(properties);
+            properties.SetColor("_BaseColor", new Color(0.25f, 1f, 0.65f, 1f));
+            properties.SetColor("_Color", new Color(0.25f, 1f, 0.65f, 1f));
+            renderers[i].SetPropertyBlock(properties);
+        }
     }
     void FollowHead()
     {
@@ -163,7 +205,19 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
     }
     static bool SecondaryPressed(XRNode node)
     {
-        return InputDevices.GetDeviceAtXRNode(node).TryGetFeatureValue(CommonUsages.secondaryButton, out bool pressed) && pressed;
+        if (InputDevices.GetDeviceAtXRNode(node).TryGetFeatureValue(CommonUsages.secondaryButton, out bool pressed) && pressed)
+            return true;
+#if ENABLE_INPUT_SYSTEM
+        // XR simulators publish controller state through Input System, not the legacy XR device API.
+        var usage = node == XRNode.LeftHand
+            ? UnityEngine.InputSystem.CommonUsages.LeftHand
+            : UnityEngine.InputSystem.CommonUsages.RightHand;
+        var controller = UnityEngine.InputSystem.InputSystem.GetDevice<UnityEngine.InputSystem.XR.XRController>(usage);
+        var button = controller?.TryGetChildControl<UnityEngine.InputSystem.Controls.ButtonControl>("secondaryButton");
+        return button != null && button.isPressed;
+#else
+        return false;
+#endif
     }
     public void PrepareSessionReset()
     {
@@ -175,6 +229,7 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
     public void ReturnToStand()
     {
         if (!body || grab.isSelected) return;
+        SetFittingHighlight(false);
         IsWorn = false; wearFrame = -1;
         examinationSession = System.Guid.Empty;
         if (!body.isKinematic) { body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
@@ -186,6 +241,7 @@ public class DivingHelmetWearable : MonoBehaviour, IResettable
     }
     void OnDisable()
     {
+        SetFittingHighlight(false);
         if (!grab) return;
         if (IsWorn) ReturnToStand();
         grab.selectEntered.RemoveListener(OnGrab);

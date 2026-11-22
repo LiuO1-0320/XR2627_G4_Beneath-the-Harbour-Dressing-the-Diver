@@ -118,8 +118,12 @@ public sealed class StageCoordinator : MonoBehaviour
     }
     public static bool AllowsHelmet(DivingHelmetWearable helmet)
     {
-        return helmet.GetComponent<DiverNpcInteraction>() ? Allows(ExperienceStage.DressTheDiver)
-            : Allows(ExperienceStage.TheCase);
+        if (helmet.GetComponent<DiverNpcInteraction>()) return Allows(ExperienceStage.DressTheDiver);
+        if (Allows(ExperienceStage.TheCase)) return true;
+        // First fitting advances the session. Keep the visitor exhibit reusable afterwards.
+        // Repeated fittings do not report completion outside TheCase (see DivingHelmetWearable).
+        return Current && Current.Controller.Session.Status == SessionStatus.Running
+            && Current.Controller.Session.Result(ExperienceStage.TheCase) == StageResult.Completed;
     }
     public void QueueInteraction(Guid session, ExperienceStage stage, VisitorAction action)
     {
@@ -283,6 +287,10 @@ public sealed class StageCoordinator : MonoBehaviour
         foreach (var component in content.activities)
             if (component is IStageActivity activity)
             { activeActivities.Add(activity); activity.BeginStage(Controller.Session.SessionId, stage); }
+        if (stage == ExperienceStage.ScaleUp && activeActivities.Count == 0)
+            foreach (var inspection in inspections)
+                if (inspection && inspection.isActiveAndEnabled)
+                { activeActivities.Add(inspection); inspection.BeginStage(Controller.Session.SessionId, stage); }
         IntegrationStatus = SessionState.IsTask(stage) && stage != ExperienceStage.Descent && activeActivities.Count == 0
             ? "Awaiting M3 integration: no task provider assigned. Staff may Skip; no success will be inferred." : "";
         if (stage == ExperienceStage.DressTheDiver && activeActivities.Count == 0 && Array.Exists(divers, diver => diver))
@@ -329,6 +337,81 @@ public sealed class StageCoordinator : MonoBehaviour
     static bool KeepFitted(DivingHelmetWearable wearable, bool keepFittedHelmet, bool keepDiverEscort)
     {
         return wearable.IsWorn && (wearable.GetComponent<DiverNpcInteraction>() ? keepDiverEscort : keepFittedHelmet);
+    }
+    public bool BackToPreviousStage()
+    {
+        var state = Controller.Session;
+        var restore = state.CaptureBackRestore();
+        if (restore == null || !GlobalReset || GlobalReset.IsResetting || !navigation || !Camera.main) return false;
+        var target = state.PreviousStage;
+        int destination = target == ExperienceStage.Briefing ? 0 : target == ExperienceStage.TheCase ? 1
+            : target == ExperienceStage.ScaleUp ? 2 : target == ExperienceStage.DressTheDiver ? 3 : 4;
+        Transform[] targets = { navigation.start, navigation.act1, navigation.act2, navigation.act3, navigation.act4 };
+        if (!targets[destination]) return false;
+        // Reuse the reset sequence: cancel selections/deferred releases, rope travel and all pending callbacks.
+        if (!GlobalReset.ResetAll()) throw new InvalidOperationException("Back reset failed: " + GlobalReset.LastError);
+        navigation.SessionTravelTo(destination);
+        PositionAtInteractionExhibit(target);
+        if (target == ExperienceStage.SeabedCleanup && cleanup)
+        {
+            var origin = Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+            if (!origin || !cleanup.CollectionTarget) throw new InvalidOperationException("Cleanup destination unavailable.");
+            var body = origin.GetComponent<CharacterController>(); bool enabledBody = body && body.enabled;
+            if (enabledBody) body.enabled = false;
+            Vector3 feet = cleanup.CollectionTarget.position + Vector3.right * 2;
+            Vector3 offset = Camera.main.transform.position - origin.transform.position; offset.y = 0;
+            origin.transform.position = feet - offset;
+            if (enabledBody) body.enabled = true;
+        }
+        Physics.SyncTransforms();
+        restore();
+        IntegrationStatus = "Returned to " + state.Stage + ": task restarted.";
+        return true;
+    }
+    void PositionAtInteractionExhibit(ExperienceStage stage)
+    {
+        Transform exhibit = null;
+        if (stage == ExperienceStage.ScaleUp)
+        {
+            foreach (var inspection in inspections) if (inspection && inspection.helmet) { exhibit = inspection.helmet; break; }
+        }
+        else if (stage == ExperienceStage.DressTheDiver)
+        {
+            // Back must return to the reset dressing station, not the old ACT3 prefab anchor.
+            foreach (var diver in divers)
+                if (diver && diver.helmet) { exhibit = diver.helmet; break; }
+        }
+        else if (stage == ExperienceStage.TheCase)
+        {
+            foreach (var wearable in wearables)
+                if (wearable && wearable.helmet && !wearable.GetComponent<DiverNpcInteraction>()) { exhibit = wearable.helmet; break; }
+        }
+        if (!exhibit || !Camera.main) return;
+        var origin = Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+        if (!origin) throw new InvalidOperationException("Back requires an XR Origin.");
+        Vector3 centre = exhibit.position;
+        var visible = exhibit.GetComponentsInChildren<Renderer>();
+        if (visible.Length > 0)
+        {
+            var bounds = visible[0].bounds;
+            foreach (var renderer in visible) bounds.Encapsulate(renderer.bounds);
+            centre = bounds.center;
+        }
+        // Keep the authored arrival side, but measure distance from the actual model, not the region anchor.
+        var area = stages[(int)stage].arrivalArea;
+        Vector3 approach = Vector3.ProjectOnPlane((area ? area.bounds.center : Camera.main.transform.position) - centre, Vector3.up);
+        if (approach.sqrMagnitude < .01f) approach = -exhibit.forward;
+        approach = Vector3.ProjectOnPlane(approach, Vector3.up).normalized;
+        Vector3 position = centre + approach * 1.3f;
+        position.y = origin.transform.position.y;
+        var body = origin.GetComponent<CharacterController>(); bool wasEnabled = body && body.enabled;
+        if (wasEnabled) body.enabled = false;
+        Vector3 forward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up);
+        if (forward.sqrMagnitude > .001f)
+            origin.transform.RotateAround(Camera.main.transform.position, Vector3.up, Vector3.SignedAngle(forward, -approach, Vector3.up));
+        Vector3 offset = Camera.main.transform.position - origin.transform.position; offset.y = 0;
+        origin.transform.position = position - offset;
+        if (wasEnabled) body.enabled = true;
     }
     void Navigate(int destination)
     {

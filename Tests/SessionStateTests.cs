@@ -22,6 +22,7 @@ public static class SessionStateTests
         Check(!DiveShaftGeometry.Contains(1.5f, 0) && DiveShaftGeometry.CanInteract(1.5f, 0), "Expanded activation never widens the safe travel shaft");
         Check(!DiveShaftGeometry.CanInteract(float.NaN, 0), "Invalid interaction position rejected");
         try { ResetTests.Run(); } catch (Exception error) { Console.WriteLine("RESET TEST FAILURE: " + error.Message); Environment.Exit(1); }
+        BackTests.Run();
         GazeTests.Run();
         CommandTests.Run();
         AudioArrivalTests.Run();

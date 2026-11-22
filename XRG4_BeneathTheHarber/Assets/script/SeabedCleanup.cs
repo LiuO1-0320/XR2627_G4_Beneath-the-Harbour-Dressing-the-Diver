@@ -22,6 +22,9 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         public Rigidbody body;
         public XRGrabInteractable grab;
         public bool held, collected;
+        public Renderer[] renderers;
+        public MaterialPropertyBlock[] originalProperties;
+        public bool highlighted;
     }
     readonly List<Litter> litter = new List<Litter>();
     readonly List<Material> materials = new List<Material>();
@@ -95,7 +98,17 @@ public class SeabedCleanup : MonoBehaviour, IResettable
                 item.grab.colliders.Clear(); item.grab.colliders.Add(collider);
                 item.grab.useDynamicAttach = true; item.grab.throwOnDetach = false;
                 item.grab.retainTransformParent = true; item.grab.movementType = XRBaseInteractable.MovementType.Kinematic;
-                item.grab.selectEntered.AddListener(args => item.held = true);
+                item.renderers = root.GetComponentsInChildren<Renderer>();
+                item.originalProperties = new MaterialPropertyBlock[item.renderers.Length];
+                for (int j = 0; j < item.renderers.Length; j++)
+                {
+                    item.originalProperties[j] = new MaterialPropertyBlock();
+                    item.renderers[j].GetPropertyBlock(item.originalProperties[j]);
+                }
+                item.grab.hoverEntered.AddListener(args => RefreshHighlight(item));
+                item.grab.hoverExited.AddListener(args => RefreshHighlight(item));
+                item.grab.selectEntered.AddListener(args => { item.held = true; SetHighlight(item, false); });
+                item.grab.selectExited.AddListener(args => RefreshHighlight(item));
             }
             litter.Add(item);
         }
@@ -124,6 +137,7 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         foreach (var item in litter)
         {
             if (item.collected || !item.grab) continue;
+            RefreshHighlight(item);
             if (item.grab.isSelected) { item.held = true; continue; }
             Vector3 inBasket = basket.InverseTransformPoint(item.root.position);
             // Release inside the open basket, including a small area above its rim.
@@ -139,6 +153,26 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         var coordinator = StageCoordinator.Current;
         if (coordinator)
             coordinator.Controller.Session.ReportCleanupProgress(coordinator.Controller.Session.SessionId, collected, litter.Count);
+    }
+    void RefreshHighlight(Litter item)
+    {
+        SetHighlight(item, item.grab && item.grab.isActiveAndEnabled && item.grab.isHovered
+            && !item.grab.isSelected && !item.collected && StageCoordinator.Allows(ExperienceStage.SeabedCleanup));
+    }
+    void SetHighlight(Litter item, bool active)
+    {
+        if (item.highlighted == active || item.renderers == null) return;
+        item.highlighted = active;
+        for (int i = 0; i < item.renderers.Length; i++)
+        {
+            if (!item.renderers[i]) continue;
+            if (!active) { item.renderers[i].SetPropertyBlock(item.originalProperties[i]); continue; }
+            var properties = new MaterialPropertyBlock();
+            item.renderers[i].GetPropertyBlock(properties);
+            properties.SetColor("_BaseColor", new Color(1f, .85f, .15f, 1f));
+            properties.SetColor("_Color", new Color(1f, .85f, .15f, 1f));
+            item.renderers[i].SetPropertyBlock(properties);
+        }
     }
     public void ResetCleanup()
     {
@@ -178,7 +212,7 @@ public class SeabedCleanup : MonoBehaviour, IResettable
     void RefreshProgress()
     {
         progress.text = collected == litter.Count ? "全部回收完成！请上浮到水面\nALL LITTER COLLECTED - ASCEND TO THE SURFACE" :
-            "已回收 / Collected: " + collected + " / " + litter.Count;
+            "已回收 / Collected: \n" + collected + " / " + litter.Count;
     }
     void BuildPanel()
     {
@@ -193,10 +227,13 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         Label(panel, "握住垃圾捡起，放到回收篮内松手\nHold grip to pick up litter; release it inside the basket", new Vector2(0, 110), 32);
         progress = Label(panel, "", new Vector2(0, -45), 38);
         var image = Graphic<Image>(panel, "Reset collection", new Vector2(0, -225), new Vector2(700, 90));
-        image.color = new Color(.05f, .38f, .34f); image.raycastTarget = true;
-        var button = image.gameObject.AddComponent<QuickTravelPressButton>(); button.targetGraphic = image; resetButton = button;
+        image.color = Color.clear; image.raycastTarget = true;
+        var button = image.gameObject.AddComponent<QuickTravelPressButton>();
+        var resetFrame = OptionFrame.Apply(image.gameObject);
+        if (resetFrame != null) button.targetGraphic = resetFrame; resetButton = button;
         button.onClick.AddListener(ResetCleanup);
-        Label(image.transform, "重新收集 / Reset cleanup", Vector2.zero, 32);
+        var resetLabel = Label(image.transform, "重新收集 / Reset cleanup", Vector2.zero, 32);
+        resetLabel.rectTransform.anchoredPosition = new Vector2(700f * 0.044f, 0f);
     }
     T Graphic<T>(Transform parent, string name, Vector2 p, Vector2 size) where T : Graphic
     {

@@ -38,8 +38,8 @@ public sealed class CommandDispatcher
         CommandReply result;
         if (command.sessionId != state.SessionId.ToString() || command.expectedRevision != state.Revision)
             result = Reply(command, false, "StaleState", "Fetch a fresh snapshot; do not automatically retry with a new revision.");
-        else if (command.action != "Start" && command.action != "Pause" && command.action != "Resume" && command.action != "Skip" && command.action != "Reset")
-            result = Reply(command, false, "UnknownAction", "Supported: Start, Pause, Resume, Skip, Reset.");
+        else if (command.action != "Start" && command.action != "Pause" && command.action != "Resume" && command.action != "Skip" && command.action != "Reset" && command.action != "Back")
+            result = Reply(command, false, "UnknownAction", "Supported: Start, Pause, Resume, Back, Skip, Reset.");
         else
         {
             try

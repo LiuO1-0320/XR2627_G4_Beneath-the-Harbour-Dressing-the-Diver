@@ -35,6 +35,13 @@ public sealed class AccessibilityUI : MonoBehaviour, IResettable
         panel.transform.SetParent(transform,false); panel.transform.localScale = Vector3.one*.0013f;
         panel.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         panel.GetComponent<RectTransform>().sizeDelta = new Vector2(720,1040);
+        // Same black backing as the other text panels, so the floating controls stay readable.
+        var backing = new GameObject("Backing",typeof(RectTransform),typeof(Image));
+        backing.transform.SetParent(panel.transform,false);
+        backing.GetComponent<RectTransform>().sizeDelta = new Vector2(720,1040);
+        backing.GetComponent<Image>().color = new Color(.025f,.09f,.12f,.96f);
+        backing.GetComponent<Image>().raycastTarget = false;
+        backing.transform.SetAsFirstSibling();
         heading = Label("HEAD GAZE / 头部凝视",new Vector2(0,450),new Vector2(700,70));
         menu = Button("辅助菜单 / Accessibility",0,360,()=>open=!open,true);
         standard = Button("Standard / 手柄",-175,260,()=>input.SetAccessible(false),true,330);
@@ -139,8 +146,9 @@ public sealed class AccessibilityUI : MonoBehaviour, IResettable
         var obj=new GameObject(caption,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(AccessibleButton));
         obj.transform.SetParent(panel.transform,false);
         var rect=obj.GetComponent<RectTransform>(); rect.anchoredPosition=new Vector2(x,y); rect.sizeDelta=new Vector2(width,80);
-        var image=obj.GetComponent<Image>(); image.color=new Color(.04f,.28f,.32f,.97f);
-        var button=obj.GetComponent<AccessibleButton>(); button.targetGraphic=image; button.allowWhilePaused=paused;
+        var image=obj.GetComponent<Image>(); image.color=Color.clear;
+        var frame=OptionFrame.Apply(obj);
+        var button=obj.GetComponent<AccessibleButton>(); if (frame != null) button.targetGraphic=frame; button.allowWhilePaused=paused;
         button.onClick.AddListener(()=>{ if (pending==null) pending=action; });
         var text=Label(caption,Vector2.zero,new Vector2(width-15,75)); text.transform.SetParent(obj.transform,false);
         return button;

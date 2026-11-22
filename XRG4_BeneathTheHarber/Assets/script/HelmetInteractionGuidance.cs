@@ -29,17 +29,20 @@ public class HelmetInteractionGuidance : MonoBehaviour, IResettable
         stationText.fontSize = notificationText.fontSize = Mathf.Max(1, fontSize);
         stationText.text = Application.isPlaying && wearable && wearable.IsWorn
             ? successMessage : instructions;
-        notificationText.text = successMessage;
+        bool ready = Application.isPlaying && wearable && wearable.ReadyToWear;
+        const string readyMessage = "松开握把即可佩戴\nRelease grip to wear · 键盘松开 G";
+        if (ready) stationText.text = readyMessage;
+        notificationText.text = ready ? readyMessage : successMessage;
         Transform viewer = wearable && wearable.head ? wearable.head : Camera.main ? Camera.main.transform : null;
         if (!Application.isPlaying) return;
         bool worn = wearable && wearable.IsWorn;
         if (worn && !previousWorn) remaining = successDuration;
         if (!worn) remaining = 0;
         previousWorn = worn;
-        if (remaining > 0 && viewer)
+        if ((ready || remaining > 0) && viewer)
         {
             notification.transform.SetPositionAndRotation(viewer.TransformPoint(new Vector3(0, -0.18f, 1.3f)), viewer.rotation);
-            notificationGroup.alpha = Mathf.Clamp01(remaining / 0.4f);
+            notificationGroup.alpha = ready ? 1f : Mathf.Clamp01(remaining / 0.4f);
             remaining = Mathf.Max(0, remaining - Time.deltaTime);
         }
         else notificationGroup.alpha = 0;
@@ -47,7 +50,7 @@ public class HelmetInteractionGuidance : MonoBehaviour, IResettable
 
     void Build()
     {
-        fallback = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 42);
+        fallback = Font.CreateDynamicFontFromOSFont(new[] { "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Arial" }, 42);
         station = Panel("Helmet instructions (generated)", new Vector2(1100, 320), out stationText);
         notification = Panel("Equipped notification (generated)", new Vector2(900, 160), out notificationText);
         notification.transform.localScale = Vector3.one * 0.001f;

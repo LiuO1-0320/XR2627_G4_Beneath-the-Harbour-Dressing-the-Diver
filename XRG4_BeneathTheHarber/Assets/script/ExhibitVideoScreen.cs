@@ -92,7 +92,7 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         }
         player.isLooping = loop;
         var director = StageCoordinator.Current ? StageCoordinator.Current.Audio : null;
-        audioSource.volume = volume * (director && director.NarrationPlaying ? 0.25f : 1f);
+        if (audioSource) audioSource.volume = volume * (director && director.NarrationPlaying ? 0.25f : 1f);
         foreach (var picture in generated.GetComponentsInChildren<RawImage>()) picture.color = player.isPrepared ? Color.white : Color.black;
         foreach (var overlay in overlays) overlay.SetActive(!player.isPrepared);
         foreach (var button in playButtons) button.interactable = CanPlay && HasSource && InViewingRange;
@@ -142,7 +142,9 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         var button = play.gameObject.AddComponent<QuickTravelPressButton>(); button.targetGraphic = play;
         playButtons.Add(button);
         button.onClick.AddListener(TogglePlayback);
-        playLabels.Add(Label(play.transform, "▶ 播放 / Play", Vector2.zero, new Vector2(250, 55), 27));
+        var playLabel = Label(play.transform, "▶ 播放 / Play", Vector2.zero, new Vector2(250, 55), 27);
+        playLabel.rectTransform.anchoredPosition = new Vector2(260f * 0.044f, 0f);
+        playLabels.Add(playLabel);
         var track = Graphic<Image>(canvas.transform, "Progress track", new Vector2(10, -260), new Vector2(330, 14));
         track.color = new Color(.2f, .26f, .28f); track.raycastTarget = true;
         var fill = Graphic<Image>(track.transform, "Progress fill", Vector2.zero, new Vector2(330, 14));
@@ -160,10 +162,18 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         player.renderMode = VideoRenderMode.RenderTexture; player.aspectRatio = VideoAspectRatio.FitInside;
         texture = new RenderTexture(1280, 720, 0) { name = name + " video", hideFlags = HideFlags.HideAndDontSave };
         texture.Create(); player.targetTexture = texture;
-        audioSource = generated.AddComponent<AudioSource>(); audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 1; audioSource.minDistance = 2; audioSource.maxDistance = 15;
-        player.audioOutputMode = VideoAudioOutputMode.AudioSource; player.controlledAudioTrackCount = 1;
-        player.SetTargetAudioSource(0, audioSource);
+        if (AudioDiagnostics.VideoDisabled)
+        {
+            player.audioOutputMode = VideoAudioOutputMode.None;
+            player.controlledAudioTrackCount = 0;
+        }
+        else
+        {
+            audioSource = generated.AddComponent<AudioSource>(); audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 1; audioSource.minDistance = 2; audioSource.maxDistance = 15;
+            player.audioOutputMode = VideoAudioOutputMode.AudioSource; player.controlledAudioTrackCount = 1;
+            player.SetTargetAudioSource(0, audioSource);
+        }
         player.prepareCompleted += Prepared; player.errorReceived += VideoError;
         player.seekCompleted += SeekCompleted;
         foreach (var picture in generated.GetComponentsInChildren<RawImage>()) { picture.texture = texture; picture.color = Color.white; }

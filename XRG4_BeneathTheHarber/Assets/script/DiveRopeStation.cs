@@ -317,7 +317,7 @@ public class DiveRopeStation : MonoBehaviour, IResettable
         var badge = Label(item.transform, "Section", "BENEATH THE HARBOUR  /  DIVE STATION", new Vector2(0,165), new Vector2(700,35), 19);
         badge.color = new Color(.45f,.85f,.8f);
         Label(item.transform, "Title", underwater ? "返回水面 / Ascend" : "探索水下 / Descend", new Vector2(0,110), new Vector2(700,65), 38);
-        status = Label(item.transform, "Hint", "靠近绳索以启用\nApproach the rope to activate", new Vector2(0,20), new Vector2(690,100), 26);
+        status = Label(item.transform, "Hint", "靠近绳索以启用，按A键可上浮\nApproach the rope to activate, press A to ascend", new Vector2(0,20), new Vector2(690,100), 26);
         status.color = new Color(.75f,.84f,.87f);
         var image = Card(item.transform, "Travel button", new Vector2(0, -95), new Vector2(620, 88), Color.white);
         image.raycastTarget = true;
