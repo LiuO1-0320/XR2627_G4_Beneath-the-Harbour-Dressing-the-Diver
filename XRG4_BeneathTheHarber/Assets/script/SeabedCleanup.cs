@@ -125,7 +125,8 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         if (!Application.isPlaying) return;
         var current = StageCoordinator.Current;
         if (resetButton) resetButton.interactable = !current ||
-            (current.Controller.Session.Status == SessionStatus.Running && current.Controller.Session.Stage == ExperienceStage.FreeExploration);
+            (current.Controller.Session.Status == SessionStatus.Running &&
+                (current.Controller.Session.Stage == ExperienceStage.SeabedCleanup || current.Controller.Session.Stage == ExperienceStage.FreeExploration));
         if (!StageCoordinator.Allows(ExperienceStage.SeabedCleanup)) return;
         if (current && current.Controller.Session.Stage == ExperienceStage.SeabedCleanup && current.Controller.Session.CleanupResolved)
         {
@@ -176,13 +177,16 @@ public class SeabedCleanup : MonoBehaviour, IResettable
     }
     public void ResetCleanup()
     {
-        // Guided progress cannot be erased mid-task. Replay is available in free exploration.
+        // Allow restarting the current collection task as well as free-exploration replay.
         var coordinator = StageCoordinator.Current;
         if (Application.isPlaying && coordinator && coordinator.Controller.Session.Status != SessionStatus.Idle
             && !(coordinator.Controller.Session.Status == SessionStatus.Running
-                && coordinator.Controller.Session.Stage == ExperienceStage.FreeExploration)) return;
+                && (coordinator.Controller.Session.Stage == ExperienceStage.SeabedCleanup
+                    || coordinator.Controller.Session.Stage == ExperienceStage.FreeExploration))) return;
         foreach (var item in litter)
             if (item.grab && item.grab.isSelected) { progress.text = "请先松开手里的垃圾，再重置\nRelease the item before resetting"; return; }
+        if (Application.isPlaying && coordinator && coordinator.Controller.Session.Stage == ExperienceStage.SeabedCleanup
+            && !coordinator.Controller.Session.ResetCleanupProgress(coordinator.Controller.Session.SessionId)) return;
         collected = 0;
         foreach (var item in litter) { item.collected = item.held = false; ReturnItem(item); }
         RefreshProgress();

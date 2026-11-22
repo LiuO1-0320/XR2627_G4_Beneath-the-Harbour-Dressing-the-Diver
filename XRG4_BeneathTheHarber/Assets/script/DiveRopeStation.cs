@@ -45,7 +45,7 @@ public class DiveRopeStation : MonoBehaviour, IResettable
     public Vector3 NpcRopeTop => transform.TransformPoint(new Vector3(-0.45f, 0, 0.3f));
     public Vector3 NpcRopeBottom => NpcRopeTop + Vector3.up * BottomLocalY;
     float BottomLocalY => seabed ? transform.InverseTransformPoint(seabed.TransformPoint(Vector3.up * 0.5f)).y : -6.41f;
-    Vector3 BottomDock => transform.TransformPoint(new Vector3(DiveShaftGeometry.AxisX, BottomLocalY, 0));
+    public Vector3 BottomDock => transform.TransformPoint(new Vector3(DiveShaftGeometry.AxisX, BottomLocalY, 0));
     GameObject generated;
     Material ropeMaterial, braidMaterial, woodMaterial, metalMaterial;
     Font fallback;

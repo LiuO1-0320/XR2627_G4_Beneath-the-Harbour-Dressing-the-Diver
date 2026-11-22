@@ -61,6 +61,15 @@ public sealed class SessionState
         if (CleanupCompleted) results[(int)ExperienceStage.SeabedCleanup] = StageResult.Completed;
         Publish(); return true;
     }
+    public bool ResetCleanupProgress(Guid session)
+    {
+        if (publishing || session != SessionId || Status != SessionStatus.Running
+            || Stage != ExperienceStage.SeabedCleanup) return false;
+        CleanupCollected = 0;
+        HasReturnedAfterCleanup = false;
+        results[(int)ExperienceStage.SeabedCleanup] = StageResult.Active;
+        Publish(); return true;
+    }
     public bool ReportPlatformReturn(Guid session)
     {
         if (publishing || session != SessionId || Status != SessionStatus.Running || HasReturnedAfterCleanup

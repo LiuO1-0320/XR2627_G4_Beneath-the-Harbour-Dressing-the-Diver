@@ -95,6 +95,17 @@ public static class SessionStateTests
             Check(state.Result(ExperienceStage.SeabedCleanup) == StageResult.Completed && state.Stage == ExperienceStage.SeabedCleanup, "Completed cleanup waits for actual landing");
             Check(!state.Skip() && !state.ChooseFreeExploration(id), "Completed cleanup still cannot skip landing");
             Check(!state.ReportCleanupProgress(id, 9, 9), "Completion emitted only once");
+            Check(!state.ResetCleanupProgress(Guid.NewGuid()), "Foreign cleanup reset rejected");
+            state.Pause();
+            Check(!state.ResetCleanupProgress(id), "Paused cleanup reset rejected");
+            state.Resume();
+            Check(state.ResetCleanupProgress(id) && state.CleanupCollected == 0 && state.CleanupTotal == 9
+                && !state.CleanupResolved && state.Result(ExperienceStage.SeabedCleanup) == StageResult.Active,
+                "Restart completed collection before landing");
+            Check(!state.ReportPlatformReturn(id), "Restarted collection cannot complete on landing");
+            Check(state.ReportCleanupProgress(id, 2, 9) && state.ResetCleanupProgress(id)
+                && state.CleanupCollected == 0, "Restart partial collection");
+            Check(state.ReportCleanupProgress(id, 9, 9), "Restarted collection can finish again");
             Check(!state.ReportPlatformReturn(Guid.NewGuid()), "Old or foreign ascent rejected");
             state.Pause();
             Check(!state.ReportPlatformReturn(id), "Paused ascent cannot show ending");

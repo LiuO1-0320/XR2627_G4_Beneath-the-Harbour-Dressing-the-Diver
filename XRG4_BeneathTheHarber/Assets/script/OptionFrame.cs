@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(CanvasRenderer))]
 public sealed class OptionFrame : MaskableGraphic
 {
     public static OptionFrame Apply(GameObject button)
     {
-        var child = new GameObject("Option Frame", typeof(RectTransform), typeof(OptionFrame));
+        var child = new GameObject("Option Frame", typeof(RectTransform), typeof(CanvasRenderer), typeof(OptionFrame));
         child.layer = button.layer;
         var frame = child.GetComponent<OptionFrame>();
         var rect = frame.rectTransform;

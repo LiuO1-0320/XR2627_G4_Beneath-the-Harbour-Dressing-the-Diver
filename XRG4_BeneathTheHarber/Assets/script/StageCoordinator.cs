@@ -219,12 +219,19 @@ public sealed class StageCoordinator : MonoBehaviour
         bool hasStage = session.Status == SessionStatus.Running || session.Status == SessionStatus.Paused;
         if (!hasStage || entered != session.Stage)
         {
+            bool skippedPreviousStage = hasStage && entered.HasValue && entered.Value != session.Stage
+                && session.Result(entered.Value) == StageResult.Skipped;
             bool keepFittedHelmet = entered == ExperienceStage.TheCase && hasStage && session.Stage == ExperienceStage.ScaleUp
                 && session.Result(ExperienceStage.TheCase) == StageResult.Completed;
             bool keepDiverEscort = hasStage && entered.HasValue &&
                 SessionState.PreserveDiverEscort(entered.Value, session.Stage, session.Result(entered.Value));
             LeaveStage(keepFittedHelmet, keepDiverEscort);
-            if (hasStage) EnterStage(session.Stage);
+            if (hasStage)
+            {
+                EnterStage(session.Stage);
+                if (skippedPreviousStage && session.Stage < ExperienceStage.ExperienceComplete)
+                    PositionAfterSkip(session.Stage);
+            }
             else if (session.Status == SessionStatus.Idle)
             {
                 foreach (var content in stages) foreach (var component in content.activities)
@@ -241,6 +248,8 @@ public sealed class StageCoordinator : MonoBehaviour
             IntegrationStatus = cleanup ? "Collected " + session.CleanupCollected + " / " + cleanup.TotalCount
                 + (session.CleanupResolved ? "; ascend and return to the land platform." : "; release litter inside the basket.")
                 : "Cleanup activity missing. Staff may Skip.";
+            if (!session.CleanupResolved && cleanupReturnGuided)
+            { cleanupReturnGuided = false; GuideToStage(ExperienceStage.SeabedCleanup); }
             if (session.CleanupResolved && !cleanupReturnGuided)
             { cleanupReturnGuided = true; GuideToStage(ExperienceStage.SeabedCleanup); }
         }
@@ -367,6 +376,30 @@ public sealed class StageCoordinator : MonoBehaviour
         restore();
         IntegrationStatus = "Returned to " + state.Stage + ": task restarted.";
         return true;
+    }
+    void PositionAfterSkip(ExperienceStage target)
+    {
+        if (!Camera.main) return;
+        int destination = target == ExperienceStage.Briefing ? 0 : target == ExperienceStage.TheCase ? 1
+            : target == ExperienceStage.ScaleUp ? 2 : target == ExperienceStage.DressTheDiver ? 3 : 4;
+        Navigate(destination);
+        PositionAtInteractionExhibit(target);
+        if (target == ExperienceStage.SeabedCleanup && rope)
+        {
+            var origin = Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+            if (!origin) return;
+            var body = origin.GetComponent<CharacterController>(); bool enabledBody = body && body.enabled;
+            if (enabledBody) body.enabled = false;
+            try
+            {
+                // Use the exact endpoint of a completed rope descent.
+                Vector3 feet = rope.BottomDock;
+                Vector3 offset = Camera.main.transform.position - origin.transform.position; offset.y = 0;
+                origin.transform.position = feet - offset;
+            }
+            finally { if (enabledBody) body.enabled = true; }
+        }
+        Physics.SyncTransforms();
     }
     void PositionAtInteractionExhibit(ExperienceStage stage)
     {
