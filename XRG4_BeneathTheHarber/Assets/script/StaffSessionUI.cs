@@ -5,7 +5,8 @@ using UnityEngine;
 public sealed class StaffSessionUI : MonoBehaviour
 {
     public StageCoordinator coordinator;
-    bool expanded, confirmBack, confirmSkip;
+    bool expanded = true;
+    bool confirmBack, confirmSkip;
     int backRevision, skipRevision;
     string backMessage;
     void OnGUI()

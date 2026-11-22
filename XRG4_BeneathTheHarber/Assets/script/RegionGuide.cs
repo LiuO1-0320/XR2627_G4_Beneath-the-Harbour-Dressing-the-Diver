@@ -73,17 +73,20 @@ public sealed class RegionGuide : MonoBehaviour, IResettable
         var viewer = Camera.main;
         if (!viewer) return;
         Vector3 direction = Vector3.ProjectOnPlane(viewer.transform.forward, Vector3.up).normalized;
-        // Keep the task card in the upper-right of the viewing area, clear of hand interactions.
-        // Remain world-space so the same card is visible through the headset.
-        const float cardDepth = 2f;
-        float viewHeight = 2f * cardDepth * Mathf.Tan(viewer.fieldOfView * .5f * Mathf.Deg2Rad);
-        float viewWidth = viewHeight * viewer.aspect;
-        float cardWidth = Mathf.Min(viewWidth * .36f, viewHeight * .65f);
+        // Keep the card below the sightline, within the central view of both eyes.
+        const float cardDepth = 1.2f;
+        const float cardViewportY = .35f;
+        var eye = viewer.stereoEnabled ? Camera.MonoOrStereoscopicEye.Left : Camera.MonoOrStereoscopicEye.Mono;
+        var left = viewer.ViewportToWorldPoint(new Vector3(.28f, cardViewportY, cardDepth), eye);
+        var right = viewer.ViewportToWorldPoint(new Vector3(.72f, cardViewportY, cardDepth), eye);
+        float cardWidth = Mathf.Min(Vector3.Distance(left, right), .85f);
         panel.transform.localScale = Vector3.one * (cardWidth / 900f);
-        float cardHeight = cardWidth * 230f / 900f;
-        Vector3 position = viewer.transform.TransformPoint(new Vector3(
-            viewWidth * .5f - cardWidth * .5f - viewWidth * .03f,
-            viewHeight * .5f - cardHeight * .5f - viewHeight * .06f, cardDepth));
+        Vector3 position = (left + right) * .5f;
+        if (viewer.stereoEnabled)
+        {
+            var otherEye = viewer.ViewportToWorldPoint(new Vector3(.5f, cardViewportY, cardDepth), Camera.MonoOrStereoscopicEye.Right);
+            position = (position + otherEye) * .5f;
+        }
         panel.transform.SetPositionAndRotation(position, viewer.transform.rotation);
         // Tracking continues during pause, but routing/fading does not advance.
         if (state == SessionStatus.Paused) { if (targetMarker) targetMarker.SetActive(false); return; }
