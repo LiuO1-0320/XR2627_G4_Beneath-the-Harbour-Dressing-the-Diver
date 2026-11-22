@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>M3 owns completion criteria. Capture the supplied session ID at Begin;
+/// <summary>M3 owns completion criteria. Capture the supplied activity attempt ID at Begin;
 /// report that captured ID, never the controller's latest ID from a delayed callback.</summary>
 public interface IStageActivity
 {
@@ -40,7 +40,7 @@ public sealed class TaskEndpoint : MonoBehaviour, IStageActivity
     public void ReportProgress(string capturedSessionId, string detail)
     {
         if (!active || paused || !controller || !Guid.TryParse(capturedSessionId, out var id) || id != activeSession
-            || controller.Session.SessionId != id || controller.Session.Stage != stage
+            || controller.Session.ActivityId != id || controller.Session.Stage != stage
             || controller.Session.Status != SessionStatus.Running) return;
         SessionTelemetry.Report("TaskProgress", this, detail == null ? "" : detail.Substring(0, Math.Min(detail.Length, 1024)));
     }

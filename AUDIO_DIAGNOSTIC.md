@@ -29,3 +29,5 @@ narration triggers. Exit Play before every change. Verify the startup log's Mode
 narration and video fields. Save a copy of Editor.log immediately after each run.
 Neither split mode is a mute slider or a confirmed fix; repeated non-crash runs
 alone do not prove which subsystem caused a prior crash. Preserve every crash dump.
+
+For the ACT3 escort fix, the three normal-speed BasicScene runs and the three-film playback checks, see the [Windows Editor regression report](Tests/ACT3-Escort-Audio.md).

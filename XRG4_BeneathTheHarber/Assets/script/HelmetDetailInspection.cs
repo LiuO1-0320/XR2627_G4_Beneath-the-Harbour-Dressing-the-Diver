@@ -10,7 +10,7 @@ using UnityEngine.XR.Interaction.Toolkit.Filtering;
 
 /// <summary>Independent exhibit for helmet 2. Exact part keys exclude nail2 through nail12.</summary>
 [ExecuteAlways]
-public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
+public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity, IAccessibleActionProvider
 {
     public int ResetOrder => 10;
     public void PrepareReset() { PrepareSessionReset(); }
@@ -43,7 +43,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         public Quaternion rotation;
         public XRGrabInteractable grab;
         public Rigidbody body;
-        public bool detached;
+        public readonly HelmetPartVisit visit = new HelmetPartVisit();
         public Renderer renderer;
         public MaterialPropertyBlock original;
         public LineRenderer outline, socket;
@@ -55,14 +55,37 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
     }
     Guid taskSession;
     bool taskActive, taskPaused, completing;
-    readonly HashSet<string> inspected = new HashSet<string>();
-    public int InspectedCount => inspected.Count;
+    const string DetachAction = "detach-inspection-part";
+    const string InspectAction = "turn-inspection-part";
+    const string RefitAction = "refit-inspection-part";
+    bool partsConfigured;
+    int freeExplorationIndex;
+    Part Preview => parts.Find(part => part.visit.Assisted);
+    bool RecordingVisit => taskActive && !taskPaused && !completing && StageCoordinator.Allows(ExperienceStage.ScaleUp);
+    public int InspectedCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var part in parts) if (part.visit.Observed) count++;
+            return count;
+        }
+    }
+    public int RefittedCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var part in parts) if (part.visit.Complete) count++;
+            return count;
+        }
+    }
     public int RequiredCount => parts.Count;
     public void BeginStage(Guid sessionId, ExperienceStage stage)
-    { taskSession = sessionId; taskActive = stage == ExperienceStage.ScaleUp; taskPaused = completing = false; inspected.Clear(); UpdateStatus(); }
+    { taskSession = sessionId; taskActive = stage == ExperienceStage.ScaleUp; taskPaused = completing = false; ResetExhibit(); }
     public void SetStagePaused(bool paused) { taskPaused = paused; }
     public void EndStage() { taskActive = false; }
-    public void ResetActivity() { taskActive = taskPaused = completing = false; inspected.Clear(); ResetExhibit(); }
+    public void ResetActivity() { taskActive = taskPaused = completing = false; ResetExhibit(); }
     readonly List<Part> parts = new List<Part>();
     Vector3 baseScale, basePosition, localCenter;
     Quaternion baseRotation;
@@ -128,7 +151,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             grab.throwOnDetach = false; grab.movementType = XRBaseInteractable.MovementType.Kinematic;
             part.grab = grab;
             grab.selectFilters.Add(new XRSelectFilterDelegate((interactor, interactable) =>
-                part.detached || !wholeGrab || !wholeGrab.isSelected));
+                part.visit.Detached || !wholeGrab || !wholeGrab.isSelected));
             part.entered = args => Detach(part);
             part.exited = args => { if (!args.isCanceled) part.releaseFrame = Time.frameCount + 2; };
             grab.selectEntered.AddListener(part.entered.Invoke);
@@ -140,23 +163,138 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             part.socket = MakeOutline("装回位置 " + info.key);
             parts.Add(part);
         }
-        SetupWholeGrab();
+        // The checklist and guided order use the exhibit's authored descriptions, not mesh import order.
+        parts.Sort((left, right) => Array.IndexOf(descriptions, left.info).CompareTo(Array.IndexOf(descriptions, right.info)));
+        partsConfigured = parts.Count > 0 && parts.Count == descriptions.Length
+            && Array.TrueForAll(descriptions, info => info != null && parts.Exists(part => part.info == info));
+        if (!partsConfigured) Debug.LogError("ACT2 requires exactly one detachable mesh for each configured description.", this);
+        // XRI registers on OnEnable. Supply the shell colliders before the first registration.
+        var meshes = helmet.GetComponentsInChildren<MeshFilter>();
+        bool wasActive = helmet.gameObject.activeSelf;
+        helmet.gameObject.SetActive(false);
+        try { SetupWholeGrab(meshes); }
+        finally { helmet.gameObject.SetActive(wasActive); }
+        RegisterAction(DetachAction, "拆下下一件 / Detach next part", 0);
+        RegisterAction(InspectAction, "转动观察 / Turn to inspect", 1);
+        RegisterAction(RefitAction, "装回原位 / Refit part", 2);
         if (!panel) BuildPanel();
         ShowDetails(defaultDetails);
         UpdateStatus();
     }
-    void Detach(Part part)
+    void RegisterAction(string id, string caption, int order)
     {
-        if (taskActive && !taskPaused && StageCoordinator.Allows(ExperienceStage.ScaleUp)) inspected.Add(part.info.key);
-        SessionTelemetry.Report("PartDetached", part.transform, part.info.key);
-        // Keep ACT2 part grabs silent while investigating the native audio resampler crash.
-        part.releaseFrame = -1; part.detached = true;
+        var endpoint = gameObject.AddComponent<AccessibleTaskAction>();
+        endpoint.provider = this;
+        endpoint.stage = ExperienceStage.ScaleUp;
+        endpoint.actionId = id;
+        endpoint.caption = caption;
+        endpoint.menuOrder = order;
+        endpoint.keepMenuOpen = true;
+    }
+
+    Part NextPart(bool freeExploration)
+    {
+        // A part left loose by hand can be picked up again without using a controller.
+        var loose = parts.Find(part => part.visit.Detached);
+        if (loose != null) return loose;
+        return freeExploration ? parts[freeExplorationIndex] : parts.Find(part => !part.visit.Complete);
+    }
+
+    public bool CanExecuteAccessibleAction(string actionId, Guid attempt, ExperienceStage stage, out string reason)
+    {
+        reason = "当前不可用 / Unavailable";
+        var coordinator = StageCoordinator.Current;
+        if (stage != ExperienceStage.ScaleUp || !isActiveAndEnabled || !partsConfigured || !coordinator ||
+            !GazeInput.Current || !GazeInput.Current.Accessible || !StageCoordinator.Allows(stage)) return false;
+        var state = coordinator.Controller.Session;
+        bool freeExploration = state.Stage == ExperienceStage.FreeExploration;
+        if (state.ActivityId != attempt || (!freeExploration && (!RecordingVisit || taskSession != attempt))) return false;
+        if (!coordinator.IsVisitorInNarrationRegion(stage))
+        {
+            reason = "请到展台前 / Approach the stand";
+            return false;
+        }
+        if (Held() || parts.Exists(part => part.releaseFrame >= 0))
+        {
+            reason = "请先松手 / Release your grip";
+            return false;
+        }
+        var preview = Preview;
+        switch (actionId)
+        {
+            case DetachAction:
+                if (preview != null) { reason = "先装回当前件 / Refit first"; return false; }
+                if (NextPart(freeExploration) == null) return false;
+                break;
+            case InspectAction:
+            case RefitAction:
+                if (preview == null) { reason = "先拆下一件 / Detach first"; return false; }
+                if (actionId == RefitAction && !preview.visit.CanRefitWithGaze)
+                { reason = "先转动观察 / Inspect first"; return false; }
+                break;
+            default: return false;
+        }
+        reason = "";
+        return true;
+    }
+
+    public void ExecuteAccessibleAction(string actionId, Guid attempt, ExperienceStage stage)
+    {
+        if (!CanExecuteAccessibleAction(actionId, attempt, stage, out _)) return;
+        if (actionId == DetachAction)
+        {
+            bool freeExploration = StageCoordinator.Current.Controller.Session.Stage == ExperienceStage.FreeExploration;
+            var part = NextPart(freeExploration);
+            Detach(part, true);
+            var viewer = Camera.main.transform;
+            var towardExhibit = Vector3.ProjectOnPlane(helmet.TransformPoint(localCenter) - viewer.position, Vector3.up);
+            var forward = towardExhibit.sqrMagnitude > .001f ? towardExhibit.normalized : viewer.forward;
+            var distance = Mathf.Clamp(towardExhibit.magnitude * .55f, .5f, .85f);
+            var centre = viewer.position + forward * distance - Vector3.up * .2f;
+            // Imported fittings can share the helmet pivot. Position the visible mesh itself in view.
+            part.transform.position += centre - part.renderer.bounds.center;
+            Physics.SyncTransforms();
+            if (freeExploration) freeExplorationIndex = (parts.IndexOf(part) + 1) % parts.Count;
+        }
+        else if (actionId == InspectAction)
+        {
+            var part = Preview;
+            part.transform.RotateAround(part.renderer.bounds.center, Vector3.up, 90f);
+            Physics.SyncTransforms();
+            bool firstView = !part.visit.ViewedInPreview;
+            part.visit.Observe(RecordingVisit);
+            if (firstView) SessionTelemetry.Report("PartInspected", part.transform, part.info.key);
+            ShowPartDetails(part, "可以继续转动，或选择装回。\nTurn again, or choose Refit part.");
+        }
+        else
+        {
+            var part = Preview;
+            Refit(part);
+            ShowDetails(part.info.title + "\n\n已装回原位 ✓ / Back in place ✓");
+        }
+        UpdateStatus();
+    }
+
+    void Detach(Part part, bool assisted = false)
+    {
+        bool wasDetached = part.visit.Detached;
+        if (assisted) part.visit.TakeForInspection();
+        else part.visit.TakeByHand(RecordingVisit);
+        if (!wasDetached) SessionTelemetry.Report("PartDetached", part.transform, part.info.key);
+        part.releaseFrame = -1;
         part.transform.SetParent(null, true);
+        if (assisted) part.body.isKinematic = true;
+        ShowPartDetails(part, assisted
+            ? "零件已放在面前。准备好后，选择「转动观察」。\nThe part is in front of you. Choose Turn to inspect when ready."
+            : "旋转手柄观察零件。放回原位附近并松手可装回。\nRotate your controller to inspect the part. Bring it close to its original position and release to reattach.");
+        UpdateStatus();
+    }
+    void ShowPartDetails(Part part, string guidance)
+    {
         string english = string.IsNullOrWhiteSpace(part.info.englishDescription)
             ? EnglishDescription(part.info.key) : part.info.englishDescription;
         ShowDetails(part.info.title + "\n\n" + part.info.description + "\n\n" + english
-            + "\n\n旋转手柄观察零件。放回原位附近并松手可装回。\nRotate your controller to inspect the part. Bring it close to its original position and release to reattach.");
-        UpdateStatus();
+            + "\n\n" + guidance);
     }
     void LateUpdate()
     {
@@ -168,10 +306,10 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             if (part.releaseFrame < 0 || Time.frameCount < part.releaseFrame) continue;
             part.releaseFrame = -1;
             if (!part.grab.isSelected && Vector3.Distance(part.transform.position, part.parent.TransformPoint(part.position)) <= reattachDistance)
-                Restore(part);
+                Refit(part);
         }
-        if (taskActive && !taskPaused && !completing && parts.Count > 0
-            && parts.TrueForAll(p => inspected.Contains(p.info.key) && !p.detached) && !Held()
+        if (RecordingVisit && partsConfigured
+            && parts.TrueForAll(p => p.visit.Complete) && !Held()
             && StageCoordinator.Current)
         {
             completing = true;
@@ -179,7 +317,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         }
     }
     bool Held() { return (wholeGrab && wholeGrab.isSelected) || parts.Exists(p => p.grab.isSelected); }
-    void SetupWholeGrab()
+    void SetupWholeGrab(MeshFilter[] meshes)
     {
         var body = helmet.GetComponent<Rigidbody>();
         if (!body) body = helmet.gameObject.AddComponent<Rigidbody>();
@@ -189,9 +327,6 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         wholeTransformer.allowTwoHandedScaling = false;
         wholeTransformer.allowTwoHandedRotation = XRGeneralGrabTransformer.TwoHandedRotationMode.TwoHandedAverage;
         wholeGrab = helmet.gameObject.AddComponent<XRGrabInteractable>();
-        // Re-register only after the fixed-part collider list is complete. OnEnable
-        // initially sees the imported hierarchy and its separate part colliders.
-        wholeGrab.enabled = false;
         // Non-convex shell surfaces support raycasts, but not Physics.ClosestPoint.
         wholeGrab.distanceCalculationMode = XRBaseInteractable.DistanceCalculationMode.TransformPosition;
         wholeGrab.addDefaultGrabTransformers = false;
@@ -202,14 +337,14 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         wholeGrab.trackScale = false;
         wholeGrab.throwOnDetach = false;
         wholeGrab.movementType = XRBaseInteractable.MovementType.Instantaneous;
-        wholeGrab.AddSingleGrabTransformer(wholeTransformer);
-        wholeGrab.AddMultipleGrabTransformer(wholeTransformer);
+        wholeGrab.startingSingleGrabTransformers.Add(wholeTransformer);
+        wholeGrab.startingMultipleGrabTransformers.Add(wholeTransformer);
         wholeGrab.selectFilters.Add(new XRSelectFilterDelegate((interactor, interactable) =>
-            !parts.Exists(p => !p.detached && p.grab.isSelected)));
+            !parts.Exists(p => !p.visit.Detached && p.grab.isSelected)));
         // Use the existing fixed model parts instead of generated grip spheres.
         // Detachable parts keep their own grab interactables and colliders.
         wholeGrab.colliders.Clear();
-        foreach (var mesh in helmet.GetComponentsInChildren<MeshFilter>())
+        foreach (var mesh in meshes)
         {
             if (!mesh.sharedMesh || !mesh.GetComponent<Renderer>()) continue;
             if (parts.Exists(part => mesh.transform == part.transform || mesh.transform.IsChildOf(part.transform))) continue;
@@ -220,21 +355,29 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             collider.convex = false;
             wholeGrab.colliders.Add(collider);
         }
-        wholeGrab.enabled = true;
     }
-    void Restore(Part part)
+    void Refit(Part part)
     {
-        if (part.detached)
-        {
-            SessionTelemetry.Report("PartRestored", part.transform, part.info.key);
-            lastFeedback = part.info.title + " · 已装回 ✓"; feedbackUntil = Time.time + 2;
-            // Keep reattachment silent too: preserve model-testing audio crash mitigation.
-        }
+        if (!part.visit.Detached) return;
+        PlaceInSocket(part);
+        part.visit.ReturnToSocket();
+        lastFeedback = part.info.title + " · 已装回 ✓"; feedbackUntil = Time.time + 2;
+        SessionTelemetry.Report("PartRestored", part.transform, part.info.key);
+        UpdateStatus();
+    }
+    static void PlaceInSocket(Part part)
+    {
         part.body.isKinematic = true;
         part.transform.SetParent(part.parent, false);
         part.transform.localPosition = part.position; part.transform.localRotation = part.rotation; part.transform.localScale = part.scale;
-        part.detached = false; part.releaseFrame = -1;
-        UpdateStatus();
+        part.releaseFrame = -1;
+    }
+    static void ResetPart(Part part, string eventKind)
+    {
+        bool wasDetached = part.visit.Detached;
+        PlaceInSocket(part);
+        part.visit.Reset();
+        if (wasDetached) SessionTelemetry.Report(eventKind, part.transform, part.info.key);
     }
     public void Rotate(float angle)
     {
@@ -247,9 +390,10 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
     {
         if (!Application.isPlaying || !helmet || !wholeGrab) return;
         if (Held()) { status.text = "请先松开零件，再复位 / Release part first"; return; }
-        inspected.Clear();
+        freeExplorationIndex = 0;
         helmet.localScale = baseScale; helmet.localPosition = basePosition; helmet.localRotation = baseRotation;
-        foreach (var part in parts) Restore(part);
+        foreach (var part in parts) ResetPart(part, "PartReset");
+        feedbackUntil = 0;
         ShowDetails(defaultDetails); UpdateStatus();
     }
     public void SetSessionInteraction(bool allowed)
@@ -267,16 +411,34 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
         if (checklist)
         {
             var lines = new System.Text.StringBuilder("部件清单 / Parts\n\n");
-            foreach (var part in parts) lines.Append(part.detached ? "待装回 ○ " : inspected.Contains(part.info.key) ? "已完成 ✓ " : "未观察 · ").Append(part.info.title).Append("\n\n");
+            foreach (var part in parts)
+            {
+                string marker = part.visit.Assisted && !part.visit.ViewedInPreview ? "观察中 ◇ " :
+                    part.visit.Detached ? "待装回 ○ " : part.visit.Complete ? "已完成 ✓ " : "未观察 · ";
+                lines.Append(marker).Append(part.info.title).Append("\n\n");
+            }
             checklist.text = lines.ToString();
         }
-        if (status) status.text = $"已观察 {inspected.Count}/{parts.Count} · 未归位 {parts.FindAll(p => p.detached).Count}\n逐一抓取所有可拆零件并装回，完成后前往潜水员装备区";
+        if (status)
+        {
+            string hint = GazeInput.Current && GazeInput.Current.Accessible
+                ? "体验菜单：拆下 → 转动观察 → 装回 / Menu: Detach → Turn → Refit"
+                : "逐一抓取所有可拆零件并装回，完成后前往潜水员装备区";
+            int loose = 0;
+            foreach (var part in parts) if (part.visit.Detached) loose++;
+            bool free = StageCoordinator.Current && StageCoordinator.Current.Controller.Session.Stage == ExperienceStage.FreeExploration;
+            string progress = free ? "自由探索 / Free exploration" : $"已观察 {InspectedCount}/{RequiredCount} · 未归位 {loose}";
+            status.text = progress + "\n" + hint;
+        }
     }
     public void RecoverLooseParts()
     {
         if (!StageCoordinator.Allows(ExperienceStage.ScaleUp) || Held()) return;
         // Recovery is not a successful manual reattachment: recovered parts must be inspected again.
-        foreach (var part in parts) if (part.detached) { inspected.Remove(part.info.key); Restore(part); }
+        foreach (var part in parts)
+        {
+            if (part.visit.Detached) ResetPart(part, "LoosePartRecovered");
+        }
         lastFeedback = "散落零件已归位，其他完成进度保留"; feedbackUntil = Time.time + 3;
         UpdateStatus();
     }
@@ -334,12 +496,12 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             message = wholeGrab.isSelected ? "移动或旋转整盔；松开整盔后再拆零件" : "固定外壳：按住握把可移动整盔";
         foreach (var part in parts)
         {
-            bool near = part.detached && Vector3.Distance(part.transform.position, part.parent.TransformPoint(part.position)) <= reattachDistance;
+            bool near = part.visit.Detached && Vector3.Distance(part.transform.position, part.parent.TransformPoint(part.position)) <= reattachDistance;
             bool highlighted = allowed && (part.grab.isHovered || part.grab.isSelected);
             var color = near ? new Color(.25f, 1, .55f) : highlighted ? Color.yellow : new Color(.25f,.8f,1);
-            if (allowed && (!inspected.Contains(part.info.key) || highlighted)) DrawOutline(part.outline, part, false, color);
+            if (allowed && (!part.visit.Observed || highlighted)) DrawOutline(part.outline, part, false, color);
             else part.outline.enabled = false;
-            if (allowed && part.detached) DrawOutline(part.socket, part, true, near ? Color.green : new Color(.3f,.8f,1));
+            if (allowed && part.visit.Detached) DrawOutline(part.socket, part, true, near ? Color.green : new Color(.3f,.8f,1));
             else part.socket.enabled = false;
             if (highlighted)
             {
@@ -473,6 +635,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
     }
     void ShowDetails(string message)
     {
+        if (!details || !detailsScroll) return;
         details.text = message;
         LayoutRebuilder.ForceRebuildLayoutImmediate(details.rectTransform);
         detailsScroll.StopMovement();
@@ -547,7 +710,7 @@ public class HelmetDetailInspection : MonoBehaviour, IResettable, IStageActivity
             if (!part.grab) continue;
             part.grab.selectEntered.RemoveListener(part.entered.Invoke);
             part.grab.selectExited.RemoveListener(part.exited.Invoke);
-            if (part.detached && part.transform) Destroy(part.transform.gameObject);
+            if (part.visit.Detached && part.transform) Destroy(part.transform.gameObject);
         }
         foreach (var part in parts) { if (part.outline) Destroy(part.outline.gameObject); if (part.socket) Destroy(part.socket.gameObject); }
         if (outlineMaterial) Destroy(outlineMaterial);

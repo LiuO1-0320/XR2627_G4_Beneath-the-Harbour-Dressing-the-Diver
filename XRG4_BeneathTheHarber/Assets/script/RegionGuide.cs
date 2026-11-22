@@ -10,7 +10,6 @@ public sealed class RegionGuide : MonoBehaviour, IResettable
     public void RestoreReset() { Clear(); }
 
     [Min(0.1f)] public float fadeInSeconds = 1.5f;
-    [Min(0.1f)] public float fadeOutSeconds = 0.4f;
     [Min(0.1f)] public float arrivalRadius = 3f;
     [Min(0.1f)] public float exhibitArrivalRadius = 1.25f;
     [Min(0.1f)] public float arrivalHeightTolerance = 2f;
@@ -54,11 +53,16 @@ public sealed class RegionGuide : MonoBehaviour, IResettable
     }
     public void Clear()
     {
-        IsGuiding = false; destination = null; arrivalArea = null;
+        destination = null; arrivalArea = null;
         destinationName = "";
         LocationEvidence = "Unknown";
         routeSession = System.Guid.Empty;
         arrivalReported = false;
+        HideGuidance();
+    }
+    void HideGuidance()
+    {
+        IsGuiding = false;
         if (group) group.alpha = 0;
         if (panel) panel.SetActive(false);
         if (targetMarker) targetMarker.SetActive(false);
@@ -71,22 +75,7 @@ public sealed class RegionGuide : MonoBehaviour, IResettable
         if (controller.Session.SessionId != routeSession || controller.Session.Stage != routeStage) { Clear(); return; }
         if (state == SessionStatus.Idle || state == SessionStatus.Completed || !destination) { Clear(); return; }
         var viewer = Camera.main;
-        if (!viewer) return;
-        Vector3 direction = Vector3.ProjectOnPlane(viewer.transform.forward, Vector3.up).normalized;
-        // Keep the task card in the upper-right of the viewing area, clear of hand interactions.
-        // Remain world-space so the same card is visible through the headset.
-        const float cardDepth = 2f;
-        float viewHeight = 2f * cardDepth * Mathf.Tan(viewer.fieldOfView * .5f * Mathf.Deg2Rad);
-        float viewWidth = viewHeight * viewer.aspect;
-        float cardWidth = Mathf.Min(viewWidth * .36f, viewHeight * .65f);
-        panel.transform.localScale = Vector3.one * (cardWidth / 900f);
-        float cardHeight = cardWidth * 230f / 900f;
-        Vector3 position = viewer.transform.TransformPoint(new Vector3(
-            viewWidth * .5f - cardWidth * .5f - viewWidth * .03f,
-            viewHeight * .5f - cardHeight * .5f - viewHeight * .06f, cardDepth));
-        panel.transform.SetPositionAndRotation(position, viewer.transform.rotation);
-        // Tracking continues during pause, but routing/fading does not advance.
-        if (state == SessionStatus.Paused) { if (targetMarker) targetMarker.SetActive(false); return; }
+        if (!viewer || state == SessionStatus.Paused) { HideGuidance(); return; }
         Vector3 target = DestinationPoint;
         var origin = viewer.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
         Vector3 feet = viewer.transform.position;
@@ -103,47 +92,46 @@ public sealed class RegionGuide : MonoBehaviour, IResettable
             arrived = Vector2.Distance(new Vector2(feet.x, feet.z), new Vector2(target.x, target.z)) <=
                 (routeStage == ExperienceStage.TheCase || routeStage == ExperienceStage.ScaleUp || routeStage == ExperienceStage.DressTheDiver ? exhibitArrivalRadius : arrivalRadius)
                 && Mathf.Abs(feet.y - target.y) <= arrivalHeightTolerance;
-        if (targetMarker)
-        {
-            targetMarker.SetActive(state == SessionStatus.Running && !arrived);
-            targetMarker.transform.position = target + Vector3.up * 1.8f;
-            var facing = targetMarker.transform.position - viewer.transform.position;
-            if (facing.sqrMagnitude > .001f) targetMarker.transform.rotation = Quaternion.LookRotation(facing);
-            markerText.text = "▼ 当前目标 / Current target\n" + destinationName;
-        }
         LocationEvidence = arrived ? "TargetArrivalObserved" : "TravellingToTarget";
-        IsGuiding = !arrived;
+        if (arrived || coordinator.IsVisitorInAnyExperienceRegion())
+        {
+            HideGuidance();
+            if (arrived && !arrivalReported)
+            {
+                arrivalReported = true;
+                SessionTelemetry.Report("RouteArrived", destination, destinationName);
+                ArrivalConfirmed?.Invoke(routeSession, routeStage);
+            }
+            return;
+        }
+
+        IsGuiding = true;
         panel.SetActive(true);
-        if (IsGuiding) panel.SetActive(true);
-        group.alpha = Mathf.MoveTowards(group.alpha, 1,
-            Time.unscaledDeltaTime / Mathf.Max(0.1f, IsGuiding ? fadeInSeconds : fadeOutSeconds));
+        group.alpha = Mathf.MoveTowards(group.alpha, 1, Time.unscaledDeltaTime / Mathf.Max(.1f, fadeInSeconds));
+        Vector3 direction = Vector3.ProjectOnPlane(viewer.transform.forward, Vector3.up).normalized;
+        // Keep the task card in the upper-right of the viewing area, clear of hand interactions.
+        // Remain world-space so the same card is visible through the headset.
+        const float cardDepth = 2f;
+        float viewHeight = 2f * cardDepth * Mathf.Tan(viewer.fieldOfView * .5f * Mathf.Deg2Rad);
+        float viewWidth = viewHeight * viewer.aspect;
+        float cardWidth = Mathf.Min(viewWidth * .36f, viewHeight * .65f);
+        panel.transform.localScale = Vector3.one * (cardWidth / 900f);
+        float cardHeight = cardWidth * 230f / 900f;
+        Vector3 position = viewer.transform.TransformPoint(new Vector3(
+            viewWidth * .5f - cardWidth * .5f - viewWidth * .03f,
+            viewHeight * .5f - cardHeight * .5f - viewHeight * .06f, cardDepth));
+        panel.transform.SetPositionAndRotation(position, viewer.transform.rotation);
+        targetMarker.SetActive(true);
+        targetMarker.transform.position = target + Vector3.up * 1.8f;
+        var facing = targetMarker.transform.position - viewer.transform.position;
+        if (facing.sqrMagnitude > .001f) targetMarker.transform.rotation = Quaternion.LookRotation(facing);
+        markerText.text = "▼ 当前目标 / Current target\n" + destinationName;
         Vector3 toward = Vector3.ProjectOnPlane(target - viewer.transform.position, Vector3.up);
         float angle = Vector3.SignedAngle(direction, toward, Vector3.up);
         string bearing = Mathf.Abs(angle) > 135 ? "后方 / Behind" : angle > 30 ? "右侧 / Right" : angle < -30 ? "左侧 / Left" : "前方 / Ahead";
         float distance = Vector2.Distance(new Vector2(feet.x, feet.z), new Vector2(target.x, target.z));
         string arrow = Mathf.Abs(angle) > 135 ? "↶" : angle > 30 ? "→" : angle < -30 ? "←" : "↑";
-        label.text = arrived ? "已到达：" + destinationName + "\n" + TaskInstruction(routeStage)
-            : "当前任务：" + destinationName + "\n" + arrow + " " + bearing + " · " + distance.ToString("0.0") + " m\n请完成当前站点后再前往下一站";
-        if (arrived && !arrivalReported)
-        {
-            arrivalReported = true;
-            SessionTelemetry.Report("RouteArrived", destination, destinationName);
-            ArrivalConfirmed?.Invoke(routeSession, routeStage);
-        }
-    }
-    string TaskInstruction(ExperienceStage stage)
-    {
-        switch (stage)
-        {
-            case ExperienceStage.Briefing: return "完成操作练习，选择探索头盔 / Complete practice";
-            case ExperienceStage.TheCase: return "抓起头盔，靠近头部，松开握把佩戴 / Fit helmet";
-            case ExperienceStage.ScaleUp: return "逐一抓取可拆零件观察并装回 / Inspect and return each part";
-            case ExperienceStage.DressTheDiver: return "给潜水员戴上头盔，然后跟随前往下潜平台";
-            case ExperienceStage.Descent: return "操作绳索下潜 / Use the rope to descend";
-            case ExperienceStage.SeabedCleanup: return controller.Session.CleanupResolved
-                ? "沿绳上浮，返回陆地平台" : "抓取垃圾，松手放入回收篮";
-            default: return "完成当前任务后自动显示下一站";
-        }
+        label.text = "请前往 / Go to: " + destinationName + "\n" + arrow + " " + bearing + " · " + distance.ToString("0.0") + " m";
     }
     void Build()
     {

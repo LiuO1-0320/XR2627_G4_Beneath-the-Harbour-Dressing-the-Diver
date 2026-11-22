@@ -15,18 +15,23 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
     public int ResetOrder => 90;
     readonly BriefingPractice practice = new BriefingPractice();
     GameObject panel, ball;
-    Text instruction, english, heading, reassurance;
+    Text instruction, english, heading, reassurance, actionCaption;
     readonly Image[] steps = new Image[3];
     Sprite rounded;
     Texture2D roundedTexture;
     bool placed;
     AccessibleButton left, right, action, relocate;
     XRGrabInteractable grab;
+    Rigidbody ballBody;
+    Vector3 positionBeforeGazeGrab;
+    bool releaseNeedsLookAway;
     Material ballMaterial;
     Guid session;
     bool submitted, wasRunning;
     XRBaseInputInteractor holdingController;
     Guid holdingSession;
+    int holdingRevision;
+    bool GazeHolding => practice.HeldBy == BriefingPractice.Input.HeadGaze;
     int pendingTarget = -1;
     int lastTransitionFrame = -1;
     bool Accessible => GazeInput.Current && GazeInput.Current.Accessible;
@@ -35,7 +40,7 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         get
         {
             var c = StageCoordinator.Current;
-            return c && c.Controller.Session.SessionId == session &&
+            return c && c.Controller.Session.ActivityId == session &&
                 c.Controller.Session.Stage == ExperienceStage.Briefing && c.Controller.Session.Status == SessionStatus.Running;
         }
     }
@@ -50,7 +55,7 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
     {
         BuildRoundedSprite();
         panel = new GameObject("Briefing practice card", typeof(RectTransform), typeof(Canvas), typeof(TutorialMouseRaycaster), typeof(TrackedDeviceGraphicRaycaster));
-        panel.hideFlags = HideFlags.HideAndDontSave;
+        // The gaze scanner discovers world canvases in loaded scenes. OnDestroy owns this runtime card.
         panel.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         panel.GetComponent<Canvas>().worldCamera = Camera.main;
         panel.GetComponent<RectTransform>().sizeDelta = new Vector2(1100,660);
@@ -70,7 +75,11 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         reassurance = Label("Comfort reminder", new Vector2(0,-245), new Vector2(1000,85), 22, new Color(.69f,.81f,.84f));
         left = Button("试着选我\nTry this button", -250, () => SelectTarget(0));
         right = Button("也来试试这边\nTry this side", 250, () => SelectTarget(1));
-        action = Button("", 0, Act);
+        action = Button("Practice action", 0, Act);
+        var actionRect = action.GetComponent<RectTransform>();
+        actionRect.sizeDelta = new Vector2(760,110);
+        actionCaption = action.GetComponentInChildren<Text>(true);
+        actionCaption.rectTransform.sizeDelta = new Vector2(730,100);
         relocate = Button("把球带回我面前\nBring the ball back", 250, Reposition);
         Refresh();
     }
@@ -94,8 +103,8 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         var c = StageCoordinator.Current;
         if (!c) { panel.SetActive(false); ClearBall(); return; }
         var state = c.Controller.Session;
-        if (session != state.SessionId)
-        { ClearBall(); practice.Reset(); pendingTarget = -1; submitted = placed = false; session = state.SessionId; }
+        if (session != state.ActivityId)
+        { ClearBall(); practice.Reset(); pendingTarget = -1; submitted = placed = false; session = state.ActivityId; }
         bool briefing = state.Stage == ExperienceStage.Briefing &&
             (state.Status == SessionStatus.Running || state.Status == SessionStatus.Paused);
         if (briefing && !placed) PlacePanel();
@@ -103,23 +112,24 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         bool running = Running;
         if (!running) submitted = false;
         if (!briefing) { ClearBall(); wasRunning = false; return; }
-        if (wasRunning && !running && grab)
-        {
-            practice.Release(true); holdingController = null; holdingSession = Guid.Empty;
-            if (grab.isSelected && grab.interactionManager)
-                grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
-        }
+        if (grab && ((wasRunning && !running) || (practice.Holding && holdingRevision != state.Revision) ||
+            (GazeHolding && !Accessible)))
+            CancelHold();
         wasRunning = running;
         if (practice.Ready && ball) ClearBall();
-        if (grab) grab.enabled = running && !practice.Ready;
+        if (grab) grab.enabled = running && !practice.Ready && !GazeHolding;
+        if (GazeHolding && running && Camera.main) FollowViewer();
         if (practice.Step == 2 && running && !ball) SpawnBall();
         left.gameObject.SetActive(practice.Step == 0);
         right.gameObject.SetActive(practice.Step == 1);
-        action.gameObject.SetActive(practice.Ready);
+        action.gameObject.SetActive(practice.Ready || GazeHolding);
         relocate.gameObject.SetActive(practice.Step == 2 && !practice.Holding);
-        foreach (var b in new[] { left, right, action, relocate }) b.interactable = running && !submitted;
-        left.interactable = running && !submitted && practice.Step == 0 && pendingTarget < 0;
-        right.interactable = running && !submitted && practice.Step == 1 && pendingTarget < 0;
+        bool canAct = running && !submitted;
+        left.interactable = canAct && practice.Step == 0 && pendingTarget < 0;
+        right.interactable = canAct && practice.Step == 1 && pendingTarget < 0;
+        relocate.interactable = canAct;
+        if (GazeHolding && releaseNeedsLookAway) releaseNeedsLookAway = LookingAtAction();
+        action.interactable = canAct && !releaseNeedsLookAway;
         for (int i=0;i<3;i++) steps[i].color = i < practice.Step ? new Color(.35f,.84f,.65f) :
             i == practice.Step ? new Color(.95f,.76f,.37f) : new Color(.17f,.26f,.3f);
         reassurance.text = "不用赶时间，按你的节奏来。\nTake your time. We're here to help.";
@@ -144,11 +154,27 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
         else if (practice.Step == 2)
         {
             heading.text = practice.Holding ? "拿到了！做得很好 · 3 / 3" : "最后，试着拿起小球 · 3 / 3";
-            instruction.text = practice.Holding ? "拿稳啦！现在松开手柄侧面的握把，\n放开小球就完成这一步。" :
-                "用手柄射线指向蓝色小球，\n按住侧面握把拿起，再松开握把。";
-            english.text = practice.Holding ? "You've got it! Release the side grip to let go of the ball." :
-                "Point your controller at the blue ball. Hold the side grip to pick it up, then release.";
-            reassurance.text = "没拿到也没关系，可以再试一次。\nNo rush — you can always try again.";
+            if (GazeHolding)
+            {
+                instruction.text = releaseNeedsLookAway ? "先看一眼旁边，再看「放开小球」，等圆环填满。" :
+                    "想放手时，看向下方的「放开小球」，等圆环填满。";
+                english.text = releaseNeedsLookAway ? "Look to the side, then at Let go of the ball." :
+                    "When you're ready, look at Let go of the ball.";
+            }
+            else if (Accessible && !practice.Holding)
+            {
+                instruction.text = "看向面前的蓝色小球，等圆环填满就能拿起。\n也可以用手柄握把拿球。";
+                english.text = "Look at the blue ball until the ring fills, or pick it up with your controller.";
+            }
+            else
+            {
+                instruction.text = practice.Holding ? "拿稳啦！现在松开手柄侧面的握把，\n放开小球就完成这一步。" :
+                    "用手柄射线指向蓝色小球，\n按住侧面握把拿起，再松开握把。";
+                english.text = practice.Holding ? "You've got it! Release the side grip to let go of the ball." :
+                    "Point your controller at the blue ball. Hold the side grip to pick it up, then release.";
+            }
+            reassurance.text = practice.Holding ? "准备好了再放手。\nYou can hold it for as long as you like." :
+                "没拿到也没关系，可以再试一次。\nNo rush — you can always try again.";
         }
         else
         {
@@ -157,11 +183,9 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
             english.text = "Well done! Turn right to read the introduction. Choose Let's explore whenever you're ready.";
             reassurance.text = "随时可以休息，或请工作人员帮忙。\nYou can take a break or ask for help at any time.";
         }
-        action.GetComponentInChildren<Text>(true).text = "我准备好了，开始探索\nI'm ready — let's explore";
-        var actionRect = action.GetComponent<RectTransform>();
-        actionRect.anchoredPosition = new Vector2(0, -140);
-        actionRect.sizeDelta = new Vector2(760,110);
-        action.GetComponentInChildren<Text>(true).rectTransform.sizeDelta = new Vector2(730,100);
+        // Keep one button identity: dwelling on release cannot submit the subsequent journey confirmation.
+        actionCaption.text = GazeHolding ? "放开小球\nLet go of the ball" :
+            "我准备好了，开始探索\nI'm ready — let's explore";
     }
     void SelectTarget(int target)
     {
@@ -174,7 +198,18 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
     }
     void Act()
     {
-        if (!Running || submitted) return;
+        if (!Running || submitted || lastTransitionFrame == Time.frameCount) return;
+        if (GazeHolding)
+        {
+            if (!Accessible || releaseNeedsLookAway || holdingSession != session ||
+                holdingRevision != StageCoordinator.Current.Controller.Session.Revision) return;
+            if (practice.Release(false, BriefingPractice.Input.HeadGaze))
+            {
+                holdingSession = Guid.Empty;
+                Succeeded();
+            }
+            return;
+        }
         if (practice.Ready)
         {
             submitted = true;
@@ -194,37 +229,91 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
             ballMaterial = new Material(shader); ballMaterial.color = new Color(.1f,.7f,.95f);
             ball.GetComponent<Renderer>().sharedMaterial = ballMaterial;
         }
-        var body = ball.AddComponent<Rigidbody>(); body.useGravity = false; body.isKinematic = true;
+        ballBody = ball.AddComponent<Rigidbody>(); ballBody.useGravity = false; ballBody.isKinematic = true;
         grab = ball.AddComponent<XRGrabInteractable>(); grab.throwOnDetach = false;
         grab.movementType = XRBaseInteractable.MovementType.Kinematic;
         grab.selectEntered.AddListener(Grabbed); grab.selectExited.AddListener(Released);
+        var targetBall = ball;
+        var attempt = session;
+        ball.AddComponent<GazeWorldTarget>().Bind(() => CanPickUpByGaze(targetBall, attempt),
+            () => PickUpByGaze(targetBall, attempt));
         Reposition();
     }
+    bool CanPickUpByGaze(GameObject targetBall, Guid attempt) =>
+        Running && Accessible && !submitted && session == attempt && targetBall && targetBall == ball &&
+        practice.Step == 2 && !practice.Holding && grab && grab.isActiveAndEnabled && !grab.isSelected;
+
+    void PickUpByGaze(GameObject targetBall, Guid attempt)
+    {
+        if (!CanPickUpByGaze(targetBall, attempt) || !Camera.main || !practice.Grab(BriefingPractice.Input.HeadGaze)) return;
+        holdingSession = attempt;
+        holdingRevision = StageCoordinator.Current.Controller.Session.Revision;
+        positionBeforeGazeGrab = ballBody.position;
+        releaseNeedsLookAway = LookingAtAction();
+        grab.enabled = false;
+        ballBody.detectCollisions = false;
+        FollowViewer();
+        SessionTelemetry.Report("TutorialGrabbed", this, "Head gaze");
+    }
+
+    bool LookingAtAction()
+    {
+        var camera = Camera.main;
+        if (!camera) return false;
+        var rect = (RectTransform)action.transform;
+        var ray = new Ray(camera.transform.position, camera.transform.forward);
+        return new Plane(rect.forward, rect.position).Raycast(ray, out float distance) &&
+            rect.rect.Contains(rect.InverseTransformPoint(ray.GetPoint(distance)));
+    }
+
+    void FollowViewer()
+    {
+        ballBody.position = Camera.main.transform.TransformPoint(new Vector3(.30f, -.24f, .55f));
+    }
+
+    void CancelHold()
+    {
+        if (GazeHolding && ballBody)
+        {
+            ballBody.position = positionBeforeGazeGrab;
+            ballBody.detectCollisions = true;
+        }
+        practice.CancelHold();
+        releaseNeedsLookAway = false;
+        holdingController = null;
+        holdingSession = Guid.Empty;
+        if (grab.isSelected && grab.interactionManager)
+            grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
+    }
+
     void Reposition()
     {
         if (!Running || practice.Holding || !ball || !Camera.main) return;
         var forward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < .1f) forward = Vector3.forward;
-        ball.transform.position = Camera.main.transform.position + forward*.65f - Vector3.up*.25f;
+        ballBody.position = Camera.main.transform.position + forward*.65f - Vector3.up*.25f;
     }
     void Grabbed(SelectEnterEventArgs args)
     {
         var input = args.interactorObject as XRBaseInputInteractor;
-        // Accept actual controller selection only; sockets, gaze and helper buttons cannot pass.
+        // Only the controller that physically holds the ball can complete the grip exercise.
         if (!Running || !input || input is XRGazeInteractor || !input.selectInput.ReadIsPerformed()) return;
         if (!practice.Grab()) return;
         holdingController = input; holdingSession = session;
+        holdingRevision = StageCoordinator.Current.Controller.Session.Revision;
         SessionTelemetry.Report("TutorialGrabbed", this, input.name);
     }
     void Released(SelectExitEventArgs args)
     {
         if (!ReferenceEquals(args.interactorObject, holdingController) || holdingSession != session) return;
-        bool cancelled = args.isCanceled || !Running || !holdingController || holdingController.selectInput.ReadIsPerformed();
+        bool cancelled = args.isCanceled || !Running || !holdingController ||
+            holdingRevision != StageCoordinator.Current.Controller.Session.Revision || holdingController.selectInput.ReadIsPerformed();
         holdingController = null; holdingSession = Guid.Empty;
         if (practice.Release(cancelled)) Succeeded();
     }
     void Succeeded()
     {
+        lastTransitionFrame = Time.frameCount;
         StageCoordinator.Current.Audio.PlayFeedback(true);
         SessionTelemetry.Report("TutorialPracticeSucceeded", this);
         // Deactivate on the following Update, outside XRI selection callbacks.
@@ -237,9 +326,11 @@ public sealed class RegionalActions : MonoBehaviour, IResettable
             if (grab.isSelected && grab.interactionManager)
                 grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
         }
-        if (ball) Destroy(ball); if (ballMaterial) Destroy(ballMaterial);
-        ball = null; grab = null; ballMaterial = null; holdingController = null; holdingSession = Guid.Empty;
-        practice.Release(true);
+        if (ball) { ball.SetActive(false); Destroy(ball); }
+        if (ballMaterial) Destroy(ballMaterial);
+        ball = null; grab = null; ballBody = null; ballMaterial = null;
+        holdingController = null; holdingSession = Guid.Empty; releaseNeedsLookAway = false;
+        practice.CancelHold();
     }
     AccessibleButton Button(string caption, float x, UnityEngine.Events.UnityAction callback)
     {

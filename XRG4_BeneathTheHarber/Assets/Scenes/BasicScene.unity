@@ -103435,6 +103435,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1792338700}
   - component: {fileID: 1792338701}
+  - component: {fileID: 1792338702}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Diving Helmet 1 Interaction
@@ -103459,6 +103460,22 @@ Transform:
   - {fileID: 55419953}
   m_Father: {fileID: 2019121993}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1792338702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1792338699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af30d775f6f843fe93ffdf36751ce723, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  provider: {fileID: 1792338701}
+  stage: 1
+  actionId: fit-visitor-helmet
+  caption: "\u8BD5\u6234\u5934\u76D4 / Try on helmet"
 --- !u!114 &1792338701
 MonoBehaviour:
   m_ObjectHideFlags: 0

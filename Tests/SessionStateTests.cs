@@ -24,6 +24,7 @@ public static class SessionStateTests
         try { ResetTests.Run(); } catch (Exception error) { Console.WriteLine("RESET TEST FAILURE: " + error.Message); Environment.Exit(1); }
         BackTests.Run();
         GazeTests.Run();
+        HelmetPartVisitTests.Run();
         CommandTests.Run();
         AudioArrivalTests.Run();
         BriefingPracticeTests.Run();

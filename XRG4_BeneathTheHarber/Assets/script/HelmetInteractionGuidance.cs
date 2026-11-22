@@ -29,6 +29,9 @@ public class HelmetInteractionGuidance : MonoBehaviour, IResettable
         stationText.fontSize = notificationText.fontSize = Mathf.Max(1, fontSize);
         stationText.text = Application.isPlaying && wearable && wearable.IsWorn
             ? successMessage : instructions;
+        if (Application.isPlaying && wearable && !wearable.IsWorn && GazeInput.Current && GazeInput.Current.Accessible &&
+            StageCoordinator.Allows(ExperienceStage.TheCase))
+            stationText.text = "凝视试戴 / Try on the helmet\n看向「体验菜单」，再看向「试戴头盔」。\nLook at Menu, then Try on helmet.\n也可以用手柄抓取试戴 / You can also use your controller.";
         bool ready = Application.isPlaying && wearable && wearable.ReadyToWear;
         const string readyMessage = "松开握把即可佩戴\nRelease grip to wear · 键盘松开 G";
         if (ready) stationText.text = readyMessage;

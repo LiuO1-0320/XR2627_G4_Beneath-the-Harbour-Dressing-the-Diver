@@ -35,14 +35,42 @@ mix = documents(root/'Resources/ExperienceAudio/Experience.mixer')
 names = {d['AudioMixerGroupController']['m_Name'] for d in mix if 'AudioMixerGroupController' in d}
 check(names == {'Master','Narration','Ambience','Feedback'}, 'Mixer group names')
 mapping = documents(root/'Resources/ExperienceAudio/DefaultAudioMap.asset')[0]['MonoBehaviour']
+mixer_file = root/'Resources/ExperienceAudio/Experience.mixer'
+mixer_guid = yaml.safe_load(mixer_file.with_suffix('.mixer.meta').read_text())['guid']
+ids = re.findall(r'^--- !u!\d+ &(\d+)', mixer_file.read_text(), flags=re.M)
+group_ids = {doc['AudioMixerGroupController']['m_Name']: int(identifier)
+             for identifier, doc in zip(ids, mix) if 'AudioMixerGroupController' in doc}
+for group in ('Narration', 'Ambience', 'Feedback'):
+    ref = mapping[group.lower()+'Group']
+    check(ref['guid'] == mixer_guid and ref['fileID'] == group_ids[group], group+' mixer routing')
 music_meta = (root/'Audio/Ambience/MuseumGentleLoop.wav.meta').read_text()
 music_guid = re.search(r'^guid: (.+)$', music_meta, re.M).group(1)
 check(mapping['museumMusic']['guid'] == music_guid, 'Museum music asset reference')
 check({e['stage'] for e in mapping['stages']} == set(range(7)), 'All stage slots')
 check(mapping['duckMultiplier'] < 1 and mapping['crossfadeSeconds'] >= 1, 'Comfort defaults')
-for name in ['act1_helmetHistory.mp3','act2_helmetComponents.mp3','act3_Diver.mp3']:
+narration_files = {1: 'act1_helmetHistory.wav', 2: 'act2_helmetComponents.wav', 4: 'act3_Diver.wav'}
+by_stage = {entry['stage']: entry['narration'] for entry in mapping['stages']}
+narration_guids = set()
+for stage, name in narration_files.items():
     path = root/'Audio/Narration'/name
-    check(path.exists() and path.stat().st_size > 1000, name+' available for AssetDatabase import')
+    refs = by_stage[stage]
+    check(len(refs) == 1 and refs[0]['fileID'] == 8300000, name+' stage AudioClip reference')
+    guid = refs[0]['guid']
+    check(re.fullmatch(r'[0-9a-f]{32}', guid) and guid != '0'*32 and guid not in narration_guids,
+          name+' distinct stage recording')
+    narration_guids.add(guid)
+    meta = yaml.safe_load(path.with_suffix('.wav.meta').read_text())
+    check('AudioImporter' in meta and meta.get('guid'), name+' AudioImporter metadata')
+    # Tuanjie can store encrypted .meta GUIDs. Plain GUIDs can be compared directly offline.
+    if re.fullmatch(r'[0-9a-f]{32}', meta['guid']):
+        check(meta['guid'] == guid, name+' stage mapping GUID')
+    with wave.open(str(path), 'rb') as f:
+        frame_count = f.getnframes()
+        frames = f.readframes(frame_count)
+        check(f.getcomptype() == 'NONE' and frame_count > 0 and f.getsampwidth() == 2,
+              name+' PCM recording')
+        check(len(frames) == frame_count*f.getnchannels()*f.getsampwidth() and
+              np.frombuffer(frames, dtype='<i2').any(), name+' complete non-silent audio')
 for name, seconds, peak in [('WaterExitSplash',1.05,.46)]:
     with wave.open(str(root/'Resources/ExperienceAudio'/(name+'.wav')), 'rb') as f:
         check(f.getframerate()==44100 and f.getsampwidth()==2, name+' PCM format')

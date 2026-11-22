@@ -1,0 +1,205 @@
+游客异常输入实测摘录 / 2026-11-22
+integration · 174de8ff9e1a + local changes
+BasicScene SHA-256 d7b5ceb0050c4a3fff3ceb190744b362df4a7b7dce8c165c74dbea31410414e4
+下方数字均为原引擎日志行号。重复 ID 表示不同轮次的复测。FULL_PASS 表示驱动到达终点，请同时看 NEG_CASE 判定。
+
+=== negative-01.log ===
+SHA-256 28d6188438c0931d271e099ba49a2f2a14414a62d904d53580c7a0112c32e6b1
+ 1453  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+ 1864  NEG_CASE B01 PASS sequence=16 stage=Briefing | rightVisible=False submit=False step=0 ball=False text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1876  NEG_CASE B02 PASS sequence=16 stage=Briefing | peak sampled ring=0.004168308 after looking away=0 step=0 text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1912  NEG_CASE B03 PASS sequence=18 stage=Briefing | stale left submit=False leftVisible=False rightVisible=True step=1 selections=1 text=先移开视线， 再看看另一边亮起的按钮。
+ 1972  NEG_CASE B04 PASS sequence=22 stage=Briefing | still holding; ready=False action=放开小球 Let go of the ball instruction=想放手时，看向下方的「放开小球」，等圆环填满。
+ 2032  NEG_CASE B06 PASS sequence=24 stage=Briefing | sustained gaze after release: ready=True completed events=0 caption=我准备好了，开始探索 I'm ready — let's explore
+ 2198  NEG_CASE B05 PASS sequence=30 stage=TheCase | separate release and confirmation after look-away; completed events=1
+ 2234  NEG_CASE A11 PASS sequence=33 stage=TheCase | wrong ACT2 stand; guide=False destination=头盔展台 / Helmet exhibit ACT1 first narration delta=0 ACT2 narration delta=1 current clip=act2_helmetComponents menuOpened=True fitSubmit=False fit label=试戴头盔 / Try on helmet 请走到头盔展台前 / Approach the helmet stand
+ 2270  NEG_CASE A12 PASS sequence=38 stage=TheCase | correct stand; guide=False arrived=True ACT1 first narration delta=1 clip=act1_helmetHistory
+ 2282  NEG_CASE ACT1-P01 PASS sequence=39 stage=TheCase | XRI manual grip, held by head: distance=0.00m; ready=True worn=False stage=TheCase; sign=松开握把即可佩戴 / Release grip to wear · 键盘松开 G
+ 2294  NEG_CASE ACT1-P02 PASS sequence=41 stage=TheCase | XRI release at stand, head distance=5.24m (allowed 0.40); stand offset=0.00m; fit misses=1; stage=TheCase; sign=凝视试戴 / Try on the helmet / 看向「体验菜单」，再看向「试戴头盔」。 / Look at Menu, then Try on helmet. / 也可以用手柄抓取试戴 / You can also use your controller.
+ 2306  NEG_CASE VIDEO-01 PASS sequence=41 stage=TheCase | outside radius: submission rejected=True, label=靠近观看 / Come closer; inside: label=▶ 播放 / Play, enabled=True
+ 2319  NEG_CASE VIDEO-02 PASS sequence=43 stage=TheCase | left while playing: stopped=True, saved seconds=0.37; came back paused=True; pressed again=True, playing=True, seconds=0.50
+ 2711  NEG_CASE A21 PASS sequence=57 stage=ScaleUp | before detach: refit=装回原位 / Refit part 先拆下一件 / Detach first turn=转动观察 / Turn to inspect 先拆下一件 / Detach first submit=False/False inspected=0
+ 2747  NEG_CASE A22 PASS sequence=60 stage=ScaleUp | after detach: refit=装回原位 / Refit part 先转动观察 / Inspect first detach=拆下下一件 / Detach next part 先装回当前件 / Refit first accepted early refit=False duplicate=False inspected=0
+ 2795  NEG_CASE A23 FAIL sequence=63 stage=ScaleUp | loose-parts button submit=False inspected now=1 feedback= last PartRestored detail=
+ 3782  Crash!!!
+ 3896  NEG_CASE ACT3-01 PASS sequence=144 stage=Descent | ResetEnabled=False helmetOn=True stage=Descent NPC stayed at walking position, escort count=1
+ 3960  0x00007FF66EAA5A58 (Tuanjie) ma_linear_resampler_process_pcm_frames_f32_downsample
+ 3986  0x00007FF66EA7B53D (Tuanjie) ma_device_audio_thread__default_read_write
+
+=== negative-02.log ===
+SHA-256 75f627ea1cc63205a8286ed25f33e1efc0028d06d3da742423251ce4c351b48c
+  728  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+ 1135  NEG_CASE B01 PASS sequence=16 stage=Briefing | rightVisible=False submit=False step=0 ball=False text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1147  NEG_CASE B02 PASS sequence=16 stage=Briefing | peak sampled ring=0.004127385 after looking away=0 step=0 text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1183  NEG_CASE B03 PASS sequence=18 stage=Briefing | stale left submit=False leftVisible=False rightVisible=True step=1 selections=1 text=先移开视线， 再看看另一边亮起的按钮。
+ 1243  NEG_CASE B04 PASS sequence=22 stage=Briefing | still holding; ready=False action=放开小球 Let go of the ball instruction=想放手时，看向下方的「放开小球」，等圆环填满。
+ 1303  NEG_CASE B06 PASS sequence=24 stage=Briefing | sustained gaze after release: ready=True completed events=0 caption=我准备好了，开始探索 I'm ready — let's explore
+ 1469  NEG_CASE B05 PASS sequence=30 stage=TheCase | separate release and confirmation after look-away; completed events=1
+ 1505  NEG_CASE A11 PASS sequence=33 stage=TheCase | wrong ACT2 stand; guide=False destination=头盔展台 / Helmet exhibit ACT1 first narration delta=0 ACT2 narration delta=1 current clip=act2_helmetComponents menuOpened=True fitSubmit=False fit label=试戴头盔 / Try on helmet 请走到头盔展台前 / Approach the helmet stand
+ 1541  NEG_CASE A12 PASS sequence=38 stage=TheCase | correct stand; guide=False arrived=True ACT1 first narration delta=1 clip=act1_helmetHistory
+ 1553  NEG_CASE ACT1-P01 PASS sequence=39 stage=TheCase | XRI manual grip, held by head: distance=0.00m; ready=True worn=False stage=TheCase; sign=松开握把即可佩戴 / Release grip to wear · 键盘松开 G
+ 1565  NEG_CASE ACT1-P02 PASS sequence=41 stage=TheCase | XRI release at stand, head distance=5.24m (allowed 0.40); stand offset=0.00m; fit misses=1; stage=TheCase; sign=凝视试戴 / Try on the helmet / 看向「体验菜单」，再看向「试戴头盔」。 / Look at Menu, then Try on helmet. / 也可以用手柄抓取试戴 / You can also use your controller.
+ 1577  NEG_CASE VIDEO-01 PASS sequence=41 stage=TheCase | outside radius: submission rejected=True, label=靠近观看 / Come closer; inside: label=▶ 播放 / Play, enabled=True
+ 1590  NEG_CASE VIDEO-02 PASS sequence=43 stage=TheCase | left while playing: stopped=True, saved seconds=0.37; came back paused=True; pressed again=True, playing=True, seconds=0.50
+ 1982  NEG_CASE A21 PASS sequence=57 stage=ScaleUp | before detach: refit=装回原位 / Refit part 先拆下一件 / Detach first turn=转动观察 / Turn to inspect 先拆下一件 / Detach first submit=False/False inspected=0
+ 2018  NEG_CASE A22 PASS sequence=60 stage=ScaleUp | after detach: refit=装回原位 / Refit part 先转动观察 / Inspect first detach=拆下下一件 / Detach next part 先装回当前件 / Refit first accepted early refit=False duplicate=False inspected=0
+ 2066  NEG_CASE A23FAST PASS sequence=63 stage=ScaleUp | immediate after gaze inspection: button present=True interactable=True rapid hand submit=False inspected=1
+ 2078  NEG_CASE A23 PASS sequence=65 stage=ScaleUp | loose-parts button submit=True inspected now=0 feedback=散落零件已归位，其他完成进度保留 last PartRestored detail=forward
+ 2796  NEG_CASE A24 FAIL sequence=131 stage=DressTheDiver | recovery and intentional refit both logged same PartRestored key=forward matching entries=2 successful restorations telemetry=8 distinct expected fittings=7
+ 3137  NEG_CASE ACT3-01 PASS sequence=152 stage=Descent | ResetEnabled=False helmetOn=True stage=Descent NPC stayed at walking position, escort count=1
+ 3161  Crash!!!
+ 3303  0x00007FF66EAA5801 (Tuanjie) ma_linear_resampler_interpolate_frame_f32
+ 3304  0x00007FF66EAA6145 (Tuanjie) ma_linear_resampler_process_pcm_frames_f32_upsample
+ 3330  0x00007FF66EA7B53D (Tuanjie) ma_device_audio_thread__default_read_write
+
+=== negative-03.log ===
+SHA-256 a9c51bd1e820dc6a7a430d61f2a2015473b37d23f8a8c73eaf54426fe13543fd
+  727  ER AUDIO DIAGNOSTIC: mode=NO_VIDEO engineAudio=True ambience=True narration=True video=False Unity=2022.3.61t14 platform=WindowsEditor
+ 1134  NEG_CASE B01 PASS sequence=16 stage=Briefing | rightVisible=False submit=False step=0 ball=False text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1146  NEG_CASE B02 PASS sequence=16 stage=Briefing | peak sampled ring=0.003270154 after looking away=0 step=0 text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1182  NEG_CASE B03 PASS sequence=18 stage=Briefing | stale left submit=False leftVisible=False rightVisible=True step=1 selections=1 text=先移开视线， 再看看另一边亮起的按钮。
+ 1242  NEG_CASE B04 PASS sequence=22 stage=Briefing | still holding; ready=False action=放开小球 Let go of the ball instruction=想放手时，看向下方的「放开小球」，等圆环填满。
+ 1302  NEG_CASE B06 PASS sequence=24 stage=Briefing | sustained gaze after release: ready=True completed events=0 caption=我准备好了，开始探索 I'm ready — let's explore
+ 1468  NEG_CASE B05 PASS sequence=30 stage=TheCase | separate release and confirmation after look-away; completed events=1
+ 1504  NEG_CASE A11 PASS sequence=33 stage=TheCase | wrong ACT2 stand; guide=False destination=头盔展台 / Helmet exhibit ACT1 first narration delta=0 ACT2 narration delta=1 current clip=act2_helmetComponents menuOpened=True fitSubmit=False fit label=试戴头盔 / Try on helmet 请走到头盔展台前 / Approach the helmet stand
+ 1540  NEG_CASE A12 PASS sequence=38 stage=TheCase | correct stand; guide=False arrived=True ACT1 first narration delta=1 clip=act1_helmetHistory
+ 1552  NEG_CASE ACT1-P01 PASS sequence=39 stage=TheCase | XRI manual grip, held by head: distance=0.00m; ready=True worn=False stage=TheCase; sign=松开握把即可佩戴 / Release grip to wear · 键盘松开 G
+ 1564  NEG_CASE ACT1-P02 PASS sequence=41 stage=TheCase | XRI release at stand, head distance=5.24m (allowed 0.40); stand offset=0.00m; fit misses=1; stage=TheCase; sign=凝视试戴 / Try on the helmet / 看向「体验菜单」，再看向「试戴头盔」。 / Look at Menu, then Try on helmet. / 也可以用手柄抓取试戴 / You can also use your controller.
+ 1576  NEG_CASE VIDEO-01 PASS sequence=41 stage=TheCase | outside radius: submission rejected=True, label=靠近观看 / Come closer; inside: label=▶ 播放 / Play, enabled=True
+ 1589  NEG_CASE VIDEO-02 PASS sequence=43 stage=TheCase | left while playing: stopped=True, saved seconds=0.37; came back paused=True; pressed again=True, playing=True, seconds=0.50
+ 1981  NEG_CASE A21 PASS sequence=57 stage=ScaleUp | before detach: refit=装回原位 / Refit part 先拆下一件 / Detach first turn=转动观察 / Turn to inspect 先拆下一件 / Detach first submit=False/False inspected=0
+ 2017  NEG_CASE A22 PASS sequence=60 stage=ScaleUp | after detach: refit=装回原位 / Refit part 先转动观察 / Inspect first detach=拆下下一件 / Detach next part 先装回当前件 / Refit first accepted early refit=False duplicate=False inspected=0
+ 2065  NEG_CASE A23FAST PASS sequence=63 stage=ScaleUp | immediate after gaze inspection: button present=True interactable=True rapid hand submit=False inspected=1
+ 2077  NEG_CASE A23 PASS sequence=65 stage=ScaleUp | loose-parts button submit=True inspected now=0 feedback=散落零件已归位，其他完成进度保留 last PartRestored detail=forward
+ 2795  NEG_CASE A24 FAIL sequence=131 stage=DressTheDiver | recovery and intentional refit both logged same PartRestored key=forward matching entries=2 successful restorations telemetry=8 distinct expected fittings=7
+ 3136  NEG_CASE ACT3-01 PASS sequence=152 stage=Descent | ResetEnabled=False helmetOn=True stage=Descent NPC stayed at walking position, escort count=1
+ 3160  NEG_CASE ACT3-02A PASS sequence=152 stage=Descent | visitor distance=6.10m, NPC moved=0.000m/0.85s, waiting=True, speech bubble visible=False
+ 3172  NEG_CASE ACT3-02B PASS sequence=152 stage=Descent | caught up, distance=1.65m, NPC advanced=0.60m, waiting=False, escort events=1
+ 3184  NEG_CASE ACT3-03 FAIL sequence=153 stage=Descent | while escorting, original Talk button visible=True, enabled=True, submit=True, speech before/after=False/False, stage=Descent
+ 3208  NEG_CASE ACT4-01 PASS sequence=154 stage=Descent | 7m from dock, descent panel active=True, buttonEnabled=False, submit=False, tripsStarted=0, label=靠近绳索以启用 Approach the rope to activate
+ 3248  NEG_CASE ACT4-02 PASS sequence=157 stage=Descent | double submission=False, buttonEnabled=False, trip still active=True, new trips=0, label=正在对齐绳索位置… / Aligning with the rope…
+ 3544  NEG_CASE ACT4-03 PASS sequence=165 stage=SeabedCleanup | empty hands, 1.5s gaze at basket wall; visible label=已回收 / Collected: 0 / 9; deposit events=0
+ 3594  NEG_CASE ACT4-04 PASS sequence=167 stage=SeabedCleanup | carried object remains visible=True; pre-deposit label=已回收 / Collected: 0 / 9 带回篮边，凝视篮壁或篮底 / Look at the basket to deposit
+ 3870  NEG_CASE ACT4-05 PASS sequence=177 stage=SeabedCleanup | at platform=True, stage=SeabedCleanup, counted=1/9; ending visible=False; carried item active=True distance from original=0.00m; surface control=沿绳索探索水下 Explore beneath the harbour
+ 4122  UA_DIAG repeat descent pending flag at second basket = True
+ 4133  NEG_CASE ACT4-06 PASS sequence=186 stage=SeabedCleanup | second descent and re-pick/deposit after early ascent, label=已回收 / Collected: 2 / 9, two recorded descents=2, ending visible=False
+ 5821  NEG_CASE ACT4-07A PASS sequence=222 stage=SeabedCleanup | fully collected but underwater; basket label=9 / 9 全部回收完成！沿绳上浮返回平台 ALL COLLECTED - ASCEND THE ROPE TO THE PLATFORM, ending visible=False
+ 6033  NEG_CASE ACT4-07B PASS sequence=230 stage=ExperienceComplete | ending hidden during ascent; dock=True; final choices=True/True; stage=ExperienceComplete
+ 6257  NEG_CASE END00 PASS sequence=233 stage=ExperienceComplete | completion panel pause: free enabled=False submit=False exit enabled=True status=Paused
+ 6599  NEG_CASE END01 PASS sequence=240 stage=FreeExploration | duplicate Free submit=False persistent exit=True label=退出体验 / Exit experience choice count=1
+ 6835  NEG_CASE END02 PASS sequence=243 stage=FreeExploration | paused in ACT2 free exploration: replayVisible=True replayAccepted=False exitEnabled=True
+ 6967  NEG_CASE END03 PASS sequence=246 stage=FreeExploration | exit while paused accepted=True repeat accepted=False visitor message=体验已结束，感谢参与！ 请停留原地，等待工作人员协助摘下头显。  Thank you for visiting! Stay still and ask staff to help remove the headset. staff Start allowed=False
+ 7169  NEG_CASE END04 PASS sequence=260 stage=Briefing | staff reset/new Start=True/True new visit=7e8e281e-adab-415c-af61-217ae1c5f203 practice step=0 cleanup=0 accessible=False heading=欢迎！我们先轻松试一试 · 1 / 3
+ 7193  FULL_PASS checks=182 visit=7e8e281e-adab-415c-af61-217ae1c5f203 result=Briefing logs=
+
+=== negative-04.log ===
+SHA-256 99ce95696914e517b992d146337a731950144781d195cc088ec3dedf8a82adf4
+  728  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+ 1135  NEG_CASE B01 PASS sequence=16 stage=Briefing | rightVisible=False submit=False step=0 ball=False text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1147  NEG_CASE B02 PASS sequence=16 stage=Briefing | peak sampled ring=0.003384616 after looking away=0 step=0 text=看向下方亮起的按钮。 保持凝视，等小圆环填满就好。
+ 1183  NEG_CASE B03 PASS sequence=18 stage=Briefing | stale left submit=False leftVisible=False rightVisible=True step=1 selections=1 text=先移开视线， 再看看另一边亮起的按钮。
+ 1243  NEG_CASE B04 PASS sequence=22 stage=Briefing | still holding; ready=False action=放开小球 Let go of the ball instruction=想放手时，看向下方的「放开小球」，等圆环填满。
+ 1303  NEG_CASE B06 PASS sequence=24 stage=Briefing | sustained gaze after release: ready=True completed events=0 caption=我准备好了，开始探索 I'm ready — let's explore
+ 1469  NEG_CASE B05 PASS sequence=30 stage=TheCase | separate release and confirmation after look-away; completed events=1
+ 1505  NEG_CASE A11 PASS sequence=33 stage=TheCase | wrong ACT2 stand; guide=False destination=头盔展台 / Helmet exhibit ACT1 first narration delta=0 ACT2 narration delta=1 current clip=act2_helmetComponents menuOpened=True fitSubmit=False fit label=试戴头盔 / Try on helmet 请走到头盔展台前 / Approach the helmet stand
+ 1541  NEG_CASE A12 PASS sequence=38 stage=TheCase | correct stand; guide=False arrived=True ACT1 first narration delta=1 clip=act1_helmetHistory
+ 1553  NEG_CASE ACT1-P01 PASS sequence=39 stage=TheCase | XRI manual grip, held by head: distance=0.00m; ready=True worn=False stage=TheCase; sign=松开握把即可佩戴 / Release grip to wear · 键盘松开 G
+ 1565  NEG_CASE ACT1-P02 PASS sequence=41 stage=TheCase | XRI release at stand, head distance=5.24m (allowed 0.40); stand offset=0.00m; fit misses=1; stage=TheCase; sign=凝视试戴 / Try on the helmet / 看向「体验菜单」，再看向「试戴头盔」。 / Look at Menu, then Try on helmet. / 也可以用手柄抓取试戴 / You can also use your controller.
+ 1577  NEG_CASE VIDEO-01 PASS sequence=41 stage=TheCase | outside radius: submission rejected=True, label=靠近观看 / Come closer; inside: label=▶ 播放 / Play, enabled=True
+ 1590  NEG_CASE VIDEO-02 PASS sequence=43 stage=TheCase | left while playing: stopped=True, saved seconds=0.37; came back paused=True; pressed again=True, playing=True, seconds=0.50
+ 1982  NEG_CASE A21 PASS sequence=57 stage=ScaleUp | before detach: refit=装回原位 / Refit part 先拆下一件 / Detach first turn=转动观察 / Turn to inspect 先拆下一件 / Detach first submit=False/False inspected=0
+ 2018  NEG_CASE A22 PASS sequence=60 stage=ScaleUp | after detach: refit=装回原位 / Refit part 先转动观察 / Inspect first detach=拆下下一件 / Detach next part 先装回当前件 / Refit first accepted early refit=False duplicate=False inspected=0
+ 2066  NEG_CASE A23FAST PASS sequence=63 stage=ScaleUp | immediate after gaze inspection: button present=True interactable=True rapid hand submit=False inspected=1
+ 2078  NEG_CASE A23 PASS sequence=65 stage=ScaleUp | loose-parts button submit=True inspected now=0 feedback=散落零件已归位，其他完成进度保留 last PartRestored detail=forward
+ 2796  NEG_CASE A24 FAIL sequence=131 stage=DressTheDiver | recovery and intentional refit both logged same PartRestored key=forward matching entries=2 successful restorations telemetry=8 distinct expected fittings=7
+ 3137  NEG_CASE ACT3-01 PASS sequence=152 stage=Descent | ResetEnabled=False helmetOn=True stage=Descent NPC stayed at walking position, escort count=1
+ 3161  UA_DIAG ACT3-02 standing still in normal game time, no backward snap
+ 3172  NEG_CASE ACT3-02A PASS sequence=152 stage=Descent | visitor distance=4.50m, NPC moved=0.000m/0.85s, waiting=True, speech bubble visible=False
+ 3184  Crash!!!
+ 3229  NEG_CASE ACT3-02B PASS sequence=152 stage=Descent | caught up, distance=1.90m, NPC advanced=2.16m, waiting=False, escort events=1
+ 3243  NEG_CASE ACT3-03 FAIL sequence=153 stage=Descent | while escorting, original Talk button visible=True, enabled=True, submit=True, speech before/after=False/False, stage=Descent
+ 3350  0x00007FF66EAA60CC (Tuanjie) ma_linear_resampler_process_pcm_frames_f32_upsample
+ 3376  0x00007FF66EA7B53D (Tuanjie) ma_device_audio_thread__default_read_write
+
+=== 命令与纯逻辑层，直接调用产品源码 ===
+原始 results.tsv SHA-256 b918c33a2e1cb7c62fecae5f8d2dd6b1164447ff059025bc002d76fc64edf5e4
+id	input	expected	actual	followup	verdict
+P01	Exhibition visitor sends Start while Idle	StaffOnly and still Idle; staff Start works	StaffOnly; Idle/Briefing; rev=0; cleanup=0/0	Applied; Running/Briefing; rev=1; cleanup=0/0	PASS
+P02	Exhibition visitor submits Skip during ACT1	StaffOnly; no progress lost; real helmet event works	StaffOnly; Running/TheCase; rev=2; cleanup=0/0; task=Active	valid helmet event=True; Running/ScaleUp; rev=3; cleanup=0/0	PASS
+P03	Staff repeats same Skip command ID after missing reply	First and replay both Applied; executes only once, records Skipped; next task remains playable	Applied/Applied; executor calls=1; ACT1=Skipped; Running/ScaleUp; rev=3; cleanup=0/0	valid ACT2 event -> Running/DressTheDiver; rev=4; cleanup=0/0	PASS
+P04	Skip from old snapshot arrives after visitor Pause	StaleState; no skip under Paused; visitor Resume works	StaleState; Paused/TheCase; rev=3; cleanup=0/0	Applied; Running/TheCase; rev=4; cleanup=0/0	PASS
+P05	While paused, send ACT2 task completion and another Pause	Completion false; repeat Pause InvalidState; same task playable after Resume	CompleteTask=False; repeatPause=InvalidState; Paused/ScaleUp; rev=4; cleanup=0/0	valid ACT2 event -> Running/DressTheDiver; rev=6; cleanup=0/0	PASS
+P06	Old ACT2 completion arrives after Back reopens ACT2 in same visit	Old attempt rejected; new attempt succeeds; visitor ID and prior skipped result retained	oldCompletion=False; sameVisitor=True; changedAttempt=True; ACT1=Skipped; Running/ScaleUp; rev=5; cleanup=0/0	freshCompletion=True; Running/DressTheDiver; rev=6; cleanup=0/0	PASS
+P07	After Reset/new Start, submit previous visitor Pause and previous Briefing completion	StaleState and false even at current revision; fresh event succeeds	oldPause=StaleState; oldCompletion=False; newVisitor=True; Running/Briefing; rev=3; cleanup=0/0	fresh tutorial continue -> Running/TheCase; rev=4; cleanup=0/0	PASS
+P08	Try free exploration or exit before cleanup is finished	Both false; return before completion stays in cleanup; valid progress accepted afterwards	free=False; exit=False; return=False; Running/SeabedCleanup; rev=7; cleanup=3/9	next progress accepted; Running/SeabedCleanup; rev=8; cleanup=4/9	PASS
+P09	At 3/9 report repeated, lower, over-total and inconsistent-total collection counts	All rejected; count stays 3/9; next legal 4/9 progresses	duplicate=False; lower=False; excess=False; totalChanged=False; Running/SeabedCleanup; rev=7; cleanup=3/9	Running/SeabedCleanup; rev=8; cleanup=4/9	PASS
+P10	Staff skips unfinished cleanup and requests Skip again to end at once	Skip records Skipped without completing ending; second InvalidState; real platform return can advance	Applied/InvalidState; task=Skipped; Running/SeabedCleanup; rev=8; cleanup=2/9	valid platform return -> Running/ExperienceComplete; rev=9; cleanup=2/9	PASS
+P11	Mixed hand and gaze on same control, sustained look, then look away and reselect	First claim wins; same target cannot resubmit; rearmed deliberate gaze works	handClaim=True; simultaneousGazeClaim=False; sustainedReady=False; progress=0	lookAway=0.4s; newReady=True; newClaim=True	PASS
+P12	Gaze picks training ball, controller reports release; then selection is cancelled	Wrong input ignored, still held; cancelled release clears hold without completion; regular grip/release works	wrongRelease=False; stillHeldAfterWrongRelease=True; cancelledSuccess=False; step=2; holding=False; ready=False	regular grab + release -> step=3; ready=True	PASS
+
+run1-crash / Windows event
+Time 2026-11-22T04:14:39.7777090+08:00
+出错模块名称： Tuanjie.exe， 版本： 2022.3.61.28774，时间戳： 0x6aa00c62
+异常代码： 0xc0000005
+
+run2-crash / Windows event
+Time 2026-11-22T04:17:19.7329445+08:00
+出错模块名称： Tuanjie.exe， 版本： 2022.3.61.28774，时间戳： 0x6aa00c62
+异常代码： 0xc0000005
+
+run4-crash / Windows event
+Time 2026-11-22T04:22:47.0418200+08:00
+出错模块名称： Tuanjie.exe， 版本： 2022.3.61.28774，时间戳： 0x6aa00c62
+异常代码： 0xc0000005
+
+=== ACT2 / ACT3 修复后复测 ===
+stand-02.log SHA-256 e9b83b244ef95ebc7374300929de2f0a4ded6db3721d21a5834f9afbca26e37e
+735  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+2218  NEG_CASE A23 PASS sequence=65 stage=ScaleUp | loose-parts button submit=True inspected now=0 feedback=散落零件已归位，其他完成进度保留 last LoosePartRecovered detail=forward
+2314  FULL_OK 62 real XRI ACT2 release by socket recorded exactly one visitor restoration: left
+2876  NEG_CASE A24 PASS sequence=124 stage=DressTheDiver | staff feed visitor refits=7 keys=forward,left,right,up,fixing,nameplate,nail1 loose recoveries=1 key=forward streamed as distinct EventJson kinds; one refit performed by XRI hand
+2924  FULL_OK 101 original Talk enabled and fitting instructions before escort
+3312  NEG_CASE ACT3-03 PASS sequence=146 stage=Descent | original Talk enabled=False submitted=False stale callbacks blocked at EscortStarted and walking=True speech=False sign=请跟随潜水员前往港口。你可以慢慢走，他会等你。  Follow the diver to the harbour. Take your time. He will wait for you. events=1
+3324  FULL_OK 117 original Talk blocked for ray/gaze and late onClick; bilingual escort guidance
+3360  AUDIO_FIX_DOCK scale=1 secs=47.57362 distance=44.50013 remaining=0.1998079
+3371  FULL_OK 119 dock keeps talk unavailable and shows rope instructions on original stand
+6232  NEG_CASE ACT4-07B PASS sequence=223 stage=ExperienceComplete | ending hidden during ascent; dock=True; final choices=True/True; stage=ExperienceComplete
+7380  NEG_CASE END04 PASS sequence=253 stage=Briefing | staff reset/new Start=True/True new visit=bc487c54-022a-466a-89aa-b5a862857e35 practice step=0 cleanup=0 accessible=False heading=欢迎！我们先轻松试一试 · 1 / 3
+8028  FULL_OK 195 new visit re-enables original Talk and fitting instructions
+8040  FULL_OK 196 real Talk reopens conversation after reset
+8076  FULL_PASS checks=197 visit=00000000-0000-0000-0000-000000000000 result=Briefing logs=
+reset-01.log SHA-256 817e89752fbf92f8f1327e4ddc992328a1b9dd5cf125082d1d757db1c9c57fc3
+744  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+1458  ACT2_RESET_OK first part refitted by visitor restored=1 recovered=0 reset=0 inspected=1 socketPoses=7 staffStream=history
+1470  ACT2_RESET_OK recover second part while keeping first completed restored=1 recovered=1 reset=0 inspected=1 socketPoses=7 staffStream=history
+1482  ACT2_RESET_OK submit recovery a second time with no loose parts restored=1 recovered=1 reset=0 inspected=1 socketPoses=7 staffStream=history
+1494  ACT2_RESET_OK ACT2 Restart clears all inspection progress restored=1 recovered=1 reset=1 inspected=0 socketPoses=7 staffStream=history
+1506  ACT2_RESET_OK second local Restart with no loose parts restored=1 recovered=1 reset=1 inspected=0 socketPoses=7 staffStream=history
+1518  ACT2_RESET_OK staff Reset with one loose part restored=1 recovered=1 reset=2 inspected=0 socketPoses=7 staffStream=history
+1530  ACT2_RESET_GLOBAL_CONTEXT key=forward priorVisit=0f3b3d18-578f-4921-a14f-dd8bf18f0807 recordVisit=00000000-0000-0000-0000-000000000000 recordStage=Briefing
+1541  ACT2_RESET_OK second staff Reset with no loose parts restored=1 recovered=1 reset=2 inspected=0 socketPoses=7 staffStream=history
+1553  ACT2_RESET_PROBE_PASS
+=== efb0497c-94d3-438d-87a0-748f895022b1-0.jsonl / 6e0a609a-e7e5-449d-b7fc-a8a6c7100b19 / ACT2 ===
+{"sequence": 65, "stage": "ScaleUp", "kind": "LoosePartRecovered", "detail": "forward"}
+{"sequence": 73, "stage": "ScaleUp", "kind": "PartRestored", "detail": "forward"}
+{"sequence": 76, "stage": "ScaleUp", "kind": "PartRestored", "detail": "left"}
+{"sequence": 84, "stage": "ScaleUp", "kind": "PartRestored", "detail": "right"}
+{"sequence": 93, "stage": "ScaleUp", "kind": "PartRestored", "detail": "up"}
+{"sequence": 102, "stage": "ScaleUp", "kind": "PartRestored", "detail": "fixing"}
+{"sequence": 111, "stage": "ScaleUp", "kind": "PartRestored", "detail": "nameplate"}
+{"sequence": 120, "stage": "ScaleUp", "kind": "PartRestored", "detail": "nail1"}
+
+=== D4 提前上浮再下潜复测 ===
+d4-01.log SHA-256 7d358c85f2ea85dfc930c2997aaaceb8991113579a88e342ddc5632978da713f
+1463  ER AUDIO DIAGNOSTIC: mode=NORMAL engineAudio=True ambience=True narration=True video=True Unity=2022.3.61t14 platform=WindowsEditor
+4330  D4_CHECK first arrival at seabed | physicalArrivals=1 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=0 stage=SeabedCleanup returnedAfterCleanup=False
+4835  D4_CHECK first return to platform | physicalArrivals=1 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=1 stage=SeabedCleanup returnedAfterCleanup=False
+4847  NEG_CASE ACT4-05 PASS sequence=170 stage=SeabedCleanup | at platform=True, stage=SeabedCleanup, counted=1/9; ending visible=False; carried item active=True distance from original=0.00m; surface control=沿绳索探索水下 Explore beneath the harbour
+4900  D4_CHECK second arrival at seabed before depositing again | physicalArrivals=2 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=1 stage=SeabedCleanup returnedAfterCleanup=False
+5137  D4_CHECK after second deposit and 120 game frames | physicalArrivals=2 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=2 stage=SeabedCleanup returnedAfterCleanup=False
+5149  NEG_CASE ACT4-06 PASS sequence=179 stage=SeabedCleanup | second descent and re-pick/deposit after early ascent, label=已回收 / Collected: 2 / 9, two recorded descents=2, ending visible=False
+6850  D4_CHECK all collected underwater | physicalArrivals=2 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=9 stage=SeabedCleanup returnedAfterCleanup=False
+6862  NEG_CASE ACT4-07A PASS sequence=215 stage=SeabedCleanup | fully collected but underwater; basket label=9 / 9 全部回收完成！沿绳上浮返回平台 ALL COLLECTED - ASCEND THE ROPE TO THE PLATFORM, ending visible=False
+7087  D4_CHECK completed ascent after reaching platform | physicalArrivals=2 formalSubmissions=1 wrongStageSubmissions=0 pending=False cleanup=9 stage=ExperienceComplete returnedAfterCleanup=True
+7099  NEG_CASE ACT4-07B PASS sequence=223 stage=ExperienceComplete | ending hidden during ascent; dock=True; final choices=True/True; stage=ExperienceComplete
+8943  FULL_PASS checks=203 visit=00000000-0000-0000-0000-000000000000 result=Briefing logs=

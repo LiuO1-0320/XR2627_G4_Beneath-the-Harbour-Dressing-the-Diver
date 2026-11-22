@@ -11,6 +11,8 @@ public sealed class SessionState
     public SessionStatus Status { get; private set; }
     public ExperienceStage Stage { get; private set; }
     public Guid SessionId { get; private set; }
+    // Callbacks capture this value when work starts. Back invalidates it without ending the visit.
+    public Guid ActivityId { get; private set; }
     public int Revision { get; private set; }
     public int CleanupCollected { get; private set; }
     public int CleanupTotal { get; private set; }
@@ -31,7 +33,7 @@ public sealed class SessionState
     public bool Start()
     {
         if (publishing || Status != SessionStatus.Idle) return false;
-        SessionId = Guid.NewGuid(); Stage = ExperienceStage.Briefing;
+        SessionId = Guid.NewGuid(); ActivityId = SessionId; Stage = ExperienceStage.Briefing;
         Status = SessionStatus.Running; results[0] = StageResult.Active;
         Publish(); return true;
     }
@@ -42,18 +44,18 @@ public sealed class SessionState
         if (publishing || Status != from) return false;
         Status = to; Publish(); return true;
     }
-    public bool ReportInteraction(Guid session, ExperienceStage stage, VisitorAction action)
+    public bool ReportInteraction(Guid activityId, ExperienceStage stage, VisitorAction action)
     {
-        if (publishing || session != SessionId || stage != Stage || Status != SessionStatus.Running) return false;
+        if (publishing || activityId != ActivityId || stage != Stage || Status != SessionStatus.Running) return false;
         bool matches = (stage == ExperienceStage.Briefing && action == VisitorAction.ExploreHelmet)
             || (stage == ExperienceStage.TheCase && action == VisitorAction.HelmetEquipped);
         if (!matches) return false;
         return Advance(StageResult.Completed);
     }
     // Only the real collection activity reports progress; arrival/ordinary clicks cannot complete it.
-    public bool ReportCleanupProgress(Guid session, int collected, int total)
+    public bool ReportCleanupProgress(Guid activityId, int collected, int total)
     {
-        if (publishing || session != SessionId || Status != SessionStatus.Running || Stage != ExperienceStage.SeabedCleanup
+        if (publishing || activityId != ActivityId || Status != SessionStatus.Running || Stage != ExperienceStage.SeabedCleanup
             || CleanupResolved || total <= 0 || collected < 0 || collected > total
             || collected < CleanupCollected || (CleanupTotal > 0 && CleanupTotal != total)
             || (CleanupTotal == total && CleanupCollected == collected)) return false;
@@ -61,9 +63,9 @@ public sealed class SessionState
         if (CleanupCompleted) results[(int)ExperienceStage.SeabedCleanup] = StageResult.Completed;
         Publish(); return true;
     }
-    public bool ReportPlatformReturn(Guid session)
+    public bool ReportPlatformReturn(Guid activityId)
     {
-        if (publishing || session != SessionId || Status != SessionStatus.Running || HasReturnedAfterCleanup
+        if (publishing || activityId != ActivityId || Status != SessionStatus.Running || HasReturnedAfterCleanup
             || Stage != ExperienceStage.SeabedCleanup || !CleanupResolved) return false;
         HasReturnedAfterCleanup = true;
         return Advance(Result(ExperienceStage.SeabedCleanup));
@@ -79,9 +81,9 @@ public sealed class SessionState
             || (Stage != ExperienceStage.ExperienceComplete && Stage != ExperienceStage.FreeExploration)) return false;
         results[(int)Stage] = StageResult.Completed; Status = SessionStatus.Completed; Publish(); return true;
     }
-    public bool CompleteTask(Guid session, ExperienceStage stage)
+    public bool CompleteTask(Guid activityId, ExperienceStage stage)
     {
-        return session == SessionId && stage == Stage && IsTask(stage) &&
+        return activityId == ActivityId && stage == Stage && IsTask(stage) &&
             Status == SessionStatus.Running && Advance(StageResult.Completed);
     }
     public bool CanGoBack => (Status == SessionStatus.Running || Status == SessionStatus.Paused)
@@ -102,30 +104,46 @@ public sealed class SessionState
             }
         }
     }
-    // Capture progress before the existing full scene reset. A new generation ID rejects stale activity callbacks.
-    public Action CaptureBackRestore()
+    public bool GoBack(Action<ExperienceStage> restartScene)
     {
-        if (publishing || !CanGoBack) return null;
-        var target = PreviousStage; var status = Status;
-        var saved = (StageResult[])results.Clone();
-        return () =>
+        if (publishing || !CanGoBack) return false;
+        var target = PreviousStage;
+        var previousStatus = Status;
+        var fittingResult = Result(ExperienceStage.Inside);
+        // Keep recovery callbacks from advancing the session while objects are being released.
+        ActivityId = Guid.NewGuid();
+        publishing = true;
+        Status = SessionStatus.Paused;
+        try
         {
-            if (Status != SessionStatus.Idle) throw new InvalidOperationException("Back requires a completed scene reset.");
-            Array.Clear(results, 0, results.Length);
-            for (int i = 0; i < (int)target; i++) results[i] = saved[i];
-            if (target == ExperienceStage.ScaleUp) results[(int)ExperienceStage.Inside] = StageResult.Completed;
+            restartScene(target);
+            Array.Clear(results, (int)target, results.Length - (int)target);
+            // Inside is part of ACT1, although its legacy serialized index comes after ACT2.
+            if (target == ExperienceStage.ScaleUp) results[(int)ExperienceStage.Inside] = fittingResult;
             results[(int)target] = StageResult.Active;
-            CleanupCollected = CleanupTotal = 0; HasReturnedAfterCleanup = false;
-            SessionId = Guid.NewGuid(); Stage = target; Status = status; Publish();
-        };
+            if (target <= ExperienceStage.SeabedCleanup)
+            {
+                CleanupCollected = CleanupTotal = 0;
+                HasReturnedAfterCleanup = false;
+            }
+            Stage = target;
+            Status = previousStatus;
+        }
+        finally
+        {
+            publishing = false;
+            Publish(); // Failure leaves the same visitor paused for staff recovery.
+        }
+        return true;
     }
+    public bool CanSkip => !publishing && (Status == SessionStatus.Running || Status == SessionStatus.Paused)
+        && !(Stage == ExperienceStage.SeabedCleanup && CleanupResolved);
     public bool Skip()
     {
-        if (publishing || (Status != SessionStatus.Running && Status != SessionStatus.Paused)) return false;
+        if (!CanSkip) return false;
         // Skipping collection resolves only the task, never the physical return to land.
         if (Stage == ExperienceStage.SeabedCleanup)
         {
-            if (CleanupResolved) return false;
             results[(int)Stage] = StageResult.Skipped;
             Publish(); return true;
         }
@@ -161,7 +179,7 @@ public sealed class SessionState
         Array.Clear(results, 0, results.Length);
         CleanupCollected = CleanupTotal = 0;
         HasReturnedAfterCleanup = false;
-        SessionId = Guid.Empty; Stage = ExperienceStage.Briefing; Status = SessionStatus.Idle;
+        SessionId = ActivityId = Guid.Empty; Stage = ExperienceStage.Briefing; Status = SessionStatus.Idle;
         Publish(); return true;
     }
     void Publish()

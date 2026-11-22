@@ -31,6 +31,10 @@ public sealed class StageCoordinator : MonoBehaviour
         new StageContent { title = "Free exploration" }
     };
     public PlayerQuickTravel navigation;
+    [Header("Staff web")]
+    [Tooltip("TCP port used by the exhibition PC for the staff control page.")]
+    [Range(1, 65535)] public int staffMonitorPort = StaffMonitorServer.DefaultPort;
+    public ReadOnlyStaffMonitor StaffMonitor { get; private set; }
     [Header("Exploration space / 区域自由活动空间")]
     [Tooltip("Extra horizontal space around arrival areas where route guidance stays hidden. Does not trigger narration.")]
     [Min(0)] public float explorationAreaPadding = 2f;
@@ -68,6 +72,17 @@ public sealed class StageCoordinator : MonoBehaviour
     readonly List<IStageActivity> activeActivities = new List<IStageActivity>();
     readonly List<GameObject> escortObjects = new List<GameObject>();
 
+    internal HelmetDetailInspection ActiveInspection
+    {
+        get
+        {
+            if (entered == ExperienceStage.ScaleUp)
+                foreach (var activity in activeActivities)
+                    if (activity is HelmetDetailInspection inspection) return inspection;
+            return null;
+        }
+    }
+
     void Awake()
     {
         if (Current && Current != this) { enabled = false; return; }
@@ -101,10 +116,19 @@ public sealed class StageCoordinator : MonoBehaviour
         videos = FindObjectsOfType<ExhibitVideoScreen>();
         rope = FindObjectOfType<DiveRopeStation>();
         cleanup = FindObjectOfType<SeabedCleanup>(true);
-        if (rope) rope.DescentCompleted += OnDescentCompleted;
+        if (rope)
+        {
+            rope.DescentCompleted += OnDescentCompleted;
+            rope.PlatformReturnCompleted += OnPlatformReturnCompleted;
+        }
         foreach (var stage in stages) foreach (var item in stage.objects) if (item) item.SetActive(false);
         Controller.Session.Changed += Synchronize;
         ready = true; Synchronize();
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+        StaffMonitor = GetComponent<ReadOnlyStaffMonitor>();
+        if (!StaffMonitor) StaffMonitor = gameObject.AddComponent<ReadOnlyStaffMonitor>();
+        if (StaffMonitor.isActiveAndEnabled) StaffMonitor.Open();
+#endif
         var ui = gameObject.AddComponent<StaffSessionUI>(); ui.coordinator = this;
         gameObject.AddComponent<ExperienceEndingUI>();
         gameObject.AddComponent<NarrationRegionPanels>();
@@ -128,27 +152,35 @@ public sealed class StageCoordinator : MonoBehaviour
     public void QueueInteraction(Guid session, ExperienceStage stage, VisitorAction action)
     {
         var state = Controller.Session;
-        if (state.Status != SessionStatus.Running || state.SessionId != session || state.Stage != stage) return;
+        if (state.Status != SessionStatus.Running || state.ActivityId != session || state.Stage != stage) return;
         if (!pendingInteraction.HasValue) pendingInteraction = new VisitorInteraction { session = session, stage = stage, action = action };
         SessionTelemetry.Report("VisitorAction", this, action.ToString());
     }
-    void OnDescentCompleted() { descentFinished = true; }
+    void OnDescentCompleted()
+    {
+        var state = Controller.Session;
+        // The rope also serves return visits during cleanup and free exploration.
+        if (state.Stage == ExperienceStage.Descent && state.ActivityId == descentSession &&
+            state.Status == SessionStatus.Running)
+            descentFinished = true;
+    }
+    void OnPlatformReturnCompleted(Guid travelSession)
+    {
+        if (rope.IsVisitorOnSurfacePlatform)
+            Controller.Session.ReportPlatformReturn(travelSession);
+    }
     void OnEscortStarted(DiverNpcInteraction diver, Guid session)
     {
         // An explicitly configured M3 activity keeps ownership of its own success criteria.
         var state = Controller.Session;
-        if (activeActivities.Count != 0 || !diver.HasFittedHelmet || !Allows(ExperienceStage.DressTheDiver) || session != state.SessionId) return;
+        if (activeActivities.Count != 0 || !diver.HasFittedHelmet || state.Status != SessionStatus.Running ||
+            state.Stage != ExperienceStage.DressTheDiver || session != state.ActivityId) return;
         pendingDiver = diver; pendingDiverSession = session;
     }
     void Update()
     {
         if (!ready) return;
-        // Both completed and skipped cleanup must physically return to the supported dock.
-        // Breaking the water surface is insufficient, and travel must finish before ending.
         var state = Controller.Session;
-        if (state.Status == SessionStatus.Running && state.Stage == ExperienceStage.SeabedCleanup
-            && state.CleanupResolved && rope && rope.IsVisitorOnSurfacePlatform)
-            state.ReportPlatformReturn(state.SessionId);
         if (pendingDiver && Controller.Session.Status == SessionStatus.Running)
         {
             var diver = pendingDiver; var session = pendingDiverSession;
@@ -161,12 +193,22 @@ public sealed class StageCoordinator : MonoBehaviour
             Controller.Session.ReportInteraction(interaction.session, interaction.stage, interaction.action);
         }
         // Flush outside event dispatch; an immediate activity callback must not re-enter a transition.
-        if (descentFinished && Controller.Session.CompleteTask(descentSession, ExperienceStage.Descent)) descentFinished = false;
+        if (descentFinished && state.Status == SessionStatus.Running)
+        {
+            descentFinished = false;
+            state.CompleteTask(descentSession, ExperienceStage.Descent);
+        }
         foreach (var inspection in inspections) if (inspection && inspection.helmet) Gate(inspection.helmet, Allows(ExperienceStage.ScaleUp));
         foreach (var wearable in wearables) if (wearable && wearable.helmet) Gate(wearable.helmet, AllowsHelmet(wearable));
         foreach (var inspection in inspections) if (inspection) inspection.SetSessionInteraction(Allows(ExperienceStage.ScaleUp));
-        if (cleanup) Gate(cleanup.transform, Allows(ExperienceStage.SeabedCleanup)
-            && (state.Stage == ExperienceStage.FreeExploration || !state.CleanupResolved));
+        // Cleanup shares its scene host with the rope. Keep the rope available for the return trip.
+        if (cleanup && cleanup.InteractionRoot)
+        {
+            bool allowed = Allows(ExperienceStage.SeabedCleanup) &&
+                (state.Stage == ExperienceStage.FreeExploration || !state.CleanupResolved);
+            if (!allowed) cleanup.CancelHandSelections();
+            Gate(cleanup.InteractionRoot, allowed);
+        }
     }
     void Gate(Transform root, bool allowed)
     {
@@ -286,18 +328,18 @@ public sealed class StageCoordinator : MonoBehaviour
         foreach (var item in content.objects) if (item) item.SetActive(true);
         foreach (var component in content.activities)
             if (component is IStageActivity activity)
-            { activeActivities.Add(activity); activity.BeginStage(Controller.Session.SessionId, stage); }
+            { activeActivities.Add(activity); activity.BeginStage(Controller.Session.ActivityId, stage); }
         if (stage == ExperienceStage.ScaleUp && activeActivities.Count == 0)
             foreach (var inspection in inspections)
                 if (inspection && inspection.isActiveAndEnabled)
-                { activeActivities.Add(inspection); inspection.BeginStage(Controller.Session.SessionId, stage); }
+                { activeActivities.Add(inspection); inspection.BeginStage(Controller.Session.ActivityId, stage); }
         IntegrationStatus = SessionState.IsTask(stage) && stage != ExperienceStage.Descent && activeActivities.Count == 0
             ? "Awaiting M3 integration: no task provider assigned. Staff may Skip; no success will be inferred." : "";
         if (stage == ExperienceStage.DressTheDiver && activeActivities.Count == 0 && Array.Exists(divers, diver => diver))
             IntegrationStatus = "Existing diver activity: fit the helmet, then follow the diver to the descent platform.";
         if (stage == ExperienceStage.Descent)
         {
-            descentSession = Controller.Session.SessionId; descentFinished = false;
+            descentSession = Controller.Session.ActivityId; descentFinished = false;
             if (!rope) IntegrationStatus = "Descent station missing. Staff may Skip.";
         }
         GuideToStage(stage);
@@ -338,18 +380,36 @@ public sealed class StageCoordinator : MonoBehaviour
     {
         return wearable.IsWorn && (wearable.GetComponent<DiverNpcInteraction>() ? keepDiverEscort : keepFittedHelmet);
     }
+    public bool CanGoBack => TryGetBackDestination(out _);
+
+    bool TryGetBackDestination(out int destination)
+    {
+        destination = 0;
+        var state = Controller.Session;
+        if (!state.CanGoBack || !GlobalReset || GlobalReset.IsResetting || !navigation || !Camera.main) return false;
+        var target = state.PreviousStage;
+        Transform anchor;
+        switch (target)
+        {
+            case ExperienceStage.Briefing: anchor = navigation.start; break;
+            case ExperienceStage.TheCase: destination = 1; anchor = navigation.act1; break;
+            case ExperienceStage.ScaleUp: destination = 2; anchor = navigation.act2; break;
+            case ExperienceStage.DressTheDiver: destination = 3; anchor = navigation.act3; break;
+            default: destination = 4; anchor = navigation.act4; break;
+        }
+        if (!anchor) return false;
+        if (target == ExperienceStage.SeabedCleanup && (!cleanup || !cleanup.CollectionTarget ||
+            !Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>())) return false;
+        return true;
+    }
     public bool BackToPreviousStage()
     {
-        var state = Controller.Session;
-        var restore = state.CaptureBackRestore();
-        if (restore == null || !GlobalReset || GlobalReset.IsResetting || !navigation || !Camera.main) return false;
-        var target = state.PreviousStage;
-        int destination = target == ExperienceStage.Briefing ? 0 : target == ExperienceStage.TheCase ? 1
-            : target == ExperienceStage.ScaleUp ? 2 : target == ExperienceStage.DressTheDiver ? 3 : 4;
-        Transform[] targets = { navigation.start, navigation.act1, navigation.act2, navigation.act3, navigation.act4 };
-        if (!targets[destination]) return false;
-        // Reuse the reset sequence: cancel selections/deferred releases, rope travel and all pending callbacks.
-        if (!GlobalReset.ResetAll()) throw new InvalidOperationException("Back reset failed: " + GlobalReset.LastError);
+        if (!TryGetBackDestination(out int destination)) return false;
+        return Controller.Session.GoBack(previous => RestartStageScene(previous, destination));
+    }
+    void RestartStageScene(ExperienceStage target, int destination)
+    {
+        GlobalReset.RestoreSceneForBack(target);
         navigation.SessionTravelTo(destination);
         PositionAtInteractionExhibit(target);
         if (target == ExperienceStage.SeabedCleanup && cleanup)
@@ -364,9 +424,6 @@ public sealed class StageCoordinator : MonoBehaviour
             if (enabledBody) body.enabled = true;
         }
         Physics.SyncTransforms();
-        restore();
-        IntegrationStatus = "Returned to " + state.Stage + ": task restarted.";
-        return true;
     }
     void PositionAtInteractionExhibit(ExperienceStage stage)
     {
@@ -511,7 +568,11 @@ public sealed class StageCoordinator : MonoBehaviour
         if (routeGuide && Audio) routeGuide.ArrivalConfirmed -= Audio.ConfirmArrival;
         if (divers != null) foreach (var diver in divers) if (diver) diver.EscortStarted -= OnEscortStarted;
         if (Controller) Controller.Session.Changed -= Synchronize;
-        if (rope) rope.DescentCompleted -= OnDescentCompleted;
+        if (rope)
+        {
+            rope.DescentCompleted -= OnDescentCompleted;
+            rope.PlatformReturnCompleted -= OnPlatformReturnCompleted;
+        }
         if (ready) LeaveStage();
         if (Audio) Audio.StopAll();
         SetLocomotionPaused(false);

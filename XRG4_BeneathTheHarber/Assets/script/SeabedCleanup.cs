@@ -3,17 +3,20 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
-/// <summary>Pick up litter with either hand and release it into the seabed collection basket.</summary>
+/// <summary>Hand and head-gaze inputs share the physical seabed litter and basket.</summary>
 [ExecuteAlways]
 public class SeabedCleanup : MonoBehaviour, IResettable
 {
     public int ResetOrder => 30;
-    public void PrepareReset() {  }
+    public void PrepareReset() { CancelCarry(); }
     public void RestoreReset() { ResetForSession(); if(collected!=0) throw new System.InvalidOperationException("Cleanup count was not cleared."); }
 
     public Transform seabed;
+    [Tooltip("Maximum distance from the headset to a piece of litter or the collection basket, in metres.")]
+    [Min(.5f)] public float gazeReach = 3f;
     class Litter
     {
         public Transform root;
@@ -21,7 +24,11 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         public Quaternion rotation;
         public Rigidbody body;
         public XRGrabInteractable grab;
-        public bool held, collected;
+        public bool collected, handSelected;
+        public Vector3? releasePosition;
+        public int lastReleaseFrame = -10;
+        public System.Guid pickupActivity;
+        public ExperienceStage pickupStage;
         public Renderer[] renderers;
         public MaterialPropertyBlock[] originalProperties;
         public bool highlighted;
@@ -34,6 +41,9 @@ public class SeabedCleanup : MonoBehaviour, IResettable
     Text progress;
     Button resetButton;
     int collected;
+    Litter carried;
+    bool carriedGravity, carriedCollisions;
+    internal Transform InteractionRoot => generated ? generated.transform : null;
     public Transform CollectionTarget => basket;
     public int CollectedCount => collected;
     public int TotalCount => litter.Count;
@@ -107,11 +117,35 @@ public class SeabedCleanup : MonoBehaviour, IResettable
                 }
                 item.grab.hoverEntered.AddListener(args => RefreshHighlight(item));
                 item.grab.hoverExited.AddListener(args => RefreshHighlight(item));
-                item.grab.selectEntered.AddListener(args => { item.held = true; SetHighlight(item, false); });
-                item.grab.selectExited.AddListener(args => RefreshHighlight(item));
+                item.grab.selectFilters.Add(new XRSelectFilterDelegate((interactor, target) => carried == null));
+                item.grab.selectEntered.AddListener(args =>
+                {
+                    item.handSelected = true;
+                    item.releasePosition = null;
+                    item.pickupActivity = CurrentActivity;
+                    item.pickupStage = CurrentStage;
+                    SetHighlight(item, false);
+                });
+                item.grab.selectExited.AddListener(args =>
+                {
+                    if (!item.handSelected) return;
+                    item.handSelected = false;
+                    item.lastReleaseFrame = Time.frameCount;
+                    // Count only a matching, normal release. A late exit after cancellation owns no item.
+                    if (!args.isCanceled && CollectionOpen() && SamePickup(item))
+                        item.releasePosition = item.body.position;
+                    else
+                    {
+                        item.releasePosition = null;
+                        item.pickupActivity = System.Guid.Empty;
+                    }
+                    RefreshHighlight(item);
+                });
+                root.AddComponent<GazeWorldTarget>().Bind(() => CanPickUp(item), () => PickUp(item));
             }
             litter.Add(item);
         }
+        if (Application.isPlaying) basket.gameObject.AddComponent<GazeWorldTarget>().Bind(CanDeposit, DepositCarried);
         BuildPanel(); RefreshProgress();
     }
     void Update()
@@ -124,36 +158,152 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         }
         if (!Application.isPlaying) return;
         var current = StageCoordinator.Current;
-        if (resetButton) resetButton.interactable = !current ||
-            (current.Controller.Session.Status == SessionStatus.Running && current.Controller.Session.Stage == ExperienceStage.FreeExploration);
+        bool canReset = !current || (current.Controller.Session.Status == SessionStatus.Running &&
+            current.Controller.Session.Stage == ExperienceStage.FreeExploration);
+        if (resetButton && resetButton.interactable != canReset)
+        {
+            resetButton.interactable = canReset;
+            if (canReset) RefreshProgress();
+        }
+        UpdateCarry();
         if (!StageCoordinator.Allows(ExperienceStage.SeabedCleanup)) return;
         if (current && current.Controller.Session.Stage == ExperienceStage.SeabedCleanup && current.Controller.Session.CleanupResolved)
         {
-            progress.text = current.Controller.Session.CleanupCompleted
-                ? "全部回收完成！请上浮返回陆地平台\nALL COLLECTED - RETURN TO THE LAND PLATFORM"
-                : "工作人员已跳过回收，请上浮返回陆地平台\nCOLLECTION SKIPPED - RETURN TO THE LAND PLATFORM";
+            if (!current.Controller.Session.CleanupCompleted)
+                progress.text = "工作人员已跳过回收，请沿绳上浮返回平台\nCOLLECTION SKIPPED - ASCEND THE ROPE TO THE PLATFORM";
             return;
         }
         foreach (var item in litter)
         {
             if (item.collected || !item.grab) continue;
             RefreshHighlight(item);
-            if (item.grab.isSelected) { item.held = true; continue; }
-            Vector3 inBasket = basket.InverseTransformPoint(item.root.position);
-            // Release inside the open basket, including a small area above its rim.
-            if (item.held && Mathf.Abs(inBasket.x) < .65f && Mathf.Abs(inBasket.z) < .55f && inBasket.y > .2f && inBasket.y < 1.5f)
+            if (item == carried || item.grab.isSelected) continue;
+            if (item.releasePosition.HasValue)
             {
-                item.collected = true; collected++;
-                SessionTelemetry.Report("LitterCollected", item.root, collected.ToString());
-                item.root.gameObject.SetActive(false); RefreshProgress(); continue;
+                Vector3 positionAtRelease = item.releasePosition.Value;
+                item.releasePosition = null;
+                if (CollectReleasedItem(item, positionAtRelease)) continue;
             }
             Vector3 position = generated.transform.InverseTransformPoint(item.root.position);
             if (position.y < Bottom - 1 || Vector3.Distance(position, item.start) > 35) ReturnItem(item);
         }
-        var coordinator = StageCoordinator.Current;
-        if (coordinator)
-            coordinator.Controller.Session.ReportCleanupProgress(coordinator.Controller.Session.SessionId, collected, litter.Count);
+        if (current && current.Controller.Session.CleanupTotal == 0)
+            ReportProgress(CurrentActivity);
     }
+
+    System.Guid CurrentActivity => StageCoordinator.Current
+        ? StageCoordinator.Current.Controller.Session.ActivityId : System.Guid.Empty;
+
+    ExperienceStage CurrentStage => StageCoordinator.Current
+        ? StageCoordinator.Current.Controller.Session.Stage : ExperienceStage.SeabedCleanup;
+
+    bool SamePickup(Litter item) => item.pickupActivity == CurrentActivity && item.pickupStage == CurrentStage;
+
+    bool CollectionOpen()
+    {
+        var coordinator = StageCoordinator.Current;
+        return StageCoordinator.Allows(ExperienceStage.SeabedCleanup) &&
+            (!coordinator || CurrentStage == ExperienceStage.FreeExploration || !coordinator.Controller.Session.CleanupResolved);
+    }
+
+    bool CanUseGaze() => Application.isPlaying && isActiveAndEnabled && StageCoordinator.Current && Camera.main &&
+        GazeInput.Current && GazeInput.Current.Accessible && !DiveRopeStation.IsPlayerTravelling && CollectionOpen();
+
+    bool WithinReach(Vector3 point) => (Camera.main.transform.position - point).sqrMagnitude <= gazeReach * gazeReach;
+
+    bool CanPickUp(Litter item)
+    {
+        return CanUseGaze() && carried == null && !item.collected && item.grab.isActiveAndEnabled &&
+            WithinReach(item.root.position) && !litter.Exists(other => other.grab.isSelected ||
+                Time.frameCount - other.lastReleaseFrame <= 1);
+    }
+
+    void PickUp(Litter item)
+    {
+        if (!CanPickUp(item)) return;
+        carried = item;
+        item.pickupActivity = CurrentActivity;
+        item.pickupStage = CurrentStage;
+        item.releasePosition = null;
+        carriedGravity = item.body.useGravity;
+        carriedCollisions = item.body.detectCollisions;
+        if (!item.body.isKinematic) { item.body.velocity = Vector3.zero; item.body.angularVelocity = Vector3.zero; }
+        item.body.useGravity = false;
+        item.body.detectCollisions = false;
+        SetHighlight(item, false);
+        FollowViewer();
+        SessionTelemetry.Report("LitterPickedUp", item.root, "Head gaze");
+        RefreshProgress();
+    }
+
+    void FollowViewer()
+    {
+        // Keep the model visible below the gaze ray and within its original reset hierarchy.
+        carried.body.position = Camera.main.transform.TransformPoint(new Vector3(.32f, -.3f, .65f));
+    }
+
+    void UpdateCarry()
+    {
+        if (carried == null) return;
+        var coordinator = StageCoordinator.Current;
+        if (coordinator && coordinator.Controller.Session.Status == SessionStatus.Paused) return;
+        if (!CanUseGaze() || !SamePickup(carried))
+            CancelCarry();
+        else FollowViewer();
+    }
+
+    bool CanDeposit() => carried != null && CanUseGaze() && SamePickup(carried) && WithinReach(basket.TransformPoint(Vector3.up * .5f));
+
+    void DepositCarried()
+    {
+        if (!CanDeposit()) return;
+        var item = ReleaseCarry();
+        item.body.position = basket.TransformPoint(Vector3.up * .65f);
+        CollectReleasedItem(item, item.body.position);
+    }
+
+    Litter ReleaseCarry()
+    {
+        var item = carried;
+        carried = null;
+        item.body.useGravity = carriedGravity;
+        item.body.detectCollisions = carriedCollisions;
+        return item;
+    }
+
+    void CancelCarry()
+    {
+        if (carried == null) return;
+        ReturnItem(ReleaseCarry());
+        RefreshProgress();
+    }
+
+    bool IsInsideBasket(Vector3 position)
+    {
+        Vector3 local = basket.InverseTransformPoint(position);
+        return Mathf.Abs(local.x) < .65f && Mathf.Abs(local.z) < .55f && local.y > .2f && local.y < 1.5f;
+    }
+
+    bool CollectReleasedItem(Litter item, Vector3 positionAtRelease)
+    {
+        if (item.collected || item == carried || item.grab.isSelected ||
+            !SamePickup(item) || !IsInsideBasket(positionAtRelease)) return false;
+        item.collected = true;
+        collected++;
+        SessionTelemetry.Report("LitterCollected", item.root, collected.ToString());
+        item.root.gameObject.SetActive(false);
+        RefreshProgress();
+        ReportProgress(item.pickupActivity);
+        return true;
+    }
+
+    void ReportProgress(System.Guid activity)
+    {
+        var coordinator = StageCoordinator.Current;
+        if (coordinator && coordinator.Controller.Session.Stage == ExperienceStage.SeabedCleanup)
+            coordinator.Controller.Session.ReportCleanupProgress(activity, collected, litter.Count);
+    }
+
     void RefreshHighlight(Litter item)
     {
         SetHighlight(item, item.grab && item.grab.isActiveAndEnabled && item.grab.isHovered
@@ -174,6 +324,14 @@ public class SeabedCleanup : MonoBehaviour, IResettable
             item.renderers[i].SetPropertyBlock(properties);
         }
     }
+    internal void CancelHandSelections()
+    {
+        // XRI temporarily unparents a held object. Cancel it before gating the generated subtree.
+        foreach (var item in litter)
+            if (item.grab && item.grab.isSelected && item.grab.interactionManager)
+                item.grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)item.grab);
+    }
+
     public void ResetCleanup()
     {
         // Guided progress cannot be erased mid-task. Replay is available in free exploration.
@@ -183,8 +341,13 @@ public class SeabedCleanup : MonoBehaviour, IResettable
                 && coordinator.Controller.Session.Stage == ExperienceStage.FreeExploration)) return;
         foreach (var item in litter)
             if (item.grab && item.grab.isSelected) { progress.text = "请先松开手里的垃圾，再重置\nRelease the item before resetting"; return; }
+        RestoreLitter();
+    }
+    void RestoreLitter()
+    {
         collected = 0;
-        foreach (var item in litter) { item.collected = item.held = false; ReturnItem(item); }
+        if (carried != null) ReleaseCarry();
+        foreach (var item in litter) { item.collected = false; ReturnItem(item); }
         RefreshProgress();
     }
     public void ResetForSession()
@@ -198,21 +361,37 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         {
             foreach (var item in litter)
                 if (item.grab && item.grab.isSelected) throw new System.InvalidOperationException("Cleanup item is still selected after cancellation.");
-            ResetCleanup();
+            RestoreLitter();
         }
         finally { foreach (var grab in enabledGrabs) if (grab) grab.enabled = true; }
     }
     void ReturnItem(Litter item)
     {
+        item.handSelected = false;
+        item.releasePosition = null;
+        item.lastReleaseFrame = -10;
+        item.pickupActivity = System.Guid.Empty;
         item.root.gameObject.SetActive(true);
         item.root.SetParent(generated.transform, false);
         item.root.localPosition = item.start; item.root.localRotation = item.rotation;
-        if (item.body) { item.body.velocity = Vector3.zero; item.body.angularVelocity = Vector3.zero; }
+        if (item.body)
+        {
+            item.body.position = item.root.position;
+            item.body.rotation = item.root.rotation;
+            if (!item.body.isKinematic) { item.body.velocity = Vector3.zero; item.body.angularVelocity = Vector3.zero; }
+        }
     }
     void RefreshProgress()
     {
-        progress.text = collected == litter.Count ? "全部回收完成！请上浮到水面\nALL LITTER COLLECTED - ASCEND TO THE SURFACE" :
-            "已回收 / Collected: \n" + collected + " / " + litter.Count;
+        if (collected == litter.Count)
+        {
+            progress.text = CurrentStage == ExperienceStage.FreeExploration
+                ? "全部回收完成！可以重新收集 / All collected! You can reset the basket."
+                : $"{collected} / {litter.Count} 全部回收完成！沿绳上浮返回平台\nALL COLLECTED - ASCEND THE ROPE TO THE PLATFORM";
+            return;
+        }
+        progress.text = $"已回收 / Collected: {collected} / {litter.Count}" +
+            (carried != null ? "\n带回篮边，凝视篮壁或篮底 / Look at the basket to deposit" : "");
     }
     void BuildPanel()
     {
@@ -224,7 +403,7 @@ public class SeabedCleanup : MonoBehaviour, IResettable
         ui.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         Graphic<Image>(panel, "Background", Vector2.zero, new Vector2(1300, 660)).color = new Color(.015f, .1f, .12f, .75f);
         Label(panel, "海底捡垃圾 / SEABED CLEANUP", new Vector2(0, 245), 42);
-        Label(panel, "握住垃圾捡起，放到回收篮内松手\nHold grip to pick up litter; release it inside the basket", new Vector2(0, 110), 32);
+        Label(panel, "凝视垃圾拾起，再到篮边凝视篮壁或篮底。也可以用手柄抓取后在篮内松手。\nLook at litter to pick it up, then at the basket to deposit. Or use grip and release inside.", new Vector2(0, 110), 30);
         progress = Label(panel, "", new Vector2(0, -45), 38);
         var image = Graphic<Image>(panel, "Reset collection", new Vector2(0, -225), new Vector2(700, 90));
         image.color = Color.clear; image.raycastTarget = true;
@@ -260,6 +439,7 @@ public class SeabedCleanup : MonoBehaviour, IResettable
     }
     void OnDisable()
     {
+        carried = null;
         Dispose(generated); Dispose(font); foreach (var material in materials) Dispose(material);
         materials.Clear(); litter.Clear(); generated = null; basket = panel = null; collected = 0;
     }

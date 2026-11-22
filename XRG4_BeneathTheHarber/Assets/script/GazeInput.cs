@@ -9,7 +9,15 @@ public sealed class GazeInput : MonoBehaviour, IResettable
 {
     public int ResetOrder => -800;
     public void PrepareReset() { dwell.Reset(); TargetName=""; if(feedback) feedback.Hide(); }
-    public void RestoreReset() { Accessible=false; dwell.Reset(); TargetName=""; revision=controller ? controller.Session.Revision : -1; }
+    public void RestoreReset()
+    {
+        Accessible = false;
+        dwell.Reset();
+        TargetName = "";
+        revision = controller ? controller.Session.Revision : -1;
+        // Global reset also visits inactive components that may not have reached Awake.
+        if (configuredDwellSeconds.HasValue) dwellSeconds = configuredDwellSeconds.Value;
+    }
 
     public static GazeInput Current { get; private set; }
     [Range(.5f,5)] public float dwellSeconds = 1.8f;
@@ -22,11 +30,13 @@ public sealed class GazeInput : MonoBehaviour, IResettable
     readonly List<Canvas> canvases = new List<Canvas>();
     GazeFeedback feedback;
     SessionController controller;
+    float? configuredDwellSeconds;
     float nextScan;
     int revision = -1;
     bool focused = true;
     void Awake()
     {
+        configuredDwellSeconds = dwellSeconds;
         Current = this; controller = GetComponent<SessionController>();
         var obj = new GameObject("Head gaze progress",typeof(RectTransform)); obj.transform.SetParent(transform,false);
         feedback = obj.AddComponent<GazeFeedback>();
@@ -39,12 +49,16 @@ public sealed class GazeInput : MonoBehaviour, IResettable
     }
     public bool Claim(AccessibleButton button,bool gaze)
     {
+        return Claim(button, gaze, button.gazeInStandardMode, button.allowWhilePaused);
+    }
+    bool Claim(Component target, bool gaze, bool allowStandard, bool allowPaused)
+    {
         if (!isActiveAndEnabled) return !gaze;
-        if (!focused || (gaze && !Accessible && !button.gazeInStandardMode)) return false;
+        if (!focused || (gaze && !Accessible && !allowStandard)) return false;
         if (controller && controller.Session.Status == SessionStatus.Completed) return false;
-        if (controller && controller.Session.Status == SessionStatus.Paused && !button.allowWhilePaused) return false;
-        if ((Accessible || gaze || button.gazeInStandardMode) && !dwell.Claim(button.GetInstanceID(),Time.unscaledTimeAsDouble)) return false;
-        SessionTelemetry.Report(gaze ? "GazeActivated" : "UIActivated",button,button.name);
+        if (controller && controller.Session.Status == SessionStatus.Paused && !allowPaused) return false;
+        if ((Accessible || gaze || allowStandard) && !dwell.Claim(target.GetInstanceID(),Time.unscaledTimeAsDouble)) return false;
+        SessionTelemetry.Report(gaze ? "GazeActivated" : "UIActivated",target,target.name);
         return true;
     }
     bool Eligible(AccessibleButton button)
@@ -55,7 +69,7 @@ public sealed class GazeInput : MonoBehaviour, IResettable
     }
     void LateUpdate()
     {
-        if (!focused || !Camera.main) { dwell.CancelProgress(); feedback.Hide(); return; }
+        if (!focused || !Camera.main) { TargetName = ""; dwell.CancelProgress(); feedback.Hide(); return; }
         if (controller && revision != controller.Session.Revision)
         {
             revision = controller.Session.Revision; dwell.CancelProgress();
@@ -73,24 +87,38 @@ public sealed class GazeInput : MonoBehaviour, IResettable
         float distance = maxDistance;
         // Ignore the visitor's own body; environmental meshes still occlude buttons.
         var origin = camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+        Collider nearest = null;
         foreach (var hit in Physics.RaycastAll(ray,maxDistance,occlusionMask,QueryTriggerInteraction.Ignore))
-            if (!origin || !hit.transform.IsChildOf(origin.transform)) distance = Mathf.Min(distance,hit.distance);
+        {
+            if (hit.distance > distance || (origin && hit.collider.transform.IsChildOf(origin.transform))) continue;
+            distance = hit.distance;
+            nearest = hit.collider;
+        }
+        GazeWorldTarget world = null;
+        if (nearest && Accessible && (!controller || controller.Session.Status == SessionStatus.Running))
+        {
+            world = nearest.GetComponentInParent<GazeWorldTarget>();
+            if (world && !world.Available) world = null;
+        }
         Graphic winner = null;
         foreach (var canvas in canvases)
         {
-            if (!canvas || !canvas.isActiveAndEnabled) continue;
+            if (!canvas || !canvas.isActiveAndEnabled || canvas.gameObject == feedback.gameObject) continue;
             // uGUI 1.0 returns IndexedSet through IList; its enumerator throws.
             // Use Count/index access, as Unity's own graphic raycasters do.
             var graphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
             for (int i = 0; i < graphics.Count; i++)
             {
                 var graphic = graphics[i];
-                if (!graphic || !graphic.isActiveAndEnabled || !graphic.raycastTarget || !graphic.canvasRenderer || graphic.canvasRenderer.cull) continue;
+                if (!graphic || !graphic.isActiveAndEnabled || !graphic.canvasRenderer || graphic.canvasRenderer.cull) continue;
+                // Panel backings often opt out of pointer events; visible panels still cover objects behind them.
+                if (!graphic.raycastTarget && !(world && graphic is Image && graphic.color.a * graphic.canvasRenderer.GetInheritedAlpha() > .01f)) continue;
                 var rect = graphic.rectTransform;
                 if (Vector3.Dot(ray.direction,rect.forward) <= 0) continue;
                 if (!new Plane(rect.forward,rect.position).Raycast(ray,out float t) || t < 0 || t > distance+.001f) continue;
                 var point = ray.GetPoint(t);
                 if (!rect.rect.Contains(rect.InverseTransformPoint(point)) || !graphic.Raycast(camera.WorldToScreenPoint(point),camera)) continue;
+                if (!graphic.raycastTarget) { world = null; continue; }
                 if (winner && Mathf.Abs(t-distance) < .001f)
                 {
                     if (canvas == winner.canvas && graphic.depth <= winner.depth) continue;
@@ -103,14 +131,17 @@ public sealed class GazeInput : MonoBehaviour, IResettable
                 winner = graphic; distance = t;
             }
         }
-        var target = winner ? winner.GetComponentInParent<AccessibleButton>() : null;
-        if (!Eligible(target)) target = null;
+        var button = winner ? winner.GetComponentInParent<AccessibleButton>() : null;
+        if (!Eligible(button)) button = null;
+        Component target = winner ? (Component)button : world;
         TargetName = target ? target.name : "";
         bool complete = dwell.Step(target ? target.GetInstanceID() : 0,Time.unscaledDeltaTime,dwellSeconds);
         if (Accessible || target) feedback.Show(camera,distance,dwell.Progress,target);
         else feedback.Hide();
-        // Native XRI UI dispatch runs in Update; dwell submits afterwards through the same gate.
-        if (complete && target) target.SubmitOnce(true);
+        // Native XRI dispatch runs in Update. UI and world dwell share the same target latch.
+        if (!complete || !target) return;
+        if (button) button.SubmitOnce(true);
+        else if (Claim(world, true, false, false)) world.Activate();
     }
     void OnApplicationFocus(bool value) { focused = value; dwell.CancelProgress(); }
     void OnDisable() { Accessible=false; dwell.Reset(); if (feedback) feedback.Hide(); }

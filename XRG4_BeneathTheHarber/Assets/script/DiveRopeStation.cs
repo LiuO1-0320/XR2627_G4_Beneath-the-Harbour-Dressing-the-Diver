@@ -157,7 +157,7 @@ public class DiveRopeStation : MonoBehaviour, IResettable
         controllerWasEnabled = controller && controller.enabled;
         if (controllerWasEnabled) controller.enabled = false;
         ascending = goingUp; elapsed = 0; travelling = IsPlayerTravelling = true;
-        travelSession = StageCoordinator.Current ? StageCoordinator.Current.Controller.Session.SessionId : System.Guid.Empty;
+        travelSession = StageCoordinator.Current ? StageCoordinator.Current.Controller.Session.ActivityId : System.Guid.Empty;
         SessionTelemetry.Report("RopeTravelStarted", this, ascending ? "Ascent" : "Descent");
         SetStatus("正在对齐绳索位置… / Aligning with the rope…");
     }

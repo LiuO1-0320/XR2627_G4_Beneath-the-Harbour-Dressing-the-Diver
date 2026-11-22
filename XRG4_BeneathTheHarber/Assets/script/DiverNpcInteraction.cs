@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
-/// <summary>Act 3 diver, controller-operated dialogue and helmet dressing station.</summary>
+/// <summary>ACT3 helmet fitting, diver dialogue and guided walk to the harbour.</summary>
 [ExecuteAlways]
 public class DiverNpcInteraction : MonoBehaviour, IResettable
 {
@@ -34,7 +34,9 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
     public float departureDistance = 2.2f;
     GameObject visuals;
     Transform head, dialoguePanel, instructionPanel, uiParent;
-    Text dialogue, nextCaption;
+    const string FittingInstructions = "抓起头盔，移到潜水员头边松手。\n使用凝视时，打开「体验菜单」，选择「为潜水员戴头盔」。\n戴好后，跟他一起走到港口。\n\nRelease the helmet near his head, or use head gaze:\nMenu → Fit diver's helmet. Then follow him to the harbour.";
+    Text dialogue, nextCaption, stationInstructions;
+    AccessibleButton stationTalk, stationReset;
     Image dialogueBackground;
     DiverSpeechBubbleTail speechTail;
     Font fallback;
@@ -51,19 +53,20 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
     Vector3[] route;
     Vector3 diveStart;
     DivingHelmetWearable wearable;
+    AccessibleTaskAction fittingAction;
     int page;
     bool previouslyWorn;
     readonly string[] lines = {
         "你好，我是这里的潜水员。准备下潜前，请帮我检查并戴好头盔。\n\nHello! I am the diver at this station. Help me check and put on my helmet before the dive.",
         "先观察头盔的视窗和连接结构。清晰的视野与牢固的连接对潜水员很重要。\n\nLook at the helmet's viewports and connections. A clear view and secure connections are important to a diver.",
-        "请按住握把抓起展台上的 helmet3，移到我的头部附近，再松开握把。\n\nHold the grip to pick up helmet3 from the stand. Bring it close to my head, then release the grip.",
-        "谢谢你帮我戴好头盔！现在准备好了。跟我来，我们一起前往 ACT 4。\n\nThank you for fitting my helmet! I'm ready now. Follow me to ACT 4."
+        "把头盔举到我头边再松手。使用凝视时，打开「体验菜单」，选择「为潜水员戴头盔」。\n\nBring my helmet close to my head and let go. With head gaze, open Menu and choose Fit diver's helmet.",
+        "谢谢你帮我戴好头盔！跟我一起走到港口吧，我会等你。\n\nThank you for fitting my helmet! Follow me to the harbour. I'll wait for you along the way."
     };
 
     void OnEnable()
     {
         homePosition = transform.position; homeRotation = transform.rotation;
-        behaviour = Behaviour.Idle; greeted = previouslyWorn = false;
+        behaviour = Behaviour.Idle; greeted = previouslyWorn = false; route = null;
         stateTime = gestureTime = stride = 0;
         Build(); SetupWearable();
     }
@@ -79,6 +82,16 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         wearable.wornEulerOffset = helmetEulerOffset;
         wearable.hideShellWhileWorn = false;
         wearable.returnWithSecondaryButton = false;
+
+        // The menu keeps this endpoint when the NPC is re-enabled and gets a new wearable.
+        if (!fittingAction)
+        {
+            fittingAction = gameObject.AddComponent<AccessibleTaskAction>();
+            fittingAction.stage = ExperienceStage.DressTheDiver;
+            fittingAction.actionId = DivingHelmetWearable.FitDiverAction;
+            fittingAction.caption = "为潜水员戴头盔 / Fit diver's helmet";
+        }
+        fittingAction.provider = wearable;
     }
     void Update()
     {
@@ -94,7 +107,7 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
             RefreshDialogue();
             if (wearable.IsWorn)
             {
-                fittingSession = StageCoordinator.Current ? StageCoordinator.Current.Controller.Session.SessionId : System.Guid.Empty;
+                fittingSession = wearable.FittedActivityId;
                 SetBehaviour(Behaviour.Thanking); ShowDialoguePopup();
             }
             else { RestoreStation(); }
@@ -107,10 +120,11 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         facing.y = 0;
         if (facing.sqrMagnitude > 0.001f) panel.rotation = Quaternion.LookRotation(facing);
     }
+    bool CanOpenDialogue => Application.isPlaying && route == null && StageCoordinator.Allows(ExperienceStage.DressTheDiver);
+
     public void OpenDialogue()
     {
-        if (!StageCoordinator.Allows(ExperienceStage.DressTheDiver)) return;
-        if (!Application.isPlaying) return;
+        if (!CanOpenDialogue) return;
         page = wearable && wearable.IsWorn ? 3 : 0;
         RefreshDialogue();
         ShowDialoguePopup();
@@ -124,7 +138,20 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
     }
     void LateUpdate()
     {
+        RefreshStandControls();
         if (dialoguePanel && dialoguePanel.gameObject.activeSelf) PositionSpeechBubble();
+    }
+    void RefreshStandControls()
+    {
+        if (!Application.isPlaying || !stationTalk) return;
+        stationTalk.interactable = CanOpenDialogue;
+        stationReset.interactable = CanResetAtStand;
+        if (route == null)
+            stationInstructions.text = FittingInstructions;
+        else if (behaviour == Behaviour.Leading)
+            stationInstructions.text = "请跟随潜水员前往港口。你可以慢慢走，他会等你。\n\nFollow the diver to the harbour. Take your time. He will wait for you.";
+        else
+            stationInstructions.text = "潜水员已到港口，请前往港口的下潜绳索处。\n\nThe diver has reached the harbour. Head to the dive rope on the platform.";
     }
     void PositionSpeechBubble()
     {
@@ -158,6 +185,15 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         if (behaviour == Behaviour.Idle) SetBehaviour(Behaviour.Talking);
         RefreshDialogue();
     }
+    bool CanResetAtStand => Application.isPlaying && wearable && StageCoordinator.Allows(ExperienceStage.DressTheDiver)
+        && behaviour != Behaviour.Leading && behaviour != Behaviour.RopeBriefing && behaviour != Behaviour.Descending;
+
+    void ResetAtStand()
+    {
+        // EscortStarted is published before the coordinator advances the stage.
+        if (CanResetAtStand) ResetActivity();
+    }
+
     public void ResetActivity()
     {
         fittingSession = System.Guid.Empty;
@@ -200,10 +236,10 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         uiParent = instructionPanel;
         Element<Image>("Background", Vector2.zero, new Vector2(1300, 620)).color = new Color(0.025f, 0.09f, 0.12f, 0.97f);
         Label("Title", "ACT 3 · 为潜水员戴头盔 / Dress the diver", new Vector2(0, 235), new Vector2(1200, 80), 38);
-        Label("Instructions", "靠近潜水员，他会挥手向你打招呼。也可以按“开始对话”。\n握住展台上的头盔，移到他头部附近松手。\n戴好后，他会点头感谢，带你前往 ACT 4。\n\nApproach the diver to say hello. Grip and fit his helmet.\nHe will thank you and lead the way to ACT 4.",
+        stationInstructions = Label("Instructions", FittingInstructions,
             new Vector2(0, 20), new Vector2(1180, 300), 32);
-        MakeButton("开始对话 / Talk", new Vector2(-280, -225), OpenDialogue);
-        MakeButton("重置 / Reset", new Vector2(280, -225), ResetActivity);
+        stationTalk = MakeButton("开始对话 / Talk", new Vector2(-280, -225), OpenDialogue);
+        stationReset = MakeButton("重置 / Reset", new Vector2(280, -225), ResetAtStand);
 
         dialoguePanel = CreatePanel("Diver Speech Bubble (generated)", transform, dialogueOffset, new Vector2(1300, 720));
         dialoguePanel.localScale = Vector3.one * dialogueScale;
@@ -215,7 +251,7 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         Label("Title", "潜水员说 / Diver says", new Vector2(0, 280), new Vector2(1200, 80), 42);
         dialogue = Label("Dialogue", "", new Vector2(0, 30), new Vector2(1180, 380), 34);
         dialogue.alignment = TextAnchor.UpperLeft;
-        nextCaption = MakeButton("检查哪些部件？\nWhat should I check?", new Vector2(-280, -270), NextDialogue);
+        nextCaption = MakeButton("检查哪些部件？\nWhat should I check?", new Vector2(-280, -270), NextDialogue).GetComponentInChildren<Text>();
         MakeButton("关闭 / Close", new Vector2(280, -270), CloseDialogue);
         RefreshDialogue();
         CloseDialogue();
@@ -282,6 +318,7 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
     {
         if (behaviour != next) SessionTelemetry.Report("DiverBehaviourChanged", this, next.ToString());
         behaviour = next; stateTime = 0; gestureTime = 0;
+        RefreshStandControls();
     }
     static float PlanarDistance(Vector3 a, Vector3 b) { return Vector3.ProjectOnPlane(a - b, Vector3.up).magnitude; }
     void TurnToward(Vector3 target)
@@ -400,7 +437,7 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         if (stateTime >= approachDuration + duration)
         {
             SetBehaviour(Behaviour.Arrived);
-            dialogue.text = "欢迎来到海底！这里散落着一些瓶子、罐子和包装，请帮忙捡起，放进绿色回收篮后松手。\n想回平台时，握住这里的绳索手柄，或点“上浮”。\n\nWelcome to the seabed! Pick up the bottles, cans and wrappers. Release them inside the green collection basket. Use the rope or press Ascend to return.";
+            dialogue.text = "欢迎来到海底！请把垃圾放进绿色回收篮。可以用手柄，也可以在辅助模式下凝视垃圾拾起，再凝视篮子投放。\n清理完后沿绳上浮回到平台。\n\nWelcome! Use your grip or head gaze to collect the litter in the green basket. Then ascend the rope to the platform.";
             ShowDialoguePopup();
         }
     }
@@ -518,7 +555,7 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         text.raycastTarget = false;
         return text;
     }
-    Text MakeButton(string caption, Vector2 position, UnityEngine.Events.UnityAction action)
+    AccessibleButton MakeButton(string caption, Vector2 position, UnityEngine.Events.UnityAction action)
     {
         var image = Element<Image>(caption, position, new Vector2(480, 100));
         image.color = Color.clear;
@@ -529,10 +566,11 @@ public class DiverNpcInteraction : MonoBehaviour, IResettable
         var label = Label(caption + " Label", caption, Vector2.zero, new Vector2(460, 90), 34);
         label.transform.SetParent(image.transform, false);
         label.rectTransform.anchoredPosition = new Vector2(480f * 0.044f, 0f);
-        return label;
+        return button;
     }
     void OnDisable()
     {
+        if (fittingAction) fittingAction.provider = null;
         if (wearable && Application.isPlaying)
         {
             wearable.ReturnToStand();

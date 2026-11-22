@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [ExecuteAlways]
+[DefaultExecutionOrder(1001)] // Read RegionGuide visibility after its LateUpdate.
 public class ActDirectionSign : MonoBehaviour
 {
     public Transform destination;
@@ -50,7 +51,7 @@ public class ActDirectionSign : MonoBehaviour
         new RouteMarker(160.18f, 6.768f, 0, 1)
     };
     readonly System.Collections.Generic.List<Transform> routeArrows = new System.Collections.Generic.List<Transform>();
-    void Update()
+    void LateUpdate()
     {
         if (!visuals) Build();
         // One owner draws the active route. The old second sign must not advertise ACT3 early.
@@ -64,7 +65,7 @@ public class ActDirectionSign : MonoBehaviour
             else if (stage == ExperienceStage.ScaleUp) route = caseRoute;
             else if (stage == ExperienceStage.DressTheDiver) route = dressRoute;
             var guide = coordinator.GetComponent<RegionGuide>();
-            if (guide && guide.LocationEvidence == "TargetArrivalObserved") route = null;
+            if (!guide || !guide.IsGuiding) route = null;
         }
         arrow.gameObject.SetActive(false); continuation.gameObject.SetActive(false); label.gameObject.SetActive(false);
         while (route != null && routeArrows.Count < route.Length)

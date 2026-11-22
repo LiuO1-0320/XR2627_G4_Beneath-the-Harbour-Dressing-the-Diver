@@ -31,7 +31,14 @@ public sealed class GlobalReset : MonoBehaviour
         public void PrepareReset()=>activity.EndStage();
         public void RestoreReset()=>activity.ResetActivity();
     }
-    public bool ResetAll()
+    public bool ResetAll() => RestoreScene(null);
+
+    public void RestoreSceneForBack(ExperienceStage target)
+    {
+        if (!RestoreScene(target)) throw new InvalidOperationException("Scene recovery is already running.");
+    }
+
+    bool RestoreScene(ExperienceStage? backTarget)
     {
         if (IsResetting) return false;
         var controller=GetComponent<SessionController>();
@@ -42,6 +49,22 @@ public sealed class GlobalReset : MonoBehaviour
         foreach(var component in Resources.FindObjectsOfTypeAll<MonoBehaviour>())
         {
             if(!component || !component.gameObject.scene.IsValid() || !component.gameObject.scene.isLoaded) continue;
+            if (backTarget.HasValue)
+            {
+                // The normal stage transition changes the audio. Keep this visitor's narration history.
+                if (component is AudioDirector) continue;
+                if (component is ExhibitVideoScreen video)
+                {
+                    modules.Add(new Step { prepare = video.PausePreservingProgress });
+                    continue;
+                }
+                if (component is GazeInput gaze)
+                {
+                    modules.Add(new Step { prepare = gaze.PrepareReset });
+                    continue;
+                }
+                if (component is SeabedCleanup && backTarget.Value > ExperienceStage.SeabedCleanup) continue;
+            }
             if(component is IResettable resettable) modules.Add(resettable);
             else if(component is IStageActivity activity) modules.Add(new ActivityReset(activity));
         }
@@ -70,20 +93,26 @@ public sealed class GlobalReset : MonoBehaviour
             ClearLocomotionQueues();
             if(!Camera.main || !Camera.main.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>() || !coordinator.navigation || !coordinator.navigation.start)
                 throw new InvalidOperationException("Assign the XR Origin camera and navigation.start before Reset.");
-            coordinator.navigation.SessionTravelTo(0);
+            if (!backTarget.HasValue) coordinator.navigation.SessionTravelTo(0);
             Physics.SyncTransforms();
         }});
-        SessionTelemetry.Report("GlobalResetStarted",this,controller.Session.SessionId.ToString());
+        if (!backTarget.HasValue) SessionTelemetry.Report("GlobalResetStarted",this,controller.Session.SessionId.ToString());
         var failures=sequence.Run(modules,()=>
         {
-            if(!controller.Session.Reset()) throw new InvalidOperationException("Session rejected Reset.");
+            if(!backTarget.HasValue && !controller.Session.Reset()) throw new InvalidOperationException("Session rejected Reset.");
         },()=>
         {
             if(EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
             coordinator.FinishGlobalReset();
-            if(controller.Session.Status!=SessionStatus.Idle || controller.Session.Stage!=ExperienceStage.Briefing || DiveRopeStation.IsPlayerTravelling)
+            if (DiveRopeStation.IsPlayerTravelling || (!backTarget.HasValue &&
+                (controller.Session.Status != SessionStatus.Idle || controller.Session.Stage != ExperienceStage.Briefing)))
                 throw new InvalidOperationException("Session has not returned to Waiting.");
         });
+        if (backTarget.HasValue)
+        {
+            if (failures.Count != 0) throw new InvalidOperationException(string.Join("\n", failures));
+            return true;
+        }
         LastDurationSeconds=Time.realtimeSinceStartupAsDouble-start;
         LastSucceeded=failures.Count==0; LastError=string.Join("\n",failures);
         coordinator.ReportResetResult(LastSucceeded);

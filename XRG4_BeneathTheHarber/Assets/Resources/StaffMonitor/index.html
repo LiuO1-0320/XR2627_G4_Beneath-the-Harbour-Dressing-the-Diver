@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123e43">
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=">
+<title>港湾之下 · 工作人员控制台</title>
+<style>
+:root { color-scheme: light; --paper:#f5f4ef; --ink:#192f34; --soft:#526768; --line:#d7dfd8; --teal:#177369; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif; line-height:1.55; font-variant-numeric:tabular-nums; }
+main, .top { width:min(1120px, calc(100% - 48px)); margin:auto; }
+header { background:#fffdfa; border-bottom:1px solid var(--line); }
+.top { min-height:72px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; padding:14px 0; }
+.brand { display:flex; align-items:center; gap:13px; font-weight:700; }
+.brand b { font-size:21px; letter-spacing:.05em; }
+.brand span { border-left:1px solid var(--line); padding-left:13px; color:var(--soft); font-size:14px; }
+.link { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; }
+.link::before { content:""; width:9px; height:9px; border-radius:50%; background:#9e7541; }
+.link[data-state=live]::before { background:#25816d; }
+main { padding:30px 0 50px; }
+.hero { border-radius:17px; background:#123e43; color:#f7faf6; padding:clamp(22px,4vw,45px); }
+.heroTop,.identity { display:flex; align-items:center; flex-wrap:wrap; gap:8px 24px; }
+.heroTop { justify-content:space-between; }
+.kicker { margin:0; color:#b7d4ca; font-size:14px; font-weight:600; }
+.status { border:1px solid #789b91; border-radius:24px; padding:3px 12px; font-size:14px; }
+h1 { margin:10px 0 0; line-height:1.23; font-size:clamp(32px,5vw,49px); letter-spacing:-.025em; }
+#stageEn { color:#bbd5cd; font-size:15px; margin:4px 0 0; }
+#stageEn:empty { display:none; }
+.task { margin:20px 0 0; font-size:clamp(16px,2vw,20px); font-weight:500; }
+progress { display:block; width:min(100%,410px); height:8px; margin-top:12px; border:0; border-radius:99px; background:#426361; overflow:hidden; accent-color:#9bd4b7; }
+progress::-webkit-progress-bar { background:#426361; } progress::-webkit-progress-value { background:#9bd4b7; } progress::-moz-progress-bar { background:#9bd4b7; }
+[hidden] { display:none!important; }
+.identity { border-top:1px solid #436569; margin:23px 0 0; padding-top:15px; font-size:13px; }
+.identity div { display:flex; align-items:baseline; gap:7px; } dt { color:#bad3cb; } dd { margin:0; word-break:break-word; }
+.columns { margin-top:20px; display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:20px; align-items:start; }
+section.panel { background:#fffdfa; border:1px solid var(--line); border-radius:15px; padding:21px 23px; }
+h2 { font-size:20px; margin:0 0 14px; }
+ol { list-style:none; padding:0; margin:0; }
+li { border-top:1px solid var(--line); padding:10px 0; }
+li:last-child { padding-bottom:2px; }
+.step { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+.step strong { font-weight:550; } .step small { color:var(--soft); font-size:13px; } .current strong,.current small { color:var(--teal); font-weight:700; }
+.event { display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:baseline; }
+time { color:var(--soft); font-size:13px; }
+.event span { overflow-wrap:anywhere; }
+.empty { color:var(--soft); margin:0; }
+@media(max-width:700px){
+  main,.top { width:calc(100% - 28px); } main { padding-top:15px; }
+  .top { min-height:60px; } .brand { gap:9px; } .brand span { padding-left:9px; font-size:13px; }
+  .columns { grid-template-columns:1fr; gap:14px; margin-top:14px; }
+  .eventsPanel { order:-1; } section.panel { padding:18px; }
+  .identity { gap:6px 15px; }
+}
+
+.controls { margin-top:20px; padding-top:16px; border-top:1px solid #436569; }
+.ctrlHead { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:7px 16px; margin-bottom:11px; }
+.ctrlHead h2 { font-size:18px; margin:0; } #access { font-size:14px; color:#c7dfda; }
+.commandRow { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+button { border:1px solid transparent; border-radius:9px; min-height:46px; padding:8px 14px; line-height:1.4; font-family:inherit; font-size:16px; font-weight:600; cursor:pointer; touch-action:manipulation; }
+button:focus-visible,summary:focus-visible { outline:3px solid #edac53; outline-offset:3px; }
+button[data-command] { background:#e5f3ec; color:#123e43; }
+button[data-command=Skip] { background:#ffdd9d; color:#52360d; }
+button[data-command=Reset] { background:#f2cec1; color:#5d2d26; }
+button:disabled { cursor:default; }
+button[data-command]:disabled { background:#254a4e; border-color:#527174; color:#b7c6c6; }
+button small { display:block; font-size:12px; font-weight:500; }
+#takeover { margin-bottom:12px; background:#f5f4ef; color:#123e43; }
+#notice { min-height:1.5em; margin:9px 0 0; font-size:14px; color:#dfebe6; }
+#confirmation { color:#382b17; background:#fff1d3; border-radius:10px; padding:14px 16px; margin-top:12px; }
+#confirmation h3,#confirmation p { margin:0 0 7px; }
+#confirmation div { display:flex; flex-wrap:wrap; gap:9px; }
+#cancel { color:#433b31; background:transparent; border-color:#9e8d6f; }
+#apply { color:#fff; background:#75462d; }
+details.panel { background:#fffdfa; border:1px solid var(--line); border-radius:15px; padding:0 20px; }
+summary { cursor:pointer; padding:14px 1px; font-weight:650; min-height:48px; }
+details[open] { padding-bottom:15px; }
+@media(max-width:650px) {
+  .commandRow { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .commandRow button { padding:7px 3px; }
+  .hero { padding:19px; } .identity { margin-top:15px; }
+}
+</style>
+</head>
+<body>
+<header><div class="top"><div class="brand"><b>港湾之下</b><span>工作人员控制台</span></div><div class="link" id="link" role="status">正在连接</div></div></header>
+<main>
+<section class="hero" aria-labelledby="stage">
+  <div class="heroTop"><p class="kicker">当前体验阶段</p><span class="status" id="status">等待数据</span></div>
+  <h1 id="stage">正在连接体验设备</h1><p id="stageEn"></p>
+  <p id="task" class="task">等待 Unity 发送会话状态。</p>
+  <progress id="meter" aria-label="当前任务进度" hidden></progress>
+  <section class="controls" aria-labelledby="controlTitle">
+    <div class="ctrlHead"><h2 id="controlTitle">工作人员控制</h2><span id="access">等待连接</span></div>
+    <button hidden type="button" id="takeover">启用本次控制</button>
+    <div class="commandRow">
+      <button type="button" data-command="Start" disabled>开始<small lang="en">Start</small></button>
+      <button type="button" data-command="Pause" disabled>暂停<small lang="en">Pause</small></button>
+      <button type="button" data-command="Resume" disabled>继续<small lang="en">Resume</small></button>
+      <button type="button" data-command="Skip" disabled>跳过<small lang="en">Skip</small></button>
+      <button type="button" data-command="Reset" disabled>复位<small lang="en">Reset</small></button>
+    </div>
+    <div id="confirmation" hidden role="group" aria-labelledby="confirmTitle" aria-describedby="confirmDetail">
+      <h3 id="confirmTitle"></h3><p id="confirmDetail"></p>
+      <div><button type="button" id="cancel">取消</button><button type="button" id="apply"></button></div>
+    </div>
+    <p id="notice" role="status" aria-live="polite"></p>
+  </section>
+  <dl class="identity"><div><dt>游客会话</dt><dd id="visit">—</dd></div><div><dt>所在展区</dt><dd id="region">—</dd></div><div><dt>最近同步</dt><dd id="sync">—</dd></div></dl>
+</section>
+<div class="columns">
+  <details class="panel"><summary>体验流程</summary><ol id="stages" aria-label="各阶段进度"></ol><p class="empty" id="stageEmpty">暂无会话数据</p></details>
+  <details class="panel eventsPanel"><summary>最近操作</summary><ol id="events" aria-label="当前游客最近操作，最新在前"></ol><p class="empty" id="eventEmpty">暂无会话数据</p></details>
+</div>
+</main>
+<noscript>请开启 JavaScript 以接收实时会话状态。</noscript>
+<script>
+'use strict';
+
+const linkParams = new URLSearchParams(location.search);
+const pinnedRuntime = (linkParams.get('runtime') || '').toLowerCase();
+const copiedVisit = (linkParams.get('visit') || '').toLowerCase();
+const copiedRevision = linkParams.get('rev');
+const storagePrefix = 'harbour.staff.' + pinnedRuntime + '.';
+function readTab(name) {
+  try { return sessionStorage.getItem(storagePrefix + name) || ''; } catch { return ''; }
+}
+function writeTab(name, value) {
+  try {
+    if (value) sessionStorage.setItem(storagePrefix + name,value);
+    else sessionStorage.removeItem(storagePrefix + name);
+  } catch { /* Private browsing can restrict per-tab storage. */ }
+}
+function loadAccess() {
+  const fragment = new URLSearchParams(location.hash.slice(1));
+  const supplied = fragment.get('key');
+  if (fragment.has('key')) history.replaceState(null,'',location.pathname + location.search);
+  if (!pinnedRuntime) return {key:'', fresh:false};
+  if (supplied === null) return {key:readTab('key'), fresh:false};
+  const key = /^[a-f0-9]{64}$/.test(supplied) ? supplied : '';
+  writeTab('key',key); writeTab('binding','');
+  return {key, fresh:!!key};
+}
+const access = loadAccess();
+let binding = pinnedRuntime ? readTab('binding') : '';
+
+const byId = id => document.getElementById(id);
+const stages = {
+  Briefing: ['欢迎与设备教程', 'Briefing'],
+  TheCase: ['试戴潜水头盔', 'The Case'],
+  ScaleUp: ['观察与拆装零件', 'Scale-up'],
+  Inside: ['头盔内部观察', 'Inside'],
+  DressTheDiver: ['潜水员装配', 'Dress the Diver'],
+  Descent: ['沿绳下潜', 'Descent'],
+  SeabedCleanup: ['海底垃圾回收', 'Seabed Cleanup'],
+  ExperienceComplete: ['完成体验', 'Experience Complete'],
+  FreeExploration: ['自由探索', 'Free Exploration']
+};
+const regions = {
+  Briefing:'欢迎区', TheCase:'头盔试戴展台', ScaleUp:'零件观察展台', Inside:'头盔试戴展台',
+  DressTheDiver:'潜水员装配区', Descent:'港口绳索区', SeabedCleanup:'海底清理区',
+  Unknown:'未检测到展区', OverlappingRegions:'展区重叠处'
+};
+const results = { Pending:'待体验', Active:'进行中', Completed:'已完成', Skipped:'已跳过' };
+const statuses = { Idle:'待机', Running:'进行中', Paused:'已暂停', Completed:'已结束' };
+const parts = {forward:'前部视窗',left:'左侧视窗',right:'右侧视窗',up:'顶部部件',fixing:'固定连接件',nameplate:'铭牌',nail1:'紧固件'};
+const actions = {Start:'开始体验',Pause:'暂停体验',Resume:'继续体验',Skip:'跳过当前阶段',Back:'返回上一阶段',Reset:'复位'};
+const diver = {Idle:'潜水员回到待机位置',Greeting:'潜水员向游客问候',Talking:'游客与潜水员对话',Thanking:'潜水员感谢游客',Inviting:'潜水员邀请游客同行',Leading:'潜水员开始带路',RopeBriefing:'潜水员抵达平台并介绍绳索',Descending:'潜水员沿绳下潜',Arrived:'潜水员已到达目的地'};
+const zeroId = '00000000-0000-0000-0000-000000000000';
+function stageName(key) { return stages[key] ? stages[key][0] : (key || '—'); }
+function shortName(text) { return (text || '').split(' / ')[0]; }
+function timeText(utc) {
+  const time = new Date(utc);
+  return Number.isFinite(time.getTime()) ? time.toLocaleTimeString('zh-CN',{hour12:false}) : '—';
+}
+function eventText(e) {
+  const detail = e.detail || '';
+  const part = parts[detail] || detail;
+  switch (e.kind) {
+    case 'CommandResult': {
+      const sources = {StaffWeb:'工作人员网页', StaffDesktop:'工作人员面板', Visitor:'游客'};
+      return (actions[e.subject] || e.subject) + (detail === 'Applied' ? ' · 已执行' : ' · 已拒绝') + (sources[e.source] ? ' · ' + sources[e.source] : '');
+    }
+    case 'TutorialTargetSelected': return detail === '0' ? '点亮教程左侧按钮' : (detail === '1' ? '点亮教程右侧按钮' : '点亮教程按钮');
+    case 'TutorialGrabbed': return '拿起训练球';
+    case 'TutorialPracticeSucceeded': return '完成训练球抓放';
+    case 'TutorialCompleted': return '完成设备教程';
+    case 'HelmetGrabbed': return '抓起头盔';
+    case 'HelmetReleased': return '放开头盔';
+    case 'HelmetGrabCancelled': return '取消头盔抓取';
+    case 'HelmetFitted': return detail === 'Diver' ? '为潜水员戴上头盔' : '游客已戴上头盔';
+    case 'HelmetFitMissed': return '头盔试戴未成功';
+    case 'InformationViewed': return '查看展品说明 · ' + part;
+    case 'PartDetached': return '拆下零件 · ' + part;
+    case 'PartInspected': return '观察零件 · ' + part;
+    case 'PartRestored': return '游客主动装回 · ' + part;
+    case 'LoosePartRecovered': return '展台收回散件 · ' + part;
+    case 'PartReset': return '复位收回零件 · ' + part;
+    case 'DiverBehaviourChanged': return diver[detail] || '潜水员状态更新';
+    case 'RopeTravelStarted': return detail === 'Ascent' ? '开始沿绳上浮' : '开始沿绳下潜';
+    case 'RopeTravelCompleted': return detail === 'Ascent' ? '沿绳返回平台' : '沿绳抵达海底';
+    case 'RopeTravelCancelled': return '绳索行程已取消';
+    case 'VisitorEnteredWater': return '游客进入水中';
+    case 'VisitorExitedWater': return '游客离开水面';
+    case 'LitterPickedUp': return '拾起垃圾 · ' + shortName(e.subject);
+    case 'LitterCollected': return '放入回收篮 · ' + shortName(e.subject);
+    case 'VisitorEndingChoice': return detail === 'FreeExploration' ? '选择自由探索' : '选择退出体验';
+    case 'RouteArrived': return '到达展区 · ' + shortName(detail);
+    case 'RouteStarted': return '开始引导至' + shortName(detail);
+    case 'RegionFirstNarration': return '首次聆听展区解说 · ' + stageName(detail);
+    case 'NarrationReplayRequested': return '请求重播展区解说 · ' + stageName(detail);
+    case 'NarrationStarted': return '开始播放旁白 · ' + detail;
+    case 'VisitorAction': {
+      const labels = { ExploreHelmet:'完成教程后开始参观', HelmetEquipped:'确认头盔佩戴', HelmetExamined:'查看头盔', InsideExplored:'观察头盔内部', ReflectOnViewports:'查看视窗', ReflectOnConnections:'查看连接部件' };
+      return labels[detail] || '展台互动 · ' + detail;
+    }
+    case 'AccessibilityModeChanged': return detail === 'Accessible' ? '开启凝视辅助' : '切换到常规模式';
+    case 'TaskProgress': return '任务进度 · ' + detail;
+    case 'TaskCompletionReported': return '展台上报任务完成';
+    default: return '';
+  }
+}
+function meter(value, total) {
+  const el = byId('meter');
+  el.hidden = !Number.isInteger(total) || total <= 0;
+  if (!el.hidden) { el.max = total; el.value = value; }
+}
+function taskText(s, row) {
+  meter(0,0);
+  if (s.status === 'Completed') return '本次体验已结束，等待工作人员复位。';
+  switch (s.stage) {
+    case 'Briefing': return '学习设备操作，完成训练球抓放。';
+    case 'TheCase': return '在头盔展台试戴头盔。';
+    case 'ScaleUp':
+      if (!(s.partsTotal > 0)) return '逐件拆下、观察并装回头盔零件。';
+      meter(s.partsRefitted, s.partsTotal);
+      return '已观察 ' + s.partsObserved + ' 件 · 已装回 ' + s.partsRefitted + ' / ' + s.partsTotal + ' 件';
+    case 'Inside': return '观察头盔内部。';
+    case 'DressTheDiver': return '为潜水员戴上头盔，跟随他走向港口。';
+    case 'Descent': return s.ropeTravelling ? '绳索行程进行中。' : '跟随潜水员到港口，沿绳下潜。';
+    case 'SeabedCleanup': {
+      const count = s.cleanupTotal > 0 ? '已回收 ' + s.cleanupCollected + ' / ' + s.cleanupTotal : '等待清理进度';
+      meter(s.cleanupCollected, s.cleanupTotal);
+      if (row && row.result === 'Skipped') return count + ' · 清理已跳过，等待沿绳返岸';
+      if (s.cleanupCompleted) return count + ' · 已收齐，等待沿绳返岸';
+      return count + ' · 海底清理中';
+    }
+    case 'ExperienceComplete': return '已返回平台，等待游客选择自由探索或退出。';
+    case 'FreeExploration': return '游客正在自由参观，可随时退出。';
+    default: return '正在等待当前任务状态。';
+  }
+}
+let previousStages = '', previousEvents = '';
+function clearLists() {
+  previousStages = previousEvents = '';
+  byId('stages').replaceChildren();
+  byId('events').replaceChildren();
+  byId('stageEmpty').hidden = byId('eventEmpty').hidden = false;
+}
+function clearView(s, offline) {
+  meter(0,0); clearLists();
+  let status = '待机', title = '等待下一位游客', task = '设备已就绪，等待工作人员开始体验。';
+  if (offline) {
+    status = '未同步'; title = '等待重新连接'; task = '连接恢复后将自动显示当前游客。';
+  } else if (s.resetInProgress) {
+    status = '正在复位'; title = '正在复位展台'; task = '等待设备完成复位。';
+  } else if (s.lastResetSucceeded === false) {
+    status = '复位失败'; title = '设备需要工作人员检查'; task = '请检查设备后重试复位，Unity 工作人员面板可查看详细状态。';
+  } else if (!s.ready) {
+    task = '等待设备就绪。';
+  } else if (s.status === 'Idle' && s.visitorPresent === true) {
+    title = '游客已佩戴好设备等待开始';
+    task = '设备已就绪，工作人员请为游客开启旅程';
+  }
+  byId('status').textContent = status; byId('stage').textContent = title;
+  byId('task').textContent = task; byId('stageEn').textContent = '';
+  byId('visit').textContent = byId('region').textContent = '—'; byId('visit').removeAttribute('title');
+  byId('sync').textContent = offline ? '—' : timeText(s.utc);
+  byId('stageEmpty').textContent = offline ? '等待同步' : '体验开始后显示阶段进度。';
+  byId('eventEmpty').textContent = offline ? '等待同步' : '当前没有游客操作。';
+}
+function showStages(s) {
+  const rows = s.stages.filter(row => row.stage !== 'Inside');
+  const key = JSON.stringify([s.runtimeId, s.sessionId, s.stage, s.status, rows]);
+  if (previousStages === key) return;
+  previousStages = key;
+  const list = document.createDocumentFragment();
+  for (const row of rows) {
+    const item = document.createElement('li');
+    item.className = 'step';
+    const active = s.stage === row.stage;
+    if (active) { item.classList.add('current'); item.setAttribute('aria-current','step'); }
+    const name = document.createElement('strong');
+    name.textContent = stageName(row.stage);
+    const result = document.createElement('small');
+    result.textContent = row.result === 'Active' && s.status === 'Paused' ? '已暂停' : (results[row.result] || '—');
+    item.append(name, result); list.append(item);
+  }
+  byId('stages').replaceChildren(list); byId('stageEmpty').hidden = rows.length > 0;
+}
+function showEvents(s, events) {
+  const current = events.filter(e => e.runtimeId === s.runtimeId && e.sessionId === s.sessionId && e.sequence <= s.eventSequence);
+  const key = s.runtimeId + '/' + s.sessionId + '/' + current.map(e => e.sequence).join(',');
+  if (previousEvents === key) return;
+  previousEvents = key;
+  const list = document.createDocumentFragment();
+  for (const e of current.sort((a,b) => b.sequence-a.sequence)) {
+    const caption = eventText(e);
+    if (!caption) continue;
+    const item = document.createElement('li');
+    item.className = 'event';
+    const time = document.createElement('time');
+    time.dateTime = e.utc; time.textContent = timeText(e.utc);
+    const name = document.createElement('span'); name.textContent = caption;
+    item.append(time,name); list.append(item);
+  }
+  byId('eventEmpty').textContent = '暂无本次游客的操作记录。';
+  byId('eventEmpty').hidden = list.childElementCount > 0;
+  byId('events').replaceChildren(list);
+}
+function showView(s, events) {
+  byId('link').dataset.state = 'live'; byId('link').textContent = '实时同步';
+  if (s.resetInProgress || s.lastResetSucceeded === false || s.status === 'Idle' || s.sessionId === zeroId) { clearView(s, false); return; }
+  byId('status').textContent = statuses[s.status] || s.status;
+  byId('stage').textContent = s.status === 'Completed' ? '本次体验已结束' : stageName(s.stage);
+  byId('stageEn').textContent = s.status === 'Completed' ? '' : (stages[s.stage] ? stages[s.stage][1] : '');
+  byId('task').textContent = taskText(s, s.stages.find(row => row.stage === s.stage));
+  byId('visit').textContent = s.sessionId.slice(0,8);
+  byId('visit').title = s.sessionId;
+  byId('region').textContent = regions[s.observedRegion] || '未检测到展区';
+  byId('sync').textContent = timeText(s.utc);
+  showStages(s); showEvents(s, events);
+}
+let stamp = '', stampTime = 0, timer, pendingRequest, visibilityVersion = 0;
+
+let snapshot = null, confirmation = null, sending = false, appliedRevision = -1;
+const buttons = Array.from(document.querySelectorAll('[data-command]'));
+function setNotice(text) { byId('notice').textContent = text; }
+// The empty GUID is reused for every Idle. Its revision distinguishes different handovers.
+function visitKey(s) { return s.sessionId === zeroId ? s.sessionId + '/' + s.revision : s.sessionId; }
+function bindVisit(key) { binding = key; writeTab('binding',key); }
+function sameState(a,b) {
+  return !!a && !!b && a.runtimeId === b.runtimeId && a.sessionId === b.sessionId &&
+    a.revision === b.revision && a.stage === b.stage && a.status === b.status;
+}
+function visitorLabel(s) { return s.sessionId === zeroId ? '当前待机轮次' : '游客 ' + s.sessionId.slice(0,8); }
+function controlAvailable(s, action) {
+  return !!s && !!access.key && !sending && !document.hidden && s.runtimeId.toLowerCase() === pinnedRuntime &&
+    Number.isInteger(s.revision) && binding === visitKey(s) && performance.now()-stampTime <= 5000 &&
+    Array.isArray(s.availableCommands) && s.availableCommands.includes(action);
+}
+function updateButtons() {
+  const canClaim = access.key && snapshot && !sending && binding !== visitKey(snapshot);
+  byId('takeover').hidden = !canClaim;
+  if (canClaim) byId('takeover').textContent = '启用本次控制 · ' + visitorLabel(snapshot);
+  let label = '只读监看';
+  if (access.key) {
+    if (sending) label = '正在提交';
+    else if (!snapshot) label = '等待设备同步';
+    else label = canClaim ? '等待工作人员接管' : '已启用本次控制';
+  }
+  byId('access').textContent = label;
+  for (const button of buttons) button.disabled = !!confirmation || !controlAvailable(snapshot,button.dataset.command);
+  byId('confirmation').hidden = !confirmation;
+}
+function updateControlState(next) {
+  const previous = snapshot;
+  snapshot = next;
+  if (confirmation && (!sameState(confirmation.state,next) || !controlAvailable(next,confirmation.action))) {
+    confirmation = null; setNotice('状态已变化，原确认已取消。');
+  }
+  if (!next) {
+    access.fresh = false;
+  } else if (access.key) {
+    if (access.fresh) {
+      const matches = /^\d+$/.test(copiedRevision || '') && next.sessionId.toLowerCase() === copiedVisit &&
+        (next.sessionId !== zeroId || String(next.revision) === copiedRevision);
+      if (matches) bindVisit(visitKey(next));
+      else setNotice('请核对链接对应的游客与当前状态，再启用本次控制。');
+      access.fresh = false;
+    } else if (binding && binding !== visitKey(next)) {
+      bindVisit(''); setNotice('游客或待机轮次已变更。核对当前状态后可重新启用控制。');
+    } else if (previous && visitKey(previous) !== visitKey(next) && !binding) {
+      setNotice('请核对当前游客，再启用本次控制。');
+    }
+  }
+  updateButtons();
+}
+function cancelConfirmation() {
+  if (!confirmation) return;
+  const action = confirmation.action;
+  confirmation = null; updateButtons();
+  const original = buttons.find(b => b.dataset.command === action);
+  if (original && !original.disabled) original.focus();
+}
+function chooseAction(action) {
+  if (confirmation || !controlAvailable(snapshot,action)) return;
+  if (action !== 'Reset' && action !== 'Skip') { sendAction(action,snapshot); return; }
+  confirmation = {action, state:snapshot};
+  const target = visitorLabel(snapshot) + ' · ' + stageName(snapshot.stage);
+  byId('confirmTitle').textContent = (action === 'Skip' ? '跳过当前阶段？' : '复位整个体验？');
+  let effect = '复位将清空本轮进度，并将设备恢复到待机状态。';
+  if (action === 'Skip') {
+    effect = '当前阶段会记为已跳过。';
+    if (snapshot.stage === 'SeabedCleanup') effect += '游客仍须沿绳返回平台，才能结束体验。';
+    if (snapshot.stage === 'ExperienceComplete' || snapshot.stage === 'FreeExploration') effect += '本次体验将结束。';
+  }
+  byId('confirmDetail').textContent = target + '。' + effect;
+  byId('apply').textContent = action === 'Skip' ? '确认跳过' : '确认复位';
+  setNotice(''); updateButtons(); byId('cancel').focus();
+}
+buttons.forEach(b => b.addEventListener('click',() => chooseAction(b.dataset.command)));
+byId('takeover').addEventListener('click',() => {
+  if (!access.key || !snapshot || sending || document.hidden || performance.now()-stampTime > 5000) return;
+  bindVisit(visitKey(snapshot)); setNotice('本标签页已绑定' + visitorLabel(snapshot) + '。'); updateButtons();
+});
+byId('cancel').addEventListener('click',cancelConfirmation);
+document.addEventListener('keydown',e => { if (e.key === 'Escape') cancelConfirmation(); });
+byId('apply').addEventListener('click',() => {
+  const intent = confirmation;
+  confirmation = null; updateButtons();
+  if (intent && sameState(snapshot,intent.state) && controlAvailable(snapshot,intent.action)) sendAction(intent.action,intent.state);
+});
+function newCommandId() {
+  // getRandomValues also works on HTTP inside the exhibition LAN.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  const hex = Array.from(bytes,x => x.toString(16).padStart(2,'0')).join('');
+  return [hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+}
+async function sendAction(action, state) {
+  if (!controlAvailable(snapshot,action) || !sameState(state,snapshot)) return;
+  const commandId = newCommandId();
+  sending = true;
+  const version = ++visibilityVersion;
+  clearTimeout(timer);
+  if (pendingRequest) pendingRequest.abort();
+  snapshot = null; updateButtons();
+  setNotice('正在等待 Unity 确认「' + actions[action] + '」。');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(),10000);
+  try {
+    const res = await fetch('/api/command', {method:'POST', mode:'same-origin', credentials:'omit', redirect:'error',
+      cache:'no-store', signal:controller.signal, headers:{'Content-Type':'application/json',Authorization:'Bearer ' + access.key},
+      body:JSON.stringify({protocolVersion:1, commandId, runtimeId:state.runtimeId, sessionId:state.sessionId, expectedRevision:state.revision, action})});
+    if (res.status === 401 || res.status === 403) {
+      access.key = ''; writeTab('key',''); bindVisit('');
+      setNotice('此链接无法控制设备。请从 Unity 工作人员面板重新打开控制链接。');
+      return;
+    }
+    if (!res.ok) throw new Error('unknown outcome');
+    const reply = await res.json();
+    if (version !== visibilityVersion || document.hidden) {
+      setNotice('页面曾离开前台，请核对最新状态与最近操作。'); return;
+    }
+    if (reply.commandId !== commandId || reply.runtimeId !== state.runtimeId || typeof reply.accepted !== 'boolean') throw new Error('invalid reply');
+    if (!reply.accepted) {
+      const codes = {StaleState:'会话或阶段已变化',InvalidState:'当前状态无法执行',WrongRuntime:'Unity 运行实例已变更',ExecutionFailed:'设备执行失败'};
+      setNotice('操作未执行。' + (codes[reply.code] || '设备拒绝了本次请求') + '，请检查最新状态。'); return;
+    }
+    if (!Number.isInteger(reply.revision) || reply.code !== 'Applied') throw new Error('invalid reply');
+    appliedRevision = reply.revision;
+    byId('link').dataset.state = 'waiting'; byId('link').textContent = '正在同步';
+    if (action === 'Start' && reply.code === 'Applied' && typeof reply.sessionId === 'string' && reply.sessionId !== zeroId && reply.revision > state.revision) {
+      bindVisit(reply.sessionId);
+    } else if (action === 'Reset') {
+      bindVisit('');
+    }
+    setNotice('Unity 已执行「' + actions[action] + '」。');
+  } catch {
+    setNotice('未收到确定回执。请核对最新状态与最近操作，再决定是否重新操作。');
+  } finally {
+    clearTimeout(timeout); sending = false; updateButtons();
+    if (!document.hidden) schedulePoll(0);
+  }
+}
+
+function schedulePoll(delay) {
+  clearTimeout(timer);
+  if (!document.hidden && !sending) timer = setTimeout(poll,delay);
+}
+async function poll() {
+  if (pendingRequest || sending || document.hidden) return;
+  const controller = new AbortController();
+  const version = visibilityVersion;
+  pendingRequest = controller;
+  const timeout = setTimeout(() => controller.abort(), 4000);
+  try {
+    const response = await fetch('/api/view', {cache:'no-store', signal:controller.signal});
+    if (!response.ok) throw new Error('unavailable');
+    const data = await response.json();
+    if (version !== visibilityVersion) return;
+    const s = data.snapshot;
+    if (!s || !s.runtimeId || !s.sessionId || !s.utc || !Array.isArray(s.stages) || !Array.isArray(data.events)) throw new Error('invalid snapshot');
+    if (pinnedRuntime && s.runtimeId.toLowerCase() !== pinnedRuntime) {
+      access.key = ''; writeTab('key',''); bindVisit(''); updateControlState(null); clearView(null, true);
+      setNotice('请使用当前运行的工作人员控制链接。');
+      byId('link').textContent = '运行实例已变更'; byId('link').dataset.state = 'offline';
+      byId('stage').textContent = '此链接对应的体验设备运行已结束';
+      byId('task').textContent = '请从当前 Unity 工作人员面板重新打开监看地址。';
+      return;
+    }
+    const nextStamp = [s.runtimeId,s.sessionId,s.utc].join('/');
+    if (nextStamp !== stamp) { stamp = nextStamp; stampTime = performance.now(); }
+    if (performance.now() - stampTime > 5000) throw new Error('stale snapshot');
+    if (s.revision < appliedRevision) return;
+    showView(s, data.events); updateControlState(s);
+  } catch {
+    if (version !== visibilityVersion) return;
+    byId('link').textContent = '连接中断'; byId('link').dataset.state = 'offline'; updateControlState(null); clearView(null, true);
+  } finally {
+    clearTimeout(timeout); pendingRequest = null;
+    schedulePoll(version === visibilityVersion ? 1000 : 0);
+  }
+}
+function refreshAfterVisibilityChange() {
+  visibilityVersion++;
+  clearTimeout(timer);
+  if (pendingRequest) pendingRequest.abort();
+  updateControlState(null); clearView(null,true);
+  byId('link').dataset.state = 'waiting'; byId('link').textContent = '正在同步';
+  byId('stage').textContent = '正在获取当前游客状态';
+  byId('task').textContent = '等待体验设备发送最新状态。';
+  if (!document.hidden) poll();
+}
+document.addEventListener('visibilitychange', refreshAfterVisibilityChange);
+window.addEventListener('pageshow', e => { if (e.persisted) refreshAfterVisibilityChange(); });
+poll();
+</script>
+</body>
+</html>

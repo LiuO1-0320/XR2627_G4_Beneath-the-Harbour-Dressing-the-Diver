@@ -12,14 +12,15 @@ using UnityEngine;
     public string runtimeId, sessionId, utc, status, stage, integrationStatus, fault, logError;
     public string routeDestination, locationEvidence;
     public string observedRegion, lastRuntimeError;
-    public string sessionStartedUtc;
+    public string sessionStartedUtc, controlMode;
     public int cleanupCollected, cleanupTotal;
+    public int partsObserved, partsRefitted, partsTotal;
     public bool cleanupCompleted;
     public string soundscape, audioStatus, narrationClip;
     public float narrationPositionSeconds;
     public int fittedHelmets, heldObjects;
     public bool ropeTravelling;
-    public bool travelling, ready;
+    public bool travelling, ready, visitorPresent;
     public bool firstPlatformReturnCompleted;
     public bool accessibleMode;
     public float gazeDwellSeconds, gazeProgress;
@@ -35,7 +36,7 @@ using UnityEngine;
 {
     public int protocolVersion = 1, revision;
     public long sequence;
-    public string runtimeId, sessionId, utc, stage, kind, subject, detail;
+    public string runtimeId, sessionId, utc, stage, kind, subject, detail, source;
 }
 [Serializable] public sealed class EventBatch
 {
@@ -88,26 +89,76 @@ public sealed class SessionTelemetry : MonoBehaviour
         if (string.IsNullOrWhiteSpace(json) || json.Length > 4096) return false;
         lock (queueLock) { if (incoming.Count >= 64) return false; incoming.Enqueue(json); return true; }
     }
-    public CommandReply ExecuteLocal(string action)
+    static readonly string[] staffCommands = { "Reset", "Start", "Back", "Pause", "Resume", "Skip" };
+    StageCoordinator coordinator;
+    StageCoordinator Coordinator => coordinator ? coordinator : (coordinator = GetComponent<StageCoordinator>());
+
+    bool ResetAvailable => Coordinator && coordinator.IsReady && coordinator.GlobalReset && !coordinator.GlobalReset.IsResetting;
+    public bool ControlsReady => ResetAvailable && coordinator.GlobalReset.LastSucceeded && Fault.Length == 0;
+
+    public bool CanExecute(string action)
+    {
+        if (action == "Reset") return ResetAvailable;
+        if (!ControlsReady) return false;
+        var state = controller.Session;
+        switch (action)
+        {
+            case "Start": return state.Status == SessionStatus.Idle;
+            case "Pause": return state.Status == SessionStatus.Running;
+            case "Resume": return state.Status == SessionStatus.Paused;
+            case "Back": return coordinator.CanGoBack;
+            case "Skip": return state.CanSkip;
+            default: return false;
+        }
+    }
+
+    public SessionControlMode ControlMode => dispatcher.Mode;
+    public void SetStaffControlMode(SessionControlMode mode)
+    {
+        if (!CanExecute("Start") || dispatcher.Mode == mode || !dispatcher.TrySetMode(mode)) return;
+        Record("ControlModeChanged", "Staff", mode.ToString());
+        dirty = true;
+    }
+    public CommandReply ExecuteLocal(string action) => LocalCommand(action, false);
+    public CommandReply ExecuteVisitor(string action) => LocalCommand(action, true);
+    CommandReply LocalCommand(string action, bool visitor)
     {
         var state = controller.Session;
         return Dispatch(new ControlCommand { commandId = Guid.NewGuid().ToString(), runtimeId = RuntimeId,
-            sessionId = state.SessionId.ToString(), expectedRevision = state.Revision, action = action });
+            sessionId = state.SessionId.ToString(), expectedRevision = state.Revision, action = action }, visitor, visitor ? "Visitor" : "StaffDesktop");
     }
-    CommandReply Dispatch(ControlCommand command)
+    // Called by the web inbox on the Unity thread. Keep credential headers out of telemetry.
+    internal CommandReply ExecuteStaffWeb(string json)
     {
-        Record("CommandRequested", command?.action, command == null ? "null" : JsonUtility.ToJson(command));
-        var reply = dispatcher.Dispatch(command);
-        Record("CommandResult", command?.action, JsonUtility.ToJson(reply));
+        ControlCommand command = new ControlCommand { protocolVersion = -1, expectedRevision = -1 };
+        try { JsonUtility.FromJsonOverwrite(json, command); }
+        catch (ArgumentException) { command = null; }
+        string target = null;
+        if (command != null && Guid.TryParseExact(command.sessionId, "D", out var id))
+            target = id.ToString();
+        string action = CommandDispatcher.IsWebAction(command?.action) ? command.action : "Invalid";
+        Record("CommandRequested", action, command == null ? "null" : JsonUtility.ToJson(command), target, "StaffWeb");
+        var reply = dispatcher.DispatchWeb(command, out bool replay);
+        // A successful Start belongs to the new visitor; Reset belongs to the departing visitor.
+        string auditVisit = reply.accepted && action == "Start" ? reply.sessionId : target;
+        string receipt = JsonUtility.ToJson(reply);
+        Record(replay ? "CommandReplay" : "CommandResult", action, receipt, auditVisit, "StaffWeb");
+        Emit(ReplyJson, receipt);
+        dirty = true;
+        return reply;
+    }
+
+    CommandReply Dispatch(ControlCommand command, bool visitor = false, string source = "Transport")
+    {
+        Record("CommandRequested", command?.action, command == null ? "null" : JsonUtility.ToJson(command), source: source);
+        var reply = visitor ? dispatcher.DispatchVisitor(command) : dispatcher.Dispatch(command);
+        Record("CommandResult", command?.action, JsonUtility.ToJson(reply), source: source);
         Emit(ReplyJson, JsonUtility.ToJson(reply)); dirty = true; return reply;
     }
     bool Execute(string action)
     {
         var state = controller.Session;
-        var coordinator = GetComponent<StageCoordinator>();
-        if (!coordinator || !coordinator.IsReady) return false;
-        if (coordinator.GlobalReset && coordinator.GlobalReset.IsResetting) return false;
-        if (Fault.Length != 0 && action != "Reset") return false;
+        if (!CanExecute(action)) return false;
         try
         {
             switch (action)
@@ -159,7 +210,8 @@ public sealed class SessionTelemetry : MonoBehaviour
     public SessionSnapshot GetSnapshot()
     {
         var state = controller.Session;
-        var coordinator = GetComponent<StageCoordinator>();
+        var coordinator = Coordinator;
+        var inspection = coordinator ? coordinator.ActiveInspection : null;
         var guide = GetComponent<RegionGuide>();
         var results = new List<StageSnapshot>();
         int fitted = 0, held = 0;
@@ -178,25 +230,21 @@ public sealed class SessionTelemetry : MonoBehaviour
         }
         foreach (ExperienceStage stage in Enum.GetValues(typeof(ExperienceStage)))
             results.Add(new StageSnapshot { stage = stage.ToString(), result = state.Result(stage).ToString() });
-        bool ready = coordinator && coordinator.IsReady && Fault.Length == 0;
         var commands = new List<string>();
-        if (coordinator && coordinator.IsReady) commands.Add("Reset");
-        if (ready)
-        {
-            if (state.Status == SessionStatus.Idle) commands.Add("Start");
-            if (state.Status == SessionStatus.Running) commands.Add("Pause");
-            if (state.Status == SessionStatus.Paused) commands.Add("Resume");
-            if ((state.Status == SessionStatus.Running || state.Status == SessionStatus.Paused)
-                && !(state.Stage == ExperienceStage.SeabedCleanup && state.CleanupResolved)) commands.Add("Skip");
-        }
+        foreach (var action in staffCommands)
+            if (CanExecute(action)) commands.Add(action);
         return new SessionSnapshot { runtimeId = RuntimeId, sessionId = state.SessionId.ToString(), utc = DateTime.UtcNow.ToString("O"),
             revision = state.Revision, eventSequence = sequence, status = state.Status.ToString(), stage = state.Stage.ToString(),
             stages = results.ToArray(), integrationStatus = coordinator ? coordinator.IntegrationStatus : "Coordinator missing",
-            ready = ready, fault = Fault, logError = LogError, availableCommands = commands.ToArray(),
+            visitorPresent = VisitorHeadsetPresence.IsWorn,
+            ready = ControlsReady, fault = Fault, logError = LogError, availableCommands = commands.ToArray(),
             observedRegion = region, fittedHelmets = fitted, heldObjects = held, ropeTravelling = DiveRopeStation.IsPlayerTravelling,
             lastRuntimeError = lastRuntimeError,
             cleanupCollected = state.CleanupCollected, cleanupTotal = state.CleanupTotal,
-            cleanupCompleted = state.CleanupCompleted, sessionStartedUtc = sessionStartedUtc,
+            partsObserved = inspection ? inspection.InspectedCount : 0,
+            partsRefitted = inspection ? inspection.RefittedCount : 0,
+            partsTotal = inspection ? inspection.RequiredCount : 0,
+            cleanupCompleted = state.CleanupCompleted, sessionStartedUtc = sessionStartedUtc, controlMode = ControlMode.ToString(),
             firstPlatformReturnCompleted = state.HasReturnedAfterCleanup,
             accessibleMode = GazeInput.Current && GazeInput.Current.Accessible,
             gazeDwellSeconds = GazeInput.Current ? GazeInput.Current.dwellSeconds : 0,
@@ -227,11 +275,11 @@ public sealed class SessionTelemetry : MonoBehaviour
         if (Application.isPlaying && current && current.Controller && current.Controller.Telemetry)
             current.Controller.Telemetry.Record(kind, subject ? subject.name : "", detail);
     }
-    public void Record(string kind, string subject, string detail, string capturedSessionId = null)
+    public void Record(string kind, string subject, string detail, string capturedSessionId = null, string source = null)
     {
         var state = controller.Session;
         var record = new ActivityRecord { sequence = ++sequence, runtimeId = RuntimeId, sessionId = capturedSessionId ?? state.SessionId.ToString(),
-            utc = DateTime.UtcNow.ToString("O"), revision = state.Revision, stage = state.Stage.ToString(), kind = kind, subject = subject, detail = detail };
+            utc = DateTime.UtcNow.ToString("O"), revision = state.Revision, stage = state.Stage.ToString(), kind = kind, subject = subject, detail = detail, source = source };
         history.Enqueue(record); if (history.Count > 512) history.Dequeue();
         string json = JsonUtility.ToJson(record);
         try

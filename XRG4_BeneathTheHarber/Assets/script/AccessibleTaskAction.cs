@@ -15,18 +15,23 @@ public sealed class AccessibleTaskAction : MonoBehaviour
     public MonoBehaviour provider;
     public ExperienceStage stage;
     public string actionId;
+    [Tooltip("Display order within this stage, from top to bottom.")]
+    public int menuOrder;
+    [Tooltip("Keep the menu open for a sequence of assisted actions.")]
+    public bool keepMenuOpen;
     public string caption = "辅助操作 / Assisted action";
     public bool Available(SessionState state, out string reason)
     {
         reason = "等待 M3 接口 / Awaiting M3 provider";
+        if (state.Status == SessionStatus.Paused) { reason = "请先继续体验 / Resume first"; return false; }
         if (!isActiveAndEnabled || state.Status != SessionStatus.Running || (state.Stage != stage && state.Stage != ExperienceStage.FreeExploration)) return false;
         if (!provider || !provider.isActiveAndEnabled || !(provider is IAccessibleActionProvider adapter)) return false;
-        return adapter.CanExecuteAccessibleAction(actionId,state.SessionId,stage,out reason);
+        return adapter.CanExecuteAccessibleAction(actionId,state.ActivityId,stage,out reason);
     }
     public bool Execute(SessionState state, Guid capturedSession, int capturedRevision)
     {
         if (state.SessionId != capturedSession || state.Revision != capturedRevision || !Available(state,out _)) return false;
-        ((IAccessibleActionProvider)provider).ExecuteAccessibleAction(actionId,capturedSession,stage);
+        ((IAccessibleActionProvider)provider).ExecuteAccessibleAction(actionId,state.ActivityId,stage);
         SessionTelemetry.Report("AccessibleTaskRequested",this,actionId); return true;
     }
 }

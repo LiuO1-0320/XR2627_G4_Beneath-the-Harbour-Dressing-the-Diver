@@ -21,8 +21,8 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
     [Min(1)] public float viewingDistance = 4f;
     [Tooltip("Optional centre of the viewing area; defaults to this screen.")]
     public Transform viewingAnchor;
-    double savedTime;
-    bool restoringPosition;
+    double savedTime, filmDuration;
+    bool restoringPosition, manualSeekPending, prepareOnReturn;
     bool InViewingRange => Camera.main && Vector3.Distance(Camera.main.transform.position,
         viewingAnchor ? viewingAnchor.position : transform.position) <= Mathf.Max(1, viewingDistance);
     GameObject generated;
@@ -51,9 +51,13 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         { resumePlayback = pendingPlay = false; player.Play(); }
         else if (!InViewingRange) PausePreservingProgress();
     }
+    // After a paused re-prepare, time can report zero until the first frame is presented.
+    bool HasPresentedPosition => player && player.isPrepared && !restoringPosition &&
+        !manualSeekPending && player.frame >= 0 && player.time >= 0;
+
     void SavePosition()
     {
-        if (player && player.isPrepared && !restoringPosition && player.time >= 0)
+        if (HasPresentedPosition)
             savedTime = player.time;
     }
     public void PausePreservingProgress()
@@ -62,10 +66,32 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         pendingPlay = resumePlayback = false;
         if (player && player.isPlaying) player.Pause();
     }
-    public void ResetSessionPlayback()
+    void ReleaseDecoder()
+    {
+        // A paused video still feeds a native streaming source in Tuanjie.
+        // Stop before disconnecting its track, after preserving the visitor's position.
+        preparing = restoringPosition = manualSeekPending = false;
+        player.Stop();
+        if (player.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+            player.SetTargetAudioSource(0, null);
+            player.audioOutputMode = VideoAudioOutputMode.None;
+            player.controlledAudioTrackCount = 0;
+        }
+    }
+    void LeaveViewingRange()
     {
         pendingPlay = resumePlayback = false;
-        if (player) player.Stop();
+        if (!preparing && !player.isPrepared) return;
+        SavePosition();
+        prepareOnReturn = true;
+        ReleaseDecoder();
+        SetStatus("影片已暂停，返回展台可继续观看\nVIDEO PAUSED — RETURN TO CONTINUE");
+    }
+    public void ResetSessionPlayback()
+    {
+        pendingPlay = resumePlayback = prepareOnReturn = false;
+        if (player) ReleaseDecoder();
         savedTime = 0; restoringPosition = false;
         preparing = loadFailed = false; prepareElapsed = 0;
         SetStatus(HasSource ? "点击播放观看影片\nPRESS PLAY TO WATCH" : "暂未添加视频\nNO VIDEO ADDED YET");
@@ -80,13 +106,13 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         if (!Application.isPlaying) return;
         if (!player) SetupPlayer();
         if (videoClip != loadedClip || videoUrl != loadedUrl) ConfigureSource();
-        if (!InViewingRange) PausePreservingProgress();
+        if (!InViewingRange) LeaveViewingRange();
+        else if (prepareOnReturn && CanPlay) BeginPrepare();
         if (preparing && !sessionPaused)
         {
             prepareElapsed += Time.unscaledDeltaTime;
             if (prepareElapsed > 30)
             {
-                player.Stop();
                 VideoError(player, "Preparation timed out after 30 seconds.");
             }
         }
@@ -98,11 +124,13 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         foreach (var button in playButtons) button.interactable = CanPlay && HasSource && InViewingRange;
         foreach (var label in playLabels) label.text = !CanPlay ? "等待开始或继续" : player.isPlaying ? "Ⅱ 暂停 / Pause" :
             !InViewingRange ? "靠近观看 / Come closer" : loadFailed ? "重试 / Retry" : pendingPlay ? "取消 / Cancel" : "▶ 播放 / Play";
-        foreach (var label in timers) label.text = Format(player.isPrepared && !restoringPosition ? player.time : savedTime) + " / " + Format(player.isPrepared ? player.length : 0);
+        double position = HasPresentedPosition ? player.time : savedTime;
+        double duration = player.isPrepared ? player.length : filmDuration;
+        foreach (var label in timers) label.text = Format(position) + " / " + Format(duration);
         foreach (var slider in sliders)
         {
-            slider.interactable = CanPlay && InViewingRange && player.isPrepared && player.canSetTime;
-            slider.SetValueWithoutNotify(player.isPrepared && player.length > 0 ? (float)(player.time / player.length) : 0);
+            slider.interactable = CanPlay && InViewingRange && player.isPrepared && !restoringPosition && player.canSetTime;
+            slider.SetValueWithoutNotify(duration > 0 ? (float)(position / duration) : 0);
         }
     }
     void Build()
@@ -162,18 +190,8 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         player.renderMode = VideoRenderMode.RenderTexture; player.aspectRatio = VideoAspectRatio.FitInside;
         texture = new RenderTexture(1280, 720, 0) { name = name + " video", hideFlags = HideFlags.HideAndDontSave };
         texture.Create(); player.targetTexture = texture;
-        if (AudioDiagnostics.VideoDisabled)
-        {
-            player.audioOutputMode = VideoAudioOutputMode.None;
-            player.controlledAudioTrackCount = 0;
-        }
-        else
-        {
-            audioSource = generated.AddComponent<AudioSource>(); audioSource.playOnAwake = false;
-            audioSource.spatialBlend = 1; audioSource.minDistance = 2; audioSource.maxDistance = 15;
-            player.audioOutputMode = VideoAudioOutputMode.AudioSource; player.controlledAudioTrackCount = 1;
-            player.SetTargetAudioSource(0, audioSource);
-        }
+        player.audioOutputMode = VideoAudioOutputMode.None;
+        player.controlledAudioTrackCount = 0;
         player.prepareCompleted += Prepared; player.errorReceived += VideoError;
         player.seekCompleted += SeekCompleted;
         foreach (var picture in generated.GetComponentsInChildren<RawImage>()) { picture.texture = texture; picture.color = Color.white; }
@@ -181,8 +199,12 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
     }
     void ConfigureSource()
     {
-        if (loadedClip != videoClip || loadedUrl != videoUrl) savedTime = 0;
-        player.Stop(); restoringPosition = false;
+        if (loadedClip != videoClip || loadedUrl != videoUrl)
+        {
+            savedTime = 0; filmDuration = 0;
+        }
+        prepareOnReturn = false;
+        ReleaseDecoder();
         pendingPlay = preparing = loadFailed = false; loadedClip = videoClip; loadedUrl = videoUrl;
         if (videoClip) { player.source = VideoSource.VideoClip; player.clip = videoClip; }
         else if (!string.IsNullOrWhiteSpace(videoUrl)) { player.source = VideoSource.Url; player.url = videoUrl; }
@@ -191,13 +213,31 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
     }
     void BeginPrepare()
     {
+        prepareOnReturn = false;
+        if (!AudioDiagnostics.VideoDisabled && player.audioOutputMode != VideoAudioOutputMode.AudioSource
+            && (!videoClip || videoClip.audioTrackCount > 0))
+        {
+            if (!audioSource)
+            {
+                audioSource = generated.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+                audioSource.spatialBlend = 1; audioSource.minDistance = 2; audioSource.maxDistance = 15;
+                // Fixed exhibit speakers should not pitch-shift during XR movement or teleportation.
+                audioSource.dopplerLevel = 0;
+            }
+            player.audioOutputMode = VideoAudioOutputMode.AudioSource;
+            player.controlledAudioTrackCount = 1;
+            player.SetTargetAudioSource(0, audioSource);
+        }
         preparing = true; loadFailed = false; prepareElapsed = 0;
-        SetStatus("视频加载中…可点击取消\nLOADING VIDEO — CANCEL AVAILABLE");
+        SetStatus(pendingPlay ? "视频加载中…可点击取消\nLOADING VIDEO — CANCEL AVAILABLE" :
+            "正在恢复观看位置…\nRESTORING VIEWING POSITION");
         player.Prepare();
     }
     public void TogglePlayback()
     {
-        if (!Application.isPlaying || !CanPlay || !InViewingRange || restoringPosition) return;
+        if (!Application.isPlaying || !CanPlay || !InViewingRange) return;
+        if (restoringPosition) { pendingPlay = !pendingPlay; return; }
         if (!player) SetupPlayer();
         if (videoClip != loadedClip || videoUrl != loadedUrl) ConfigureSource();
         if (!videoClip && string.IsNullOrWhiteSpace(videoUrl))
@@ -214,7 +254,7 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
     void Prepared(VideoPlayer source)
     {
         if (!preparing) return;
-        preparing = false; loadFailed = false;
+        preparing = false; loadFailed = false; filmDuration = source.length;
         if (savedTime > 0 && source.canSetTime)
         {
             restoringPosition = true;
@@ -225,13 +265,26 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
     }
     void SeekCompleted(VideoPlayer source)
     {
+        manualSeekPending = false;
         if (!restoringPosition) return;
         restoringPosition = false;
         if (pendingPlay && CanPlay && InViewingRange) { pendingPlay = false; source.Play(); }
     }
     void VideoError(VideoPlayer source, string message)
-    { pendingPlay = preparing = restoringPosition = false; loadFailed = true; SetStatus("视频加载失败，请点击重试\nVIDEO COULD NOT LOAD — PRESS RETRY"); Debug.LogWarning(name + ": " + message, this); }
-    void Seek(float value) { if (CanPlay && InViewingRange && player && player.isPrepared && player.canSetTime) { savedTime = value * player.length; player.time = savedTime; } }
+    {
+        pendingPlay = resumePlayback = prepareOnReturn = false;
+        ReleaseDecoder();
+        loadFailed = true;
+        SetStatus("视频加载失败，请点击重试\nVIDEO COULD NOT LOAD — PRESS RETRY");
+        Debug.LogWarning(name + ": " + message, this);
+    }
+    void Seek(float value)
+    {
+        if (!CanPlay || !InViewingRange || !player || !player.isPrepared || restoringPosition || !player.canSetTime) return;
+        savedTime = value * player.length;
+        manualSeekPending = true;
+        player.time = savedTime;
+    }
     void SetStatus(string message) { foreach (var label in statuses) label.text = message; }
     static string Format(double seconds)
     {
@@ -258,7 +311,7 @@ public class ExhibitVideoScreen : MonoBehaviour, IResettable
         if (texture) texture.Release(); Dispose(texture); Dispose(generated); Dispose(font);
         generated = null; player = null; audioSource = null; texture = null;
         statuses.Clear(); timers.Clear(); playLabels.Clear(); playButtons.Clear(); sliders.Clear(); overlays.Clear();
-        pendingPlay = preparing = loadFailed = resumePlayback = false;
+        pendingPlay = preparing = restoringPosition = manualSeekPending = prepareOnReturn = loadFailed = resumePlayback = false;
     }
     static void Dispose(Object item)
     { if (!item) return; if (Application.isPlaying) Destroy(item); else DestroyImmediate(item); }
